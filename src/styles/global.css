@@ -1,0 +1,64 @@
+:root {
+  --paper: #ece4cf;
+  --paper-warm: #ebe2c2;
+  --paper-deep: #ddd4ba;
+  --paper-cold: #e0dcc8;
+  --paper-rust: #ebe0c5;
+  --paper-mossy: #e1deca;
+  --paper-ash: #dcd8c5;
+  --paper-latest: #e4ddc6;
+
+  --ink: #1c2340;
+  --ink-soft: #6b6048;
+  --ink-faint: #a89e85;
+  --mark: #8b3a2e;
+  --mark-soft: #b06554;
+  --rule: rgba(28, 35, 64, 0.14);
+  --rule-strong: rgba(28, 35, 64, 0.28);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'EB Garamond', 'Noto Serif KR', serif;
+  font-weight: 400;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+}
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 3rem;
+  position: relative;
+  z-index: 1;
+}
+
+.reveal { opacity: 0; transform: translateY(14px); animation: reveal 1.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.reveal-1 { animation-delay: 0.05s; }
+.reveal-2 { animation-delay: 0.25s; }
+.reveal-3 { animation-delay: 0.45s; }
+.reveal-4 { animation-delay: 0.55s; }
+.reveal-5 { animation-delay: 0.65s; }
+.reveal-6 { animation-delay: 0.75s; }
+.reveal-7 { animation-delay: 0.85s; }
+.reveal-8 { animation-delay: 0.95s; }
+
+@keyframes reveal { to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 900px) {
+  .container { padding: 0 1.2rem; }
+}

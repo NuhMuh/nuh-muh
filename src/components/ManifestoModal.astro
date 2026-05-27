@@ -1,0 +1,85 @@
+---
+---
+<div class="manifesto-modal" id="manifesto" role="dialog" aria-modal="true">
+  <div class="manifesto-backdrop"></div>
+  <div class="manifesto-content">
+    <button class="manifesto-close" aria-label="닫기">×</button>
+    <div class="manifesto-label">— 선언 —</div>
+    <p class="manifesto-text">
+      어떤 <em>벽</em>은,<br />문이다.
+    </p>
+    <p class="manifesto-note">[ 임시 — 너의 본질 문장이 들어갈 자리 ]</p>
+  </div>
+</div>
+
+<style>
+  .manifesto-modal {
+    position: fixed; inset: 0; z-index: 200;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .manifesto-modal.open { opacity: 1; pointer-events: auto; }
+  .manifesto-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(28, 35, 64, 0.35);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+  }
+  .manifesto-content {
+    position: relative; max-width: 620px;
+    width: calc(100% - 3rem); padding: 4.5rem 3.5rem;
+    background: var(--paper); border: 1px solid var(--rule-strong);
+    text-align: center;
+    transform: translateY(20px) scale(0.98);
+    transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 30px 60px rgba(28, 35, 64, 0.2);
+  }
+  .manifesto-modal.open .manifesto-content { transform: translateY(0) scale(1); }
+  .manifesto-content::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.05; mix-blend-mode: multiply;
+  }
+  .manifesto-close {
+    position: absolute; top: 1.2rem; right: 1.4rem;
+    background: none; border: none;
+    font-family: 'EB Garamond', serif; font-size: 1.5rem;
+    color: var(--ink-soft); cursor: pointer; line-height: 1; padding: 0.5rem;
+    transition: color 0.3s, transform 0.3s;
+  }
+  .manifesto-close:hover { color: var(--mark); transform: rotate(90deg); }
+  .manifesto-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem; letter-spacing: 0.35em;
+    text-transform: uppercase; color: var(--mark); margin-bottom: 2rem;
+  }
+  .manifesto-text {
+    font-family: 'Noto Serif KR', serif;
+    font-size: clamp(1.3rem, 2.2vw, 1.65rem);
+    font-weight: 300; line-height: 1.6;
+    color: var(--ink); letter-spacing: -0.005em;
+  }
+  .manifesto-text em { color: var(--mark); font-style: normal; }
+  .manifesto-note {
+    margin-top: 2.5rem;
+    font-family: 'EB Garamond', serif; font-style: italic;
+    font-size: 0.85rem; color: var(--ink-faint);
+  }
+  @media (max-width: 900px) { .manifesto-content { padding: 3rem 2rem; } }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('manifesto');
+    const closeBtn = document.querySelector('.manifesto-close');
+    const backdrop = document.querySelector('.manifesto-backdrop');
+    if (modal && closeBtn && backdrop) {
+      closeBtn.addEventListener('click', () => modal.classList.remove('open'));
+      backdrop.addEventListener('click', () => modal.classList.remove('open'));
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') modal.classList.remove('open');
+      });
+    }
+  });
+</script>

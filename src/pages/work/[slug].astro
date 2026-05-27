@@ -1,0 +1,139 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const works = await getCollection('works');
+  return works.map((work) => ({
+    params: { slug: work.id },
+    props: { work },
+  }));
+}
+
+const { work } = Astro.props;
+const allArticles = await getCollection('articles');
+const articles = allArticles
+  .filter((a) => a.data.work === work.id)
+  .sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
+
+const { Content } = await render(work);
+---
+
+<BaseLayout title={`${work.data.title} — Nuh-Muh`}>
+  <div class="container">
+    <nav class="back-nav">
+      <a href="/">← Nuh-Muh</a>
+    </nav>
+
+    <header class={`work-header color-${work.data.color}`}>
+      <div class="work-meta">
+        <span>{work.data.number}</span>
+        {work.data.status && <span class="status">{work.data.status}</span>}
+      </div>
+      <h1>{work.data.title}</h1>
+      <p class="work-tag">{work.data.tag}</p>
+      <div class="work-intro">
+        <Content />
+      </div>
+    </header>
+
+    <section class="articles-section">
+      <div class="section-label">기록된 글 · {articles.length}편</div>
+
+      {articles.length === 0 ? (
+        <p class="empty">아직 글이 없습니다.</p>
+      ) : (
+        <ul class="article-list">
+          {articles.map((article) => (
+            <li>
+              <a href={`/work/${work.id}/${article.id}`}>
+                <div class="article-date">{article.data.date}</div>
+                <h2 class="article-title">{article.data.title}</h2>
+                {article.data.excerpt && <p class="article-excerpt">{article.data.excerpt}</p>}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .back-nav { padding: 2.5rem 0 0; }
+  .back-nav a {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; letter-spacing: 0.25em; text-transform: uppercase;
+    color: var(--ink-soft); text-decoration: none;
+    transition: color 0.3s;
+  }
+  .back-nav a:hover { color: var(--mark); }
+  .work-header {
+    padding: 4rem 3rem 4rem;
+    margin-top: 2rem;
+    border: 1px solid var(--rule);
+  }
+  .work-meta {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem; letter-spacing: 0.25em; text-transform: uppercase;
+    color: var(--ink-faint); margin-bottom: 2.5rem;
+  }
+  .work-meta .status { color: var(--mark); }
+  .work-header h1 {
+    font-family: 'Noto Serif KR', serif; font-weight: 600;
+    font-size: clamp(2.8rem, 5vw, 4.2rem);
+    line-height: 1.05; letter-spacing: -0.01em;
+    margin-bottom: 1rem;
+  }
+  .work-tag {
+    font-family: 'EB Garamond', serif; font-style: italic;
+    font-size: 1.25rem; color: var(--ink-soft); margin-bottom: 2.5rem;
+  }
+  .work-intro {
+    font-family: 'Noto Serif KR', serif; font-size: 1.05rem; line-height: 1.85;
+    font-weight: 300; color: var(--ink-soft); max-width: 620px;
+  }
+  .color-warm { background: var(--paper-warm); }
+  .color-deep { background: var(--paper-deep); }
+  .color-cold { background: var(--paper-cold); }
+  .color-rust { background: var(--paper-rust); }
+  .color-mossy { background: var(--paper-mossy); }
+  .color-ash { background: var(--paper-ash); }
+  .articles-section { padding: 4rem 0 6rem; }
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem; letter-spacing: 0.3em; text-transform: uppercase;
+    color: var(--mark);
+    padding-bottom: 1rem; margin-bottom: 2.5rem;
+    border-bottom: 1px solid var(--rule-strong);
+  }
+  .empty {
+    font-family: 'EB Garamond', serif; font-style: italic;
+    font-size: 1.1rem; color: var(--ink-faint); padding: 2rem 0;
+  }
+  .article-list { list-style: none; }
+  .article-list li { border-bottom: 1px solid var(--rule); }
+  .article-list a {
+    display: block; padding: 2rem 0;
+    text-decoration: none; color: inherit;
+    transition: padding-left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .article-list a:hover { padding-left: 1rem; }
+  .article-date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem; letter-spacing: 0.2em;
+    color: var(--ink-faint); margin-bottom: 0.6rem;
+  }
+  .article-title {
+    font-family: 'Noto Serif KR', serif; font-weight: 500;
+    font-size: 1.55rem; line-height: 1.2; margin-bottom: 0.6rem;
+    transition: color 0.3s;
+  }
+  .article-list a:hover .article-title { color: var(--mark); }
+  .article-excerpt {
+    font-family: 'Noto Serif KR', serif; font-weight: 300;
+    font-size: 1rem; line-height: 1.7; color: var(--ink-soft); max-width: 620px;
+  }
+  @media (max-width: 900px) { .work-header { padding: 2.5rem 1.8rem 3rem; } }
+</style>

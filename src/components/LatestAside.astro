@@ -1,0 +1,108 @@
+---
+import { getCollection } from 'astro:content';
+
+const allArticles = await getCollection('articles');
+const allWorks = await getCollection('works');
+const workMap = new Map(allWorks.map(w => [w.id, w.data.title]));
+
+function formatDate(iso: string): string {
+  const parts = iso.split('-');
+  return `${parts[1]}·${parts[2]}`;
+}
+
+const latest = allArticles
+  .sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime())
+  .slice(0, 5)
+  .map(article => ({
+    date: formatDate(article.data.date),
+    workTitle: workMap.get(article.data.work) || article.data.work,
+    title: article.data.title,
+    articleId: article.id,
+    workId: article.data.work,
+  }));
+---
+<aside class="latest-aside reveal reveal-3">
+  <button class="manifesto-trigger" aria-label="선언문"></button>
+  <div class="latest-label">최근의 글</div>
+  <ul class="latest-list">
+    {latest.length === 0 ? (
+      <li class="empty">아직 글이 없습니다.</li>
+    ) : (
+      latest.map(entry => (
+        <li>
+          <a href={`/work/${entry.workId}/${entry.articleId}`}>
+            <span class="date">{entry.date}</span>
+            <span class="entry"><span class="work">{entry.workTitle}</span> — {entry.title}</span>
+          </a>
+        </li>
+      ))
+    )}
+  </ul>
+</aside>
+
+<style>
+  .latest-aside {
+    grid-column: span 4; grid-row: span 2;
+    background: var(--paper-latest); border: 1px solid var(--rule);
+    padding: 2rem 1.8rem;
+    display: flex; flex-direction: column;
+    position: relative;
+  }
+  .manifesto-trigger {
+    position: absolute; top: 1.5rem; right: 1.5rem;
+    width: 3px; height: 30px;
+    background: var(--ink-soft); border: none; padding: 0;
+    cursor: pointer;
+    transition: all 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 2;
+  }
+  .manifesto-trigger:hover {
+    background: var(--mark); height: 58px;
+    box-shadow: 0 0 22px rgba(139, 58, 46, 0.7);
+  }
+  .latest-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem; letter-spacing: 0.3em; text-transform: uppercase;
+    color: var(--mark); padding-bottom: 0.9rem; margin-bottom: 1.4rem;
+    border-bottom: 1px solid var(--rule-strong);
+  }
+  .latest-list { list-style: none; flex: 1; }
+  .latest-list li { border-bottom: 1px dashed var(--rule); }
+  .latest-list li:last-child { border-bottom: none; }
+  .latest-list a {
+    display: grid; grid-template-columns: auto 1fr; gap: 0.9rem;
+    align-items: baseline;
+    padding: 0.9rem 0;
+    text-decoration: none; color: inherit;
+    transition: padding-left 0.35s ease;
+  }
+  .latest-list a:hover { padding-left: 0.4rem; }
+  .latest-list .date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem; letter-spacing: 0.15em;
+    color: var(--ink-faint); white-space: nowrap;
+  }
+  .latest-list .entry {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 0.9rem; line-height: 1.4; color: var(--ink);
+  }
+  .latest-list .entry .work { color: var(--ink-soft); font-style: italic; }
+  .latest-list .empty {
+    padding: 0.9rem 0;
+    font-family: 'EB Garamond', serif; font-style: italic;
+    color: var(--ink-faint);
+  }
+  @media (max-width: 900px) {
+    .latest-aside { grid-column: span 1; grid-row: auto; }
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const trigger = document.querySelector('.manifesto-trigger');
+    const modal = document.getElementById('manifesto');
+    if (trigger && modal) {
+      trigger.addEventListener('click', () => modal.classList.add('open'));
+    }
+  });
+</script>

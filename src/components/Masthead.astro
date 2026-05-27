@@ -1,0 +1,27 @@
+---
+---
+<header class="masthead">
+  <h1 class="reveal reveal-1">Nuh<span class="dash">—</span>Muh</h1>
+</header>
+
+<style>
+  .masthead { padding: 5.5rem 0 3.5rem; text-align: center; }
+  .masthead h1 {
+    font-family: 'Cormorant Unicase', serif;
+    font-weight: 600;
+    font-size: clamp(4.5rem, 13vw, 10rem);
+    line-height: 0.92;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+    display: inline-block;
+    cursor: default;
+  }
+  .masthead h1 .dash {
+    color: var(--mark);
+    font-weight: 500;
+    display: inline-block;
+    transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .masthead h1:hover .dash { transform: translateX(0.1em) rotate(-3deg); }
+  @media (max-width: 900px) { .masthead { padding: 3.5rem 0 2rem; } }
+</style>

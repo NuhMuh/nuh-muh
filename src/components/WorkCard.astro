@@ -1,0 +1,85 @@
+---
+import type { Work } from '../data/works';
+interface Props { work: Work; position?: 'm1' | 'm2' | 'm3' | 'm4' | 'm5'; revealClass?: string; }
+const { work, position = 'm1', revealClass = '' } = Astro.props;
+---
+<a href={`/work/${work.id}`} class={`card card-${position} color-${work.color} ${work.isComing ? 'card-coming' : ''} reveal ${revealClass}`}>
+  <div>
+    <div class="card-top">
+      <span>{work.number}</span>
+      {work.isComing
+        ? <span class="status">{work.status}</span>
+        : <span>{work.articleCount}편</span>
+      }
+    </div>
+    <h3 class="card-title">{work.title}</h3>
+    <p class="card-tag">{work.tag}</p>
+  </div>
+  <div class="card-foot">
+    <span>{work.isComing ? `${work.articleCount}편` : work.status}</span>
+    <span class="arrow">→</span>
+  </div>
+</a>
+
+<style>
+  .card {
+    background: var(--paper); border: 1px solid var(--rule);
+    padding: 2.2rem 2rem; position: relative;
+    display: flex; flex-direction: column; justify-content: space-between;
+    cursor: pointer; text-decoration: none; color: inherit; overflow: hidden;
+    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s, filter 0.4s;
+    min-height: 230px;
+  }
+  .card::after {
+    content: ''; position: absolute; left: 0; top: 0;
+    width: 3px; height: 0; background: var(--mark);
+    transition: height 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .card:hover { transform: translateY(-5px); border-color: var(--rule-strong); filter: brightness(1.02); }
+  .card:hover::after { height: 100%; }
+  .card-top {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--ink-faint); margin-bottom: 2.2rem;
+  }
+  .card-top .status { color: var(--mark); }
+  .card-title {
+    font-family: 'Noto Serif KR', serif; font-weight: 500;
+    font-size: 1.7rem; line-height: 1.15; letter-spacing: -0.01em;
+    margin-bottom: 0.7rem; transition: letter-spacing 0.4s;
+  }
+  .card:hover .card-title { letter-spacing: 0.005em; }
+  .card-tag {
+    font-family: 'EB Garamond', serif; font-style: italic;
+    font-size: 1rem; color: var(--ink-soft); line-height: 1.4;
+  }
+  .card-foot {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 1.8rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-soft);
+  }
+  .card-foot .arrow { display: inline-block; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s; }
+  .card:hover .arrow { transform: translateX(6px); color: var(--mark); }
+  .card-m1 { grid-column: span 4; }
+  .card-m2 { grid-column: span 3; }
+  .card-m3 { grid-column: span 5; }
+  .card-m4 { grid-column: span 7; }
+  .card-m5 { grid-column: span 5; }
+  .color-warm { background: var(--paper-warm); }
+  .color-deep { background: var(--paper-deep); }
+  .color-cold { background: var(--paper-cold); }
+  .color-rust { background: var(--paper-rust); }
+  .color-mossy { background: var(--paper-mossy); }
+  .color-ash { background: var(--paper-ash); }
+  .card-coming .card-title {
+    font-family: 'EB Garamond', serif; font-style: italic;
+    font-weight: 500; color: var(--ink-soft);
+  }
+  .card-coming .card-tag { color: var(--ink-faint); }
+  @media (max-width: 900px) {
+    .card-m1, .card-m2, .card-m3, .card-m4, .card-m5 {
+      grid-column: span 1; min-height: 180px;
+    }
+  }
+</style>

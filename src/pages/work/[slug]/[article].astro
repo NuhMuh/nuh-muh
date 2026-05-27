@@ -1,0 +1,121 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const works = await getCollection('works');
+  const articles = await getCollection('articles');
+  return articles.map((article) => {
+    const work = works.find((w) => w.id === article.data.work);
+    return {
+      params: { slug: article.data.work, article: article.id },
+      props: { article, work },
+    };
+  });
+}
+
+const { article, work } = Astro.props;
+const { Content } = await render(article);
+---
+
+<BaseLayout title={`${article.data.title} — Nuh-Muh`}>
+  <article class="article-page">
+    <nav class="back-nav">
+      <a href={`/work/${work?.id}`}>← {work?.data.title}</a>
+    </nav>
+
+    <header class="article-header">
+      <div class="article-date">{article.data.date}</div>
+      <h1>{article.data.title}</h1>
+      {article.data.excerpt && (
+        <p class="article-lede">{article.data.excerpt}</p>
+      )}
+    </header>
+
+    <div class="article-body">
+      <Content />
+    </div>
+
+    <footer class="article-foot">
+      <a href={`/work/${work?.id}`}>← {work?.data.title}의 다른 글들</a>
+    </footer>
+  </article>
+</BaseLayout>
+
+<style>
+  .article-page { max-width: 680px; margin: 0 auto; padding: 0 2rem; }
+  .back-nav { padding: 2.5rem 0 0; }
+  .back-nav a {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; letter-spacing: 0.25em; text-transform: uppercase;
+    color: var(--ink-soft); text-decoration: none;
+    transition: color 0.3s;
+  }
+  .back-nav a:hover { color: var(--mark); }
+  .article-header {
+    padding: 4rem 0 3rem;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 3rem;
+  }
+  .article-date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem; letter-spacing: 0.25em;
+    color: var(--ink-faint); margin-bottom: 1.5rem;
+  }
+  .article-header h1 {
+    font-family: 'Noto Serif KR', serif; font-weight: 600;
+    font-size: clamp(2.2rem, 4.2vw, 3.4rem);
+    line-height: 1.1; letter-spacing: -0.01em; margin-bottom: 1.5rem;
+  }
+  .article-lede {
+    font-family: 'EB Garamond', serif; font-style: italic;
+    font-size: 1.25rem; line-height: 1.6; color: var(--ink-soft);
+  }
+  .article-body {
+    font-family: 'Noto Serif KR', serif; font-weight: 400;
+    font-size: 1.08rem; line-height: 1.95; color: var(--ink);
+    padding-bottom: 4rem;
+  }
+  .article-body :global(h2) {
+    font-family: 'Noto Serif KR', serif; font-weight: 600;
+    font-size: 1.6rem; line-height: 1.3;
+    margin-top: 3rem; margin-bottom: 1.2rem; color: var(--ink);
+  }
+  .article-body :global(h3) {
+    font-family: 'Noto Serif KR', serif; font-weight: 500;
+    font-size: 1.3rem; margin-top: 2.2rem; margin-bottom: 0.8rem;
+  }
+  .article-body :global(p) { margin-bottom: 1.6rem; }
+  .article-body :global(em) { font-style: italic; color: var(--ink-soft); }
+  .article-body :global(strong) { font-weight: 600; color: var(--mark); }
+  .article-body :global(blockquote) {
+    border-left: 2px solid var(--mark);
+    padding: 0.5rem 0 0.5rem 1.5rem;
+    margin: 2rem 0;
+    font-family: 'EB Garamond', serif; font-style: italic;
+    font-size: 1.15rem; color: var(--ink-soft);
+  }
+  .article-body :global(img),
+  .article-body :global(video) {
+    max-width: 100%; height: auto;
+    margin: 2.5rem 0; display: block;
+  }
+  .article-body :global(a) {
+    color: var(--mark); text-decoration: none;
+    border-bottom: 1px solid rgba(139, 58, 46, 0.35);
+    transition: border-color 0.3s;
+  }
+  .article-body :global(a:hover) { border-color: var(--mark); }
+  .article-foot {
+    padding: 3rem 0 5rem;
+    border-top: 1px solid var(--rule);
+    text-align: center;
+  }
+  .article-foot a {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; letter-spacing: 0.25em; text-transform: uppercase;
+    color: var(--ink-soft); text-decoration: none;
+    transition: color 0.3s;
+  }
+  .article-foot a:hover { color: var(--mark); }
+</style>
