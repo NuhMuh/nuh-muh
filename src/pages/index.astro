@@ -4,7 +4,7 @@ import Masthead from '../components/Masthead.astro';
 import SpotlightCard from '../components/SpotlightCard.astro';
 import WorkCard from '../components/WorkCard.astro';
 import LatestAside from '../components/LatestAside.astro';
-import ManifestoModal from '../components/ManifestoModal.astro';
+import PostcardSignup from '../components/PostcardSignup.astro';
 import { getCollection, type CollectionEntry } from 'astro:content';
 
 const allWorks = await getCollection('works');
@@ -61,7 +61,7 @@ const revealClasses = ['reveal-4', 'reveal-5', 'reveal-6', 'reveal-7', 'reveal-8
     </div>
   </div>
 
-  <ManifestoModal />
+  <PostcardSignup />
 </BaseLayout>
 
 <style>

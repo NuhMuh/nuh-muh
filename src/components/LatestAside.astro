@@ -5,9 +5,9 @@ const allArticles = await getCollection('articles');
 const allWorks = await getCollection('works');
 const workMap = new Map(allWorks.map(w => [w.id, w.data.title]));
 
-function formatDate(iso: string): string {
+function formatDate(iso) {
   const parts = iso.split('-');
-  return `${parts[1]}·${parts[2]}`;
+  return parts[1] + '·' + parts[2];
 }
 
 const latest = allArticles
@@ -22,7 +22,10 @@ const latest = allArticles
   }));
 ---
 <aside class="latest-aside reveal reveal-3">
-  <button class="manifesto-trigger" aria-label="선언문"></button>
+  <div class="latest-corner">
+    <button class="question-trigger" id="question-trigger" aria-label="?">?</button>
+    <button class="signup-box" id="signup-box">가입</button>
+  </div>
   <div class="latest-label">최근의 글</div>
   <ul class="latest-list">
     {latest.length === 0 ? (
@@ -30,7 +33,7 @@ const latest = allArticles
     ) : (
       latest.map(entry => (
         <li>
-          <a href={`/work/${entry.workId}/${entry.articleId}`}>
+          <a href={'/work/' + entry.workId + '/' + entry.articleId}>
             <span class="date">{entry.date}</span>
             <span class="entry"><span class="work">{entry.workTitle}</span> — {entry.title}</span>
           </a>
@@ -48,31 +51,51 @@ const latest = allArticles
     display: flex; flex-direction: column;
     position: relative;
   }
-  .manifesto-trigger {
-    position: absolute; top: 1.5rem; right: 1.5rem;
-    width: 3px; height: 30px;
-    background: var(--ink-soft); border: none; padding: 0;
-    cursor: pointer;
-    transition: all 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+  .latest-corner {
+    position: absolute; top: 1.1rem; right: 1.1rem;
+    display: flex; align-items: center; gap: 0.6rem;
     z-index: 2;
   }
-  .manifesto-trigger:hover {
-    background: var(--mark); height: 58px;
-    box-shadow: 0 0 22px rgba(139, 58, 46, 0.7);
+  .question-trigger {
+    width: 2.4rem; height: 2.4rem;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent; border: none; cursor: pointer;
+    font-family: 'EB Garamond', serif;
+    font-size: 1.9rem; line-height: 1;
+    color: var(--ink-soft);
+    transition: color 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s, text-shadow 0.4s;
+    padding: 0;
   }
+  .question-trigger:hover {
+    color: var(--mark);
+    transform: scale(1.15);
+    text-shadow: 0 0 16px rgba(139, 58, 46, 0.5);
+  }
+  .signup-box {
+    display: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase;
+    padding: 0.4rem 0.7rem;
+    background: var(--ink); color: var(--paper);
+    border: none; cursor: pointer;
+    transition: background 0.3s;
+  }
+  .signup-box.visible { display: inline-block; }
+  .signup-box:hover { background: var(--mark); }
+
   .latest-label {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.62rem; letter-spacing: 0.3em; text-transform: uppercase;
     color: var(--mark); padding-bottom: 0.9rem; margin-bottom: 1.4rem;
     border-bottom: 1px solid var(--rule-strong);
+    margin-top: 0.3rem;
   }
   .latest-list { list-style: none; flex: 1; }
   .latest-list li { border-bottom: 1px dashed var(--rule); }
   .latest-list li:last-child { border-bottom: none; }
   .latest-list a {
     display: grid; grid-template-columns: auto 1fr; gap: 0.9rem;
-    align-items: baseline;
-    padding: 0.9rem 0;
+    align-items: baseline; padding: 0.9rem 0;
     text-decoration: none; color: inherit;
     transition: padding-left 0.35s ease;
   }
@@ -96,13 +119,3 @@ const latest = allArticles
     .latest-aside { grid-column: span 1; grid-row: auto; }
   }
 </style>
-
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const trigger = document.querySelector('.manifesto-trigger');
-    const modal = document.getElementById('manifesto');
-    if (trigger && modal) {
-      trigger.addEventListener('click', () => modal.classList.add('open'));
-    }
-  });
-</script>

@@ -1,0 +1,304 @@
+---
+---
+<div class="postcard-stage" id="postcard-stage">
+  <div class="stage-darken" id="stage-darken"></div>
+
+  <div class="postcard" id="postcard">
+    <button class="postcard-close" id="postcard-close" aria-label="닫기">×</button>
+    <p class="postcard-text" id="postcard-text"></p>
+    <form class="postcard-form" id="postcard-form">
+      <input type="email" id="postcard-email" placeholder="당신의 주소를 남기시오" required autocomplete="off" />
+      <button type="submit" class="postcard-submit">남긴다</button>
+    </form>
+    <p class="postcard-already" id="postcard-already">이미 한 번 다녀가셨습니다.</p>
+  </div>
+
+  <div class="feet" id="feet" aria-hidden="true">
+    <svg width="0" height="0" style="position:absolute">
+      <filter id="ink-wobble">
+        <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="3.2"/>
+      </filter>
+      <filter id="ink-wobble2">
+        <feTurbulence type="fractalNoise" baseFrequency="0.022" numOctaves="2" seed="3" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="4"/>
+      </filter>
+    </svg>
+
+    <div class="foot foot-machine">
+      <svg viewBox="0 0 120 230" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="filter:url(#ink-wobble)">
+        <g class="ink">
+          <path d="M60 2 L59 86" stroke-width="6.5"/>
+          <path d="M61 4 L60 84" stroke-width="3"/>
+          <path d="M48 80 L72 80 L72 96 L48 96 Z" stroke-width="3"/>
+          <path d="M49 82 L71 81 M49 88 L71 87 M49 94 L71 93" stroke-width="1.4"/>
+          <circle cx="60" cy="88" r="3.2" stroke-width="2"/>
+          <path d="M60 96 L60 118" stroke-width="3.4"/>
+          <path d="M60 118 L35 162 L30 192" stroke-width="3.2"/>
+          <path d="M61 118 L34 162 L29 192" stroke-width="1.6"/>
+          <path d="M60 118 L60 168 L59 200" stroke-width="3.2"/>
+          <path d="M60 118 L85 162 L90 192" stroke-width="3.2"/>
+          <path d="M59 118 L86 162 L91 192" stroke-width="1.6"/>
+          <path d="M27 188 L33 188 L33 197 L27 197 Z" stroke-width="2"/>
+          <path d="M56 196 L62 196 L62 205 L56 205 Z" stroke-width="2"/>
+          <path d="M87 188 L93 188 L93 197 L87 197 Z" stroke-width="2"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="foot foot-beast">
+      <svg viewBox="0 0 120 230" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="filter:url(#ink-wobble2)">
+        <g class="ink">
+          <path d="M60 2 Q54 46 60 94" stroke-width="5.5"/>
+          <path d="M62 4 Q56 46 61 92" stroke-width="2.4"/>
+          <path d="M60 94 Q37 134 28 172 Q25 186 18 196" stroke-width="3.4"/>
+          <path d="M61 95 Q38 135 29 172" stroke-width="1.6"/>
+          <path d="M60 94 Q60 140 60 178 Q60 190 56 202" stroke-width="3.4"/>
+          <path d="M61 95 Q61 140 61 178" stroke-width="1.6"/>
+          <path d="M60 94 Q83 134 92 172 Q95 186 102 196" stroke-width="3.4"/>
+          <path d="M59 95 Q82 135 91 172" stroke-width="1.6"/>
+          <path d="M18 196 Q13 201 16 206 M18 196 Q22 200 24 199" stroke-width="2"/>
+          <path d="M56 202 Q53 207 56 211 M56 202 Q60 206 62 204" stroke-width="2"/>
+          <path d="M102 196 Q107 201 104 206 M102 196 Q98 200 96 199" stroke-width="2"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <div class="residue" id="residue" aria-hidden="true">
+    <svg class="feather" viewBox="0 0 40 80" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M20 4 Q12 40 16 74 M20 4 Q28 40 16 74 M20 20 L12 28 M20 30 L28 36 M20 42 L12 48 M20 52 L26 58"/>
+    </svg>
+    <svg class="screw" viewBox="0 0 30 60" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M11 4 L19 4 L19 30 L15 40 L11 30 Z"/>
+      <path d="M11 10 L19 10 M11 16 L19 16 M11 22 L19 22"/>
+    </svg>
+  </div>
+</div>
+
+<style>
+  .postcard-stage {
+    position: fixed; inset: 0; z-index: 300;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+  .postcard-stage.open { opacity: 1; pointer-events: auto; }
+
+  .stage-darken {
+    position: absolute; inset: 0;
+    background: rgba(20, 18, 14, 0);
+    backdrop-filter: blur(0px);
+    transition: background 0.7s ease, backdrop-filter 0.7s ease;
+  }
+  .stage-darken.darkened {
+    background: rgba(20, 18, 14, 0.55);
+    backdrop-filter: blur(2px);
+  }
+
+  .postcard {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: calc(100% - 3rem); max-width: 480px;
+    background: var(--paper);
+    border: 1px solid var(--rule-strong);
+    padding: 3.5rem 3rem 3rem;
+    text-align: center;
+    box-shadow: 0 30px 70px rgba(28, 35, 64, 0.28);
+    transition: transform 1s cubic-bezier(0.5, 0, 0.75, 0), opacity 0.5s ease;
+    z-index: 2;
+  }
+  .postcard::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.05; mix-blend-mode: multiply;
+  }
+  .postcard.taken {
+    transform: translate(-50%, -180vh) rotate(-6deg);
+    transition: transform 1.1s cubic-bezier(0.5, 0, 0.75, 0);
+  }
+  .postcard.grabbed {
+    transform: translate(-50%, -50%) scale(0.97);
+    transition: transform 0.25s ease;
+  }
+
+  .postcard-close {
+    position: absolute; top: 1rem; right: 1.2rem;
+    background: none; border: none;
+    font-family: 'EB Garamond', serif; font-size: 1.4rem;
+    color: var(--ink-soft); cursor: pointer; line-height: 1;
+    transition: color 0.3s, transform 0.3s;
+  }
+  .postcard-close:hover { color: var(--mark); transform: rotate(90deg); }
+
+  .postcard-text {
+    font-family: 'Noto Serif KR', serif;
+    font-size: clamp(1.2rem, 2.2vw, 1.5rem);
+    font-weight: 300; line-height: 1.7;
+    color: var(--ink); margin-bottom: 2.5rem;
+    min-height: 3.4em;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .postcard-form {
+    display: flex; flex-direction: column; gap: 0.8rem;
+    align-items: stretch;
+  }
+  .postcard-form input {
+    font-family: 'EB Garamond', serif;
+    font-size: 1rem; padding: 0.8rem 1rem;
+    background: transparent;
+    border: none; border-bottom: 1px solid var(--rule-strong);
+    color: var(--ink); text-align: center;
+    outline: none; transition: border-color 0.3s;
+  }
+  .postcard-form input:focus { border-color: var(--mark); }
+  .postcard-form input::placeholder { color: var(--ink-faint); font-style: italic; }
+  .postcard-submit {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; letter-spacing: 0.25em; text-transform: uppercase;
+    padding: 0.8rem; margin-top: 0.5rem;
+    background: var(--ink); color: var(--paper);
+    border: none; cursor: pointer;
+    transition: background 0.3s;
+  }
+  .postcard-submit:hover { background: var(--mark); }
+
+  .postcard-already {
+    font-family: 'EB Garamond', serif; font-style: italic;
+    font-size: 0.95rem; color: var(--ink-faint);
+    display: none;
+  }
+  .postcard.subscribed .postcard-form { display: none; }
+  .postcard.subscribed .postcard-already { display: block; }
+
+  .feet {
+    position: fixed; top: 0; left: 50%;
+    display: flex; gap: 2.5rem;
+    color: var(--ink);
+    transform: translate(-50%, -130%);
+    transition: transform 0.9s cubic-bezier(0.45, 0, 0.55, 1);
+    z-index: 3;
+  }
+  .feet > .foot svg { width: 95px; height: auto; display: block; }
+  .feet .ink path, .feet .ink circle { vector-effect: non-scaling-stroke; }
+  .foot-machine { transform: rotate(4deg); }
+  .foot-beast { transform: rotate(-4deg); }
+  .feet.descending { transform: translate(-50%, calc(50vh - 260px)); }
+  .feet.ascending {
+    transform: translate(-50%, -180vh) rotate(-6deg);
+    transition: transform 1.1s cubic-bezier(0.5, 0, 0.75, 0);
+  }
+  .feet.grabbing {
+    transition: transform 0.25s ease;
+  }
+
+  .residue {
+    position: fixed; top: 0; left: 50%;
+    display: flex; gap: 4.5rem; align-items: flex-start;
+    color: var(--ink-soft);
+    opacity: 0; z-index: 2;
+    pointer-events: none;
+  }
+  .residue.show { animation: residue-fall 3.4s ease-out forwards; }
+  .residue .feather { width: 88px; }
+  .residue .screw { width: 60px; }
+  @keyframes residue-fall {
+    0% { opacity: 0; transform: translate(-50%, -20%); }
+    12% { opacity: 0.9; }
+    65% { opacity: 0.9; }
+    100% { opacity: 0; transform: translate(-50%, 60vh); }
+  }
+
+  @media (max-width: 900px) {
+    .postcard { padding: 2.8rem 1.8rem 2.2rem; }
+    .feet > .foot svg { width: 68px; }
+  }
+</style>
+
+<script>
+  const SENTENCES = [
+    '당신은 벽을 지나쳤습니까, 문을 지나쳤습니까.',
+    '여기까지 온 사람은 그리 많지 않습니다.',
+    '이 엽서는 잠시 후 회수됩니다.',
+    '무엇을 찾는지 알 것도 같습니다.',
+    '읽었다면, 당신은 이미 절반쯤 들어와 있습니다.',
+  ];
+
+  function sleep(ms) {
+    return new Promise(function (resolve) { setTimeout(resolve, ms); });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const stage = document.getElementById('postcard-stage');
+    const darken = document.getElementById('stage-darken');
+    const postcard = document.getElementById('postcard');
+    const textEl = document.getElementById('postcard-text');
+    const form = document.getElementById('postcard-form');
+    const emailInput = document.getElementById('postcard-email');
+    const feet = document.getElementById('feet');
+    const residue = document.getElementById('residue');
+    const closeBtn = document.getElementById('postcard-close');
+    const trigger = document.getElementById('question-trigger');
+    const signupBox = document.getElementById('signup-box');
+
+    if (!stage || !trigger) return;
+
+    function isSubscribed() {
+      try { return localStorage.getItem('nuhmuh_subscribed') === 'true'; }
+      catch (e) { return false; }
+    }
+
+    function refreshSignupBox() {
+      if (signupBox && isSubscribed()) signupBox.classList.add('visible');
+    }
+    refreshSignupBox();
+
+    function openPostcard() {
+      const s = SENTENCES[Math.floor(Math.random() * SENTENCES.length)];
+      textEl.textContent = s;
+      postcard.classList.remove('taken');
+      feet.classList.remove('descending', 'ascending');
+      residue.classList.remove('show');
+      if (isSubscribed()) postcard.classList.add('subscribed');
+      else postcard.classList.remove('subscribed');
+      stage.classList.add('open');
+    }
+
+    function closePostcard() {
+      stage.classList.remove('open');
+      darken.classList.remove('darkened');
+    }
+
+    trigger.addEventListener('click', openPostcard);
+    closeBtn.addEventListener('click', closePostcard);
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      if (!emailInput.value) return;
+
+      // (가짜) 이메일 저장만, 실제 전송은 B-2에서
+      try { localStorage.setItem('nuhmuh_subscribed', 'true'); } catch (e2) {}
+
+      // 시퀀스 시작
+      darken.classList.add('darkened');
+      await sleep(600);              // 어두워지는 거 충분히 보여줌
+      feet.classList.add('descending');
+      await sleep(950);              // 발이 내려옴
+      // 잡는 순간 — 발과 엽서가 함께 움찔
+      feet.classList.add('grabbing');
+      postcard.classList.add('grabbed');
+      await sleep(400);              // 움켜쥐는 정지 순간
+      // 함께 올라감 (같은 타이밍)
+      feet.classList.remove('grabbing');
+      feet.classList.remove('descending');
+      postcard.classList.remove('grabbed');
+      feet.classList.add('ascending');
+      postcard.classList.add('taken');
+      await sleep(1150);
+      darken.classList.remove('darkened');
+      await sleep(600);
+      closePostcard();
+      refreshSignupBox();
+    });
+  });
+</script>
