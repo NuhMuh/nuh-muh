@@ -1,21 +1,46 @@
 ---
-import type { Work } from '../data/works';
-interface Props { work: Work; revealClass?: string; }
+interface Props {
+  work: {
+    id: string;
+    number: string;
+    title: string;
+    tag: string;
+    color: 'warm' | 'deep' | 'cold' | 'rust' | 'mossy' | 'ash';
+    status?: string;
+    kicker?: string;
+    articleCount: number;
+    excerpt?: string;
+    coverImage?: string;
+  };
+  revealClass?: string;
+}
 const { work, revealClass = '' } = Astro.props;
+const hasImage = !!work.coverImage;
+const href = '/work/' + work.id;
+const classList = ['card', 'card-spotlight', 'color-' + work.color];
+if (hasImage) classList.push('has-image');
+classList.push('reveal');
+if (revealClass) classList.push(revealClass);
+const className = classList.join(' ');
+const styleAttr = hasImage ? "--cover-url: url('" + work.coverImage + "')" : undefined;
+const topLeft = work.kicker ? (work.number + ' · ' + work.kicker) : work.number;
 ---
-<a href={`/work/${work.id}`} class={`card card-spotlight color-${work.color} reveal ${revealClass}`}>
-  <div>
-    <div class="card-top">
-      <span>{work.number}{work.kicker ? ` · ${work.kicker}` : ''}</span>
-      {work.status && <span class="status">{work.status}</span>}
+<a href={href} class={className} style={styleAttr}>
+  {hasImage && <div class="card-cover" aria-hidden="true"></div>}
+  <div class="card-inner">
+    <div>
+      <div class="card-top">
+        <span>{topLeft}</span>
+        {work.status && <span class="status">{work.status}</span>}
+      </div>
+      <h2 class="card-title">{work.title}</h2>
+      <p class="card-tag">{work.tag}</p>
+      {work.excerpt && <p class="card-excerpt">{work.excerpt}</p>}
     </div>
-    <h2 class="card-title">{work.title}</h2>
-    <p class="card-tag">{work.tag}</p>
-    {work.excerpt && <p class="card-excerpt">{work.excerpt}</p>}
-  </div>
-  <div class="card-foot">
-    <span>{work.articleCount}편</span>
-    <span>읽기 <span class="arrow">→</span></span>
+    <div class="card-foot">
+      <span>{work.articleCount}편</span>
+      <span>읽기 <span class="arrow">→</span></span>
+    </div>
   </div>
 </a>
 
@@ -32,9 +57,37 @@ const { work, revealClass = '' } = Astro.props;
     content: ''; position: absolute; left: 0; top: 0;
     width: 3px; height: 0; background: var(--mark);
     transition: height 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 3;
+  }
+  .card-cover {
+    position: absolute; inset: 0;
+    background-image: var(--cover-url);
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    filter: sepia(0.12) saturate(0.92) contrast(1);
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 1;
+    pointer-events: none;
+  }
+  .card-cover::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(236, 228, 207, 0.82) 0%,
+      rgba(236, 228, 207, 0.62) 45%,
+      rgba(236, 228, 207, 0.78) 100%
+    );
+  }
+  .card-inner {
+    position: relative; z-index: 2;
+    display: flex; flex-direction: column; justify-content: space-between;
+    height: 100%; flex: 1;
   }
   .card:hover { transform: translateY(-5px); border-color: var(--rule-strong); filter: brightness(1.02); }
   .card:hover::after { height: 100%; }
+  .card.has-image:hover .card-cover { opacity: 0.85; }
   .card-top {
     display: flex; justify-content: space-between; align-items: flex-start;
     font-family: 'JetBrains Mono', monospace;

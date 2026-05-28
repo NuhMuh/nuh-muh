@@ -1,23 +1,48 @@
 ---
-import type { Work } from '../data/works';
-interface Props { work: Work; position?: 'm1' | 'm2' | 'm3' | 'm4' | 'm5'; revealClass?: string; }
+interface Props {
+  work: {
+    id: string;
+    number: string;
+    title: string;
+    tag: string;
+    color: 'warm' | 'deep' | 'cold' | 'rust' | 'mossy' | 'ash';
+    status?: string;
+    articleCount: number;
+    isComing?: boolean;
+    coverImage?: string;
+  };
+  position?: 'm1' | 'm2' | 'm3' | 'm4' | 'm5';
+  revealClass?: string;
+}
 const { work, position = 'm1', revealClass = '' } = Astro.props;
+const hasImage = !!work.coverImage;
+const href = '/work/' + work.id;
+const classList = ['card', 'card-' + position, 'color-' + work.color];
+if (work.isComing) classList.push('card-coming');
+if (hasImage) classList.push('has-image');
+classList.push('reveal');
+if (revealClass) classList.push(revealClass);
+const className = classList.join(' ');
+const styleAttr = hasImage ? "--cover-url: url('" + work.coverImage + "')" : undefined;
 ---
-<a href={`/work/${work.id}`} class={`card card-${position} color-${work.color} ${work.isComing ? 'card-coming' : ''} reveal ${revealClass}`}>
-  <div>
-    <div class="card-top">
-      <span>{work.number}</span>
-      {work.isComing
-        ? <span class="status">{work.status}</span>
-        : <span>{work.articleCount}편</span>
-      }
+<a href={href} class={className} style={styleAttr}>
+  {hasImage && <div class="card-cover" aria-hidden="true"></div>}
+  <div class="card-inner">
+    <div>
+      <div class="card-top">
+        <span>{work.number}</span>
+        {work.isComing
+          ? <span class="status">{work.status}</span>
+          : <span>{work.articleCount}편</span>
+        }
+      </div>
+      <h3 class="card-title">{work.title}</h3>
+      <p class="card-tag">{work.tag}</p>
     </div>
-    <h3 class="card-title">{work.title}</h3>
-    <p class="card-tag">{work.tag}</p>
-  </div>
-  <div class="card-foot">
-    <span>{work.isComing ? `${work.articleCount}편` : work.status}</span>
-    <span class="arrow">→</span>
+    <div class="card-foot">
+      <span>{work.isComing ? (work.articleCount + '편') : work.status}</span>
+      <span class="arrow">→</span>
+    </div>
   </div>
 </a>
 
@@ -34,9 +59,28 @@ const { work, position = 'm1', revealClass = '' } = Astro.props;
     content: ''; position: absolute; left: 0; top: 0;
     width: 3px; height: 0; background: var(--mark);
     transition: height 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 3;
+  }
+  .card-cover {
+    position: absolute; inset: 0;
+    background-image: var(--cover-url);
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    filter: sepia(0.35) saturate(0.7) contrast(0.95);
+    mix-blend-mode: multiply;
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 1;
+    pointer-events: none;
+  }
+  .card-inner {
+    position: relative; z-index: 2;
+    display: flex; flex-direction: column; justify-content: space-between;
+    height: 100%; flex: 1;
   }
   .card:hover { transform: translateY(-5px); border-color: var(--rule-strong); filter: brightness(1.02); }
   .card:hover::after { height: 100%; }
+  .card.has-image:hover .card-cover { opacity: 0.28; }
   .card-top {
     display: flex; justify-content: space-between; align-items: flex-start;
     font-family: 'JetBrains Mono', monospace;

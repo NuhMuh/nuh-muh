@@ -6,6 +6,7 @@ color: rust
 kicker: 표지
 status: 새로 시작
 order: 1
+coverImage: /images/works/kdcd1.1.png
 isSpotlight: true
 ---
 

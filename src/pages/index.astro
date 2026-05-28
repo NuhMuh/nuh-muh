@@ -33,6 +33,7 @@ function toWork(entry: CollectionEntry<'works'>, excerpt?: string) {
     color: entry.data.color,
     status: entry.data.status,
     kicker: entry.data.kicker,
+    coverImage: entry.data.coverImage,
     articleCount: articleCountMap.get(entry.id) || 0,
     excerpt,
     isComing: entry.data.isComing,

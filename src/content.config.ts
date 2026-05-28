@@ -10,6 +10,7 @@ const works = defineCollection({
     color: z.enum(['warm', 'deep', 'cold', 'rust', 'mossy', 'ash']),
     status: z.string().optional(),
     kicker: z.string().optional(),
+    coverImage: z.string().optional(),
     isSpotlight: z.boolean().default(false),
     isComing: z.boolean().default(false),
     order: z.number().default(99),
