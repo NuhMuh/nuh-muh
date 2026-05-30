@@ -13,56 +13,10 @@
     <p class="postcard-already" id="postcard-already">이미 한 번 다녀가셨습니다.</p>
   </div>
 
-  <div class="feet" id="feet" aria-hidden="true">
-    <svg width="0" height="0" style="position:absolute">
-      <filter id="ink-wobble">
-        <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="n"/>
-        <feDisplacementMap in="SourceGraphic" in2="n" scale="3.2"/>
-      </filter>
-      <filter id="ink-wobble2">
-        <feTurbulence type="fractalNoise" baseFrequency="0.022" numOctaves="2" seed="3" result="n"/>
-        <feDisplacementMap in="SourceGraphic" in2="n" scale="4"/>
-      </filter>
-    </svg>
-
-    <div class="foot foot-machine">
-      <svg viewBox="0 0 120 230" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="filter:url(#ink-wobble)">
-        <g class="ink">
-          <path d="M60 2 L59 86" stroke-width="6.5"/>
-          <path d="M61 4 L60 84" stroke-width="3"/>
-          <path d="M48 80 L72 80 L72 96 L48 96 Z" stroke-width="3"/>
-          <path d="M49 82 L71 81 M49 88 L71 87 M49 94 L71 93" stroke-width="1.4"/>
-          <circle cx="60" cy="88" r="3.2" stroke-width="2"/>
-          <path d="M60 96 L60 118" stroke-width="3.4"/>
-          <path d="M60 118 L35 162 L30 192" stroke-width="3.2"/>
-          <path d="M61 118 L34 162 L29 192" stroke-width="1.6"/>
-          <path d="M60 118 L60 168 L59 200" stroke-width="3.2"/>
-          <path d="M60 118 L85 162 L90 192" stroke-width="3.2"/>
-          <path d="M59 118 L86 162 L91 192" stroke-width="1.6"/>
-          <path d="M27 188 L33 188 L33 197 L27 197 Z" stroke-width="2"/>
-          <path d="M56 196 L62 196 L62 205 L56 205 Z" stroke-width="2"/>
-          <path d="M87 188 L93 188 L93 197 L87 197 Z" stroke-width="2"/>
-        </g>
-      </svg>
-    </div>
-
-    <div class="foot foot-beast">
-      <svg viewBox="0 0 120 230" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="filter:url(#ink-wobble2)">
-        <g class="ink">
-          <path d="M60 2 Q54 46 60 94" stroke-width="5.5"/>
-          <path d="M62 4 Q56 46 61 92" stroke-width="2.4"/>
-          <path d="M60 94 Q37 134 28 172 Q25 186 18 196" stroke-width="3.4"/>
-          <path d="M61 95 Q38 135 29 172" stroke-width="1.6"/>
-          <path d="M60 94 Q60 140 60 178 Q60 190 56 202" stroke-width="3.4"/>
-          <path d="M61 95 Q61 140 61 178" stroke-width="1.6"/>
-          <path d="M60 94 Q83 134 92 172 Q95 186 102 196" stroke-width="3.4"/>
-          <path d="M59 95 Q82 135 91 172" stroke-width="1.6"/>
-          <path d="M18 196 Q13 201 16 206 M18 196 Q22 200 24 199" stroke-width="2"/>
-          <path d="M56 202 Q53 207 56 211 M56 202 Q60 206 62 204" stroke-width="2"/>
-          <path d="M102 196 Q107 201 104 206 M102 196 Q98 200 96 199" stroke-width="2"/>
-        </g>
-      </svg>
-    </div>
+  <div class="spider-rig" id="spider-rig" aria-hidden="true">
+    <div class="thread"></div>
+    <div class="spider"><img src="/images/spider.png" alt="" /></div>
+    <div class="carried-postcard" id="carried-postcard"></div>
   </div>
 
   <div class="residue" id="residue" aria-hidden="true">
@@ -113,7 +67,7 @@
     opacity: 0.05; mix-blend-mode: multiply;
   }
   .postcard.taken {
-    transform: translate(-50%, -180vh) rotate(-6deg);
+    transform: translate(-50%, -110vh) rotate(-3deg);
     transition: transform 1.1s cubic-bezier(0.5, 0, 0.75, 0);
   }
   .postcard.grabbed {
@@ -171,25 +125,48 @@
   .postcard.subscribed .postcard-form { display: none; }
   .postcard.subscribed .postcard-already { display: block; }
 
-  .feet {
+  .spider-rig {
     position: fixed; top: 0; left: 50%;
-    display: flex; gap: 2.5rem;
-    color: var(--ink);
-    transform: translate(-50%, -130%);
-    transition: transform 0.9s cubic-bezier(0.45, 0, 0.55, 1);
+    transform: translateX(-50%) translateY(-100%);
+    transition: transform 0.95s cubic-bezier(0.45, 0, 0.55, 1);
     z-index: 3;
+    pointer-events: none;
+    display: flex; flex-direction: column; align-items: center;
   }
-  .feet > .foot svg { width: 95px; height: auto; display: block; }
-  .feet .ink path, .feet .ink circle { vector-effect: non-scaling-stroke; }
-  .foot-machine { transform: rotate(4deg); }
-  .foot-beast { transform: rotate(-4deg); }
-  .feet.descending { transform: translate(-50%, calc(50vh - 260px)); }
-  .feet.ascending {
-    transform: translate(-50%, -180vh) rotate(-6deg);
-    transition: transform 1.1s cubic-bezier(0.5, 0, 0.75, 0);
+  .thread {
+    width: 1px;
+    height: 50vh;
+    background: var(--ink-soft);
+    opacity: 0.5;
   }
-  .feet.grabbing {
+  .spider {
+    margin-top: -40px;
+  }
+  .spider img {
+    width: 480px; height: auto; display: block;
+  }
+  .carried-postcard {
+    margin-top: -24px;
+    display: flex;
+    justify-content: center;
+  }
+  .carried-postcard .postcard {
+    width: 480px !important;
+    max-width: 80vw;
+  }
+  /* 내려옴 — 거미가 화면 중앙 엽서에 닿음 */
+  .spider-rig.descending {
+    transform: translateX(-50%) translateY(-37vh);
+  }
+  /* 움켜쥐는 순간 */
+  .spider-rig.grabbing {
+    transform: translateX(-50%) translateY(-39vh) scale(1.02);
     transition: transform 0.25s ease;
+  }
+  /* 엽서 들고 올라감 */
+  .spider-rig.ascending {
+    transform: translateX(-50%) translateY(-110vh);
+    transition: transform 1.1s cubic-bezier(0.5, 0, 0.75, 0);
   }
 
   .residue {
@@ -211,7 +188,7 @@
 
   @media (max-width: 900px) {
     .postcard { padding: 2.8rem 1.8rem 2.2rem; }
-    .feet > .foot svg { width: 68px; }
+    .foot img { width: 90px; }
   }
 </style>
 
@@ -235,7 +212,7 @@
     const textEl = document.getElementById('postcard-text');
     const form = document.getElementById('postcard-form');
     const emailInput = document.getElementById('postcard-email');
-    const feet = document.getElementById('feet');
+    const spiderRig = document.getElementById('spider-rig');
     const residue = document.getElementById('residue');
     const closeBtn = document.getElementById('postcard-close');
     const trigger = document.getElementById('question-trigger');
@@ -257,7 +234,7 @@
       const s = SENTENCES[Math.floor(Math.random() * SENTENCES.length)];
       textEl.textContent = s;
       postcard.classList.remove('taken');
-      feet.classList.remove('descending', 'ascending');
+      spiderRig.classList.remove('descending', 'ascending', 'grabbing');
       residue.classList.remove('show');
       if (isSubscribed()) postcard.classList.add('subscribed');
       else postcard.classList.remove('subscribed');
@@ -282,18 +259,25 @@
       // 시퀀스 시작
       darken.classList.add('darkened');
       await sleep(600);              // 어두워지는 거 충분히 보여줌
-      feet.classList.add('descending');
+      spiderRig.classList.add('descending');
       await sleep(950);              // 발이 내려옴
-      // 잡는 순간 — 발과 엽서가 함께 움찔
-      feet.classList.add('grabbing');
+      // 잡는 순간 — 움찔
+      spiderRig.classList.add('grabbing');
       postcard.classList.add('grabbed');
-      await sleep(400);              // 움켜쥐는 정지 순간
-      // 함께 올라감 (같은 타이밍)
-      feet.classList.remove('grabbing');
-      feet.classList.remove('descending');
-      postcard.classList.remove('grabbed');
-      feet.classList.add('ascending');
-      postcard.classList.add('taken');
+      await sleep(400);
+      // 엽서를 거미 rig 안으로 옮겨 한 덩어리로 (안 어긋남)
+      const carried = document.getElementById('carried-postcard');
+      postcard.style.position = 'static';
+      postcard.style.transform = 'none';
+      postcard.style.transition = 'none';
+      postcard.style.margin = '0 auto';
+      postcard.style.left = 'auto';
+      postcard.style.top = 'auto';
+      carried.appendChild(postcard);
+      // 함께 올라감
+      spiderRig.classList.remove('grabbing');
+      spiderRig.classList.remove('descending');
+      spiderRig.classList.add('ascending');
       await sleep(1150);
       darken.classList.remove('darkened');
       await sleep(600);
