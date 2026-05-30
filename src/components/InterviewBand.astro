@@ -1,0 +1,104 @@
+---
+import { getCollection } from 'astro:content';
+
+const all = await getCollection('interviews');
+const interviews = all.sort((a, b) => a.data.order - b.data.order);
+
+// 줄마다 미세하게 다른 속도 (초). 인덱스에 따라 살짝씩 다르게.
+const speeds = [38, 44, 41, 47, 36];
+---
+<section class="interview-band">
+  <div class="band-label">목소리들 · Voices</div>
+  <div class="band-rows">
+    {interviews.map((person, i) => (
+      <div class="band-row">
+        <div class="person">
+          <span class="person-name">{person.data.name}</span>
+          <span class="person-title">{person.data.title}</span>
+        </div>
+        <div class="ticker">
+          <div class="ticker-track" style={`animation-duration: ${speeds[i % speeds.length]}s`}>
+            {[0, 1].map(() => (
+              <span class="ticker-group">
+                {person.data.quotes.map(q => (
+                  <span class="ticker-item">{q}<span class="sep">·</span></span>
+                ))}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
+
+<style>
+  .interview-band {
+    padding: 2.5rem 0 4rem;
+    border-top: 1px solid var(--rule);
+  }
+  .band-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem; letter-spacing: 0.3em; text-transform: uppercase;
+    color: var(--mark);
+    margin-bottom: 1.8rem;
+  }
+  .band-rows { display: flex; flex-direction: column; }
+  .band-row {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1rem 0;
+    border-bottom: 1px dashed var(--rule);
+  }
+  .band-row:first-child { border-top: 1px dashed var(--rule); }
+
+  .person { display: flex; flex-direction: column; gap: 0.2rem; }
+  .person-name {
+    font-family: 'Noto Serif KR', serif; font-weight: 500;
+    font-size: 1.05rem; color: var(--ink);
+  }
+  .person-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  /* 흐르는 영역 */
+  .ticker {
+    position: relative;
+    overflow: hidden;
+    /* 양 끝 페이드 */
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+    mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+  }
+  .ticker-track {
+    display: inline-flex;
+    white-space: nowrap;
+    animation-name: ticker-scroll;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    will-change: transform;
+  }
+  .ticker:hover .ticker-track { animation-play-state: paused; }
+
+  .ticker-group { display: inline-flex; }
+  .ticker-item {
+    font-family: 'EB Garamond', serif; font-style: italic;
+    font-size: 1.02rem; color: var(--ink-soft);
+    padding-right: 0.2rem;
+  }
+  .ticker-item .sep { padding: 0 1.4rem; color: var(--ink-faint); font-style: normal; }
+
+  @keyframes ticker-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  @media (max-width: 900px) {
+    .band-row { grid-template-columns: 130px 1fr; gap: 0.8rem; }
+    .person-name { font-size: 0.92rem; }
+    .ticker-item { font-size: 0.92rem; }
+  }
+</style>

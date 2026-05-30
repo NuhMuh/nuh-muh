@@ -5,6 +5,7 @@ import SpotlightCard from '../components/SpotlightCard.astro';
 import WorkCard from '../components/WorkCard.astro';
 import LatestAside from '../components/LatestAside.astro';
 import PostcardSignup from '../components/PostcardSignup.astro';
+import InterviewBand from '../components/InterviewBand.astro';
 import { getCollection, type CollectionEntry } from 'astro:content';
 
 const allWorks = await getCollection('works');
@@ -43,8 +44,7 @@ function toWork(entry: CollectionEntry<'works'>, excerpt?: string) {
 const spotlight = spotlightEntry ? toWork(spotlightEntry, spotlightLead?.data.excerpt) : null;
 const works = otherWorks.map(w => toWork(w));
 
-const positions: Array<'m1' | 'm2' | 'm3' | 'm4' | 'm5'> = ['m1', 'm2', 'm3', 'm4', 'm5'];
-const revealClasses = ['reveal-4', 'reveal-5', 'reveal-6', 'reveal-7', 'reveal-8'];
+const pattern: Array<'m1' | 'm2' | 'm3' | 'm4' | 'm5'> = ['m1', 'm2', 'm3', 'm4', 'm5'];
 ---
 
 <BaseLayout title="Nuh-Muh">
@@ -55,10 +55,12 @@ const revealClasses = ['reveal-4', 'reveal-5', 'reveal-6', 'reveal-7', 'reveal-8
       {spotlight && <SpotlightCard work={spotlight} revealClass="reveal-2" />}
       <LatestAside />
 
-      {works.slice(0, 5).map((work, i) => (
-        <WorkCard work={work} position={positions[i]} revealClass={revealClasses[i]} />
+      {works.map((work, i) => (
+        <WorkCard work={work} position={pattern[i % pattern.length]} />
       ))}
     </div>
+
+    <InterviewBand />
   </div>
 
   <PostcardSignup />

@@ -28,4 +28,14 @@ const articles = defineCollection({
   }),
 });
 
-export const collections = { works, articles };
+const interviews = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/interviews' }),
+  schema: z.object({
+    name: z.string(),
+    title: z.string(),
+    order: z.number().default(99),
+    quotes: z.array(z.string()).default([]),
+  }),
+});
+
+export const collections = { works, articles, interviews };
