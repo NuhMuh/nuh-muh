@@ -4,6 +4,7 @@ number: N-005 · 10주년
 tag: 트릴로지의 마지막이 남긴 것
 color: mossy
 status: 회고
+done: false
 order: 6
 ---
 

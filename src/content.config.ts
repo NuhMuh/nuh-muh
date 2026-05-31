@@ -13,6 +13,7 @@ const works = defineCollection({
     coverImage: z.string().optional(),
     isSpotlight: z.boolean().default(false),
     isComing: z.boolean().default(false),
+    done: z.boolean().default(false),
     order: z.number().default(99),
   }),
 });

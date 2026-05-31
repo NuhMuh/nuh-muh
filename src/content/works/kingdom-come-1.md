@@ -5,6 +5,7 @@ tag: 헨리가 진흙이 되는 동안
 color: rust
 kicker: 표지
 status: 새로 시작
+done: false
 order: 1
 coverImage: /images/works/kdcd1.1.png
 isSpotlight: true

@@ -4,6 +4,7 @@ number: N-004
 tag: 타협 거부의 13년
 color: rust
 status: 진행중
+done: true
 order: 5
 ---
 

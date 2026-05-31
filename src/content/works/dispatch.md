@@ -4,6 +4,7 @@ number: N-002
 tag: 죽은 자들이 만든 게임
 color: warm
 status: 추적중
+done: false
 order: 2
 ---
 

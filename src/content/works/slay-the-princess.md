@@ -4,6 +4,7 @@ number: N-014
 tag: 목소리를 믿지 마라
 color: deep
 status: 추적중
+done: true
 order: 14
 ---
 선택과 공포의 미로.

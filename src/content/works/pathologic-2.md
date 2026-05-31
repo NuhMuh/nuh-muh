@@ -5,6 +5,7 @@ tag: 전염병 아래의 자유의지
 color: ash
 status: 예열중
 isComing: true
+done: true
 order: 7
 ---
 

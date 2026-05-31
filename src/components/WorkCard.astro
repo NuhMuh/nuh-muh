@@ -11,17 +11,15 @@ interface Props {
     isComing?: boolean;
     coverImage?: string;
   };
-  position?: 'm1' | 'm2' | 'm3' | 'm4' | 'm5';
-  revealClass?: string;
+  variant?: number;
 }
-const { work, position = 'm1', revealClass = '' } = Astro.props;
+const { work, variant = 0 } = Astro.props;
 const hasImage = !!work.coverImage;
 const href = '/work/' + work.id;
-const classList = ['card', 'card-' + position, 'color-' + work.color];
+const vClass = 'v' + (variant % 9 + 1);
+const classList = ['card', 'color-' + work.color, vClass];
 if (work.isComing) classList.push('card-coming');
 if (hasImage) classList.push('has-image');
-classList.push('reveal');
-if (revealClass) classList.push(revealClass);
 const className = classList.join(' ');
 const styleAttr = hasImage ? "--cover-url: url('" + work.coverImage + "')" : undefined;
 ---
@@ -31,10 +29,7 @@ const styleAttr = hasImage ? "--cover-url: url('" + work.coverImage + "')" : und
     <div>
       <div class="card-top">
         <span>{work.number}</span>
-        {work.isComing
-          ? <span class="status">{work.status}</span>
-          : <span>{work.articleCount}편</span>
-        }
+        {work.isComing ? <span class="status">{work.status}</span> : <span>{work.articleCount}편</span>}
       </div>
       <h3 class="card-title">{work.title}</h3>
       <p class="card-tag">{work.tag}</p>
@@ -48,30 +43,48 @@ const styleAttr = hasImage ? "--cover-url: url('" + work.coverImage + "')" : und
 
 <style>
   .card {
-    background: var(--paper); border: 1px solid var(--rule);
-    padding: 2.2rem 2rem; position: relative;
+    position: relative;
     display: flex; flex-direction: column; justify-content: space-between;
-    cursor: pointer; text-decoration: none; color: inherit; overflow: hidden;
-    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s, filter 0.4s;
-    min-height: 230px;
+    padding: 2rem 2rem;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 18px;
+    cursor: pointer; text-decoration: none; color: inherit;
+    overflow: hidden;
+    transition: transform 0.45s cubic-bezier(0.16,1,0.3,1), border-color 0.3s, filter 0.4s;
+    min-height: 280px;
   }
+
+  /* 너비(span) × 높이 조합 — 불규칙 (자동 배정) */
+  /* 한 줄 3개의 가로 비율 패턴 (12칸 기준). 줄마다 다르게 반복 */
+  .v1 { grid-column: span 5; }
+  .v2 { grid-column: span 4; }
+  .v3 { grid-column: span 3; }
+  .v4 { grid-column: span 3; }
+  .v5 { grid-column: span 5; }
+  .v6 { grid-column: span 4; }
+  .v7 { grid-column: span 4; }
+  .v8 { grid-column: span 3; }
+  .v9 { grid-column: span 5; }
+
   .card::after {
     content: ''; position: absolute; left: 0; top: 0;
     width: 3px; height: 0; background: var(--mark);
-    transition: height 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: height 0.5s cubic-bezier(0.16,1,0.3,1);
     z-index: 3;
   }
   .card-cover {
-    position: absolute; inset: 0;
+    position: absolute; inset: 0; border-radius: 18px;
     background-image: var(--cover-url);
-    background-size: cover;
-    background-position: center;
+    background-size: cover; background-position: center;
     opacity: 0;
-    filter: sepia(0.35) saturate(0.7) contrast(0.95);
-    mix-blend-mode: multiply;
-    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 1;
-    pointer-events: none;
+    filter: sepia(0.12) saturate(0.92) contrast(1);
+    transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1);
+    z-index: 1; pointer-events: none;
+  }
+  .card-cover::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(to bottom, rgba(236,228,207,0.82) 0%, rgba(236,228,207,0.62) 45%, rgba(236,228,207,0.78) 100%);
   }
   .card-inner {
     position: relative; z-index: 2;
@@ -80,50 +93,39 @@ const styleAttr = hasImage ? "--cover-url: url('" + work.coverImage + "')" : und
   }
   .card:hover { transform: translateY(-5px); border-color: var(--rule-strong); filter: brightness(1.02); }
   .card:hover::after { height: 100%; }
-  .card.has-image:hover .card-cover { opacity: 0.28; }
+  .card.has-image:hover .card-cover { opacity: 0.85; }
+
   .card-top {
     display: flex; justify-content: space-between; align-items: flex-start;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase;
-    color: var(--ink-faint); margin-bottom: 2.2rem;
+    font-size: 0.64rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--ink-faint); margin-bottom: 1.4rem;
   }
   .card-top .status { color: var(--mark); }
   .card-title {
     font-family: 'Noto Serif KR', serif; font-weight: 500;
-    font-size: 1.7rem; line-height: 1.15; letter-spacing: -0.01em;
-    margin-bottom: 0.7rem; transition: letter-spacing 0.4s;
+    font-size: 1.6rem; line-height: 1.15; letter-spacing: -0.01em;
+    margin-bottom: 0.6rem; transition: letter-spacing 0.4s;
   }
   .card:hover .card-title { letter-spacing: 0.005em; }
   .card-tag {
     font-family: 'EB Garamond', serif; font-style: italic;
-    font-size: 1rem; color: var(--ink-soft); line-height: 1.4;
+    font-size: 1.02rem; color: var(--ink-soft); line-height: 1.4;
   }
   .card-foot {
     display: flex; justify-content: space-between; align-items: center;
-    margin-top: 1.8rem; font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-soft);
+    margin-top: 1.4rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.66rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-soft);
   }
-  .card-foot .arrow { display: inline-block; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s; }
+  .card-foot .arrow { display: inline-block; transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), color 0.3s; }
   .card:hover .arrow { transform: translateX(6px); color: var(--mark); }
-  .card-m1 { grid-column: span 4; }
-  .card-m2 { grid-column: span 3; }
-  .card-m3 { grid-column: span 5; }
-  .card-m4 { grid-column: span 7; }
-  .card-m5 { grid-column: span 5; }
+
   .color-warm { background: var(--paper-warm); }
   .color-deep { background: var(--paper-deep); }
   .color-cold { background: var(--paper-cold); }
   .color-rust { background: var(--paper-rust); }
   .color-mossy { background: var(--paper-mossy); }
   .color-ash { background: var(--paper-ash); }
-  .card-coming .card-title {
-    font-family: 'EB Garamond', serif; font-style: italic;
-    font-weight: 500; color: var(--ink-soft);
-  }
+  .card-coming .card-title { font-family: 'EB Garamond', serif; font-style: italic; font-weight: 500; color: var(--ink-soft); }
   .card-coming .card-tag { color: var(--ink-faint); }
-  @media (max-width: 900px) {
-    .card-m1, .card-m2, .card-m3, .card-m4, .card-m5 {
-      grid-column: span 1; min-height: 180px;
-    }
-  }
 </style>

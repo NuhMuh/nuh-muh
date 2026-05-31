@@ -4,15 +4,17 @@ import Masthead from '../components/Masthead.astro';
 import SpotlightCard from '../components/SpotlightCard.astro';
 import WorkCard from '../components/WorkCard.astro';
 import LatestAside from '../components/LatestAside.astro';
-import PostcardSignup from '../components/PostcardSignup.astro';
 import InterviewBand from '../components/InterviewBand.astro';
+import PostcardSignup from '../components/PostcardSignup.astro';
 import { getCollection, type CollectionEntry } from 'astro:content';
 
 const allWorks = await getCollection('works');
 const sorted = allWorks.sort((a, b) => a.data.order - b.data.order);
 
 const spotlightEntry = sorted.find(w => w.data.isSpotlight);
-const otherWorks = sorted.filter(w => !w.data.isSpotlight);
+const nonSpotlight = sorted.filter(w => !w.data.isSpotlight);
+const inProgress = nonSpotlight.filter(w => !w.data.done);
+const completed = nonSpotlight.filter(w => w.data.done);
 
 const allArticles = await getCollection('articles');
 const articleCountMap = new Map<string, number>();
@@ -42,38 +44,54 @@ function toWork(entry: CollectionEntry<'works'>, excerpt?: string) {
 }
 
 const spotlight = spotlightEntry ? toWork(spotlightEntry, spotlightLead?.data.excerpt) : null;
-const works = otherWorks.map(w => toWork(w));
-
-const pattern: Array<'m1' | 'm2' | 'm3' | 'm4' | 'm5'> = ['m1', 'm2', 'm3', 'm4', 'm5'];
+const progressWorks = inProgress.map(w => toWork(w));
+const completedWorks = completed.map(w => toWork(w));
 ---
 
 <BaseLayout title="Nuh-Muh">
   <div class="container">
     <Masthead />
 
-    <div class="works-grid">
+    <div class="top-grid">
       {spotlight && <SpotlightCard work={spotlight} revealClass="reveal-2" />}
       <LatestAside />
+    </div>
 
-      {works.map((work, i) => (
-        <WorkCard work={work} position={pattern[i % pattern.length]} />
+    <div class="works-masonry">
+      {progressWorks.map((work, i) => (
+        <WorkCard work={work} variant={i} />
       ))}
     </div>
 
     <InterviewBand />
+
+    <div class="works-masonry">
+      {completedWorks.map((work, i) => (
+        <WorkCard work={work} variant={i} />
+      ))}
+    </div>
   </div>
 
   <PostcardSignup />
 </BaseLayout>
 
 <style>
-  .works-grid {
+  .top-grid {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
     gap: 1.1rem;
-    padding: 1rem 0 5rem;
+    padding: 1rem 0 1.2rem;
   }
-  @media (max-width: 900px) {
-    .works-grid { grid-template-columns: 1fr; gap: 0.9rem; }
+  .works-masonry {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1.2rem;
+    padding: 1.2rem 0;
+  }
+  .works-masonry :global(.card) { width: 100%; }
+  @media (max-width: 700px) {
+    .top-grid { grid-template-columns: 1fr; }
+    .works-masonry { grid-template-columns: 1fr; }
+    .works-masonry :global(.card) { grid-column: span 1 !important; }
   }
 </style>

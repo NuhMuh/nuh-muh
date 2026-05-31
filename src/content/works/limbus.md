@@ -4,6 +4,7 @@ number: N-002
 tag: 가챠라는 갑옷을 입은 컬트 소설
 color: deep
 status: 추적중
+done: true
 order: 3
 ---
 
