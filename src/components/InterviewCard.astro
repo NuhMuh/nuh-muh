@@ -1,0 +1,130 @@
+---
+import { getCollection } from 'astro:content';
+const people = (await getCollection('interviews')).sort((a, b) => a.data.order - b.data.order);
+const data = people.map(p => ({ slug: p.id, name: p.data.name, title: p.data.title, quotes: p.data.quotes }));
+---
+<a href="/interview" class="iv-card" id="iv-card">
+  <div class="iv-label">목소리들 · Voices</div>
+
+  <div class="iv-viewport">
+    <div class="iv-track" id="iv-track" style={`--n:${data.length}`}>
+      {data.map(person => (
+        <div class="iv-set">
+          <button class="iv-name" data-slug={person.slug} onclick="event.preventDefault(); event.stopPropagation(); window.location.href='/interview/' + this.dataset.slug;">
+            {person.name}
+            <span class="iv-role">{person.title}</span>
+          </button>
+          <div class="iv-slot">
+            <div class="iv-slot-track">
+              {[0,1,2].map(() => (
+                <div class="iv-slot-group">
+                  {person.quotes.map(q => <div class="iv-quote">{q}</div>)}
+                  <div class="iv-divider">· · ·</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <div class="iv-foot">인터뷰 전체 보기 →</div>
+</a>
+
+<style>
+  .iv-card {
+    position: relative;
+    display: flex; flex-direction: column;
+    background: var(--paper-deep);
+    border: 1px solid var(--rule-strong);
+    padding: 1.8rem 1.8rem 1.5rem;
+    text-decoration: none; color: inherit;
+    overflow: hidden;
+    aspect-ratio: 1 / 1;
+  }
+  .iv-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
+    letter-spacing: 0.3em; text-transform: uppercase; color: var(--mark);
+    margin-bottom: 1.2rem;
+  }
+  .iv-viewport { flex: 1; position: relative; overflow: hidden; }
+
+  /* 가로: 세트들이 옆으로 슬라이드 */
+  .iv-track {
+    display: flex; height: 100%;
+    animation: iv-slide-x calc(var(--n, 3) * 5s) infinite;
+  }
+  .iv-card:hover .iv-track { animation-play-state: paused; }
+  .iv-set {
+    flex: 0 0 100%; height: 100%;
+    display: flex; flex-direction: column;
+  }
+  .iv-name {
+    background: none; border: none; text-align: center; cursor: pointer;
+    font-family: 'Noto Serif KR', serif; font-weight: 500;
+    font-size: 1.9rem; color: var(--ink); padding: 0; line-height: 1.2;
+    display: flex; flex-direction: column; gap: 0.2rem; align-items: center;
+    margin-bottom: 1rem;
+  }
+  .iv-name:hover { color: var(--mark); }
+  .iv-role {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.58rem;
+    letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-faint);
+  }
+
+  /* 세로: 슬롯머신 */
+  .iv-slot { flex: 1; position: relative; overflow: hidden; min-height: 0;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 25%, #000 75%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 25%, #000 75%, transparent 100%);
+  }
+  .iv-slot-track {
+    display: flex; flex-direction: column;
+    animation: iv-slide-y 5s linear infinite;
+  }
+  .iv-slot-group { display: flex; flex-direction: column; }
+  .iv-divider {
+    text-align: center; color: var(--mark);
+    font-size: 0.9rem; letter-spacing: 0.3em;
+    padding: 0.8rem 0 1rem;
+  }
+  .iv-quote {
+    font-family: 'EB Garamond', serif; font-style: italic;
+    font-size: 1.15rem; color: var(--ink); line-height: 1.5;
+    padding: 0.6rem 0; text-align: center;
+  }
+  .iv-foot {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.62rem;
+    letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-soft);
+    margin-top: 1rem; transition: color 0.3s;
+  }
+  .iv-card:hover .iv-foot { color: var(--mark); }
+
+  @keyframes iv-slide-x {
+    0%, 28% { transform: translateX(0); }
+    33%, 61% { transform: translateX(-100%); }
+    66%, 94% { transform: translateX(-200%); }
+    100% { transform: translateX(-300%); }
+  }
+  @keyframes iv-slide-y {
+    from { transform: translateY(-33.333%); }
+    to { transform: translateY(0); }
+  }
+</style>
+
+<script>
+  function initInterviewLoop() {
+    document.querySelectorAll('.iv-track').forEach(track => {
+      if (track.dataset.cloneInit === '1') return;
+      track.dataset.cloneInit = '1';
+      const sets = track.querySelectorAll('.iv-set');
+      if (sets.length < 2) return;
+      // 첫 세트 복제해서 끝에 추가 (루프 연결용)
+      const clone = sets[0].cloneNode(true);
+      clone.setAttribute('aria-hidden', 'true');
+      track.appendChild(clone);
+    });
+  }
+  initInterviewLoop();
+  document.addEventListener('astro:page-load', initInterviewLoop);
+</script>

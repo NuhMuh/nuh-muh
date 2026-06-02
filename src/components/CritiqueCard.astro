@@ -1,0 +1,57 @@
+---
+import { getCollection } from 'astro:content';
+const items = (await getCollection('critiques'))
+  .sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
+function fmt(iso) { const p = iso.split('-'); return p[1] + '.' + p[2]; }
+---
+<div class="crit-card">
+  <div class="crit-label">비평 · Critique</div>
+  <ul class="crit-list">
+    {items.map(item => (
+      <li>
+        <a href="#">
+          <span class="crit-date">{fmt(item.data.date)}</span>
+          <span class="crit-title">{item.data.title}</span>
+        </a>
+      </li>
+    ))}
+  </ul>
+</div>
+
+<style>
+  .crit-card {
+    display: flex; flex-direction: column;
+    background: var(--paper-cold);
+    border: 1px solid var(--rule-strong);
+    padding: 1.8rem 1.8rem 1rem;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+  }
+  .crit-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
+    letter-spacing: 0.3em; text-transform: uppercase; color: var(--mark);
+    margin-bottom: 1.2rem; flex-shrink: 0;
+  }
+  .crit-list {
+    list-style: none; overflow-y: auto; flex: 1;
+    -webkit-mask-image: linear-gradient(to bottom, #000 88%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 88%, transparent 100%);
+  }
+  .crit-list::-webkit-scrollbar { width: 0; }
+  .crit-list li { border-bottom: 1px dashed var(--rule); }
+  .crit-list a {
+    display: flex; flex-direction: column; gap: 0.3rem;
+    padding: 0.9rem 0; text-decoration: none; color: inherit;
+    transition: padding-left 0.3s;
+  }
+  .crit-list a:hover { padding-left: 0.4rem; }
+  .crit-list a:hover .crit-title { color: var(--mark); }
+  .crit-date {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.58rem;
+    letter-spacing: 0.15em; color: var(--ink-faint);
+  }
+  .crit-title {
+    font-family: 'Noto Serif KR', serif; font-size: 1.02rem;
+    line-height: 1.4; color: var(--ink);
+  }
+</style>

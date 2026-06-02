@@ -3,8 +3,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Masthead from '../components/Masthead.astro';
 import WorkCard from '../components/WorkCard.astro';
 import LatestAside from '../components/LatestAside.astro';
-import InterviewBand from '../components/InterviewBand.astro';
 import PostcardSignup from '../components/PostcardSignup.astro';
+import InterviewCard from '../components/InterviewCard.astro';
+import CritiqueCard from '../components/CritiqueCard.astro';
 import { getCollection, type CollectionEntry } from 'astro:content';
 
 const allWorks = await getCollection('works');
@@ -88,7 +89,11 @@ const completedSlots = fillSlots(completed, 18);
       ))}
     </div>
 
-    <InterviewBand />
+
+    <div class="middle-cards">
+      <InterviewCard />
+      <CritiqueCard />
+    </div>
 
     <div class="works-masonry">
       {completedSlots.map((slot) => (
@@ -120,6 +125,13 @@ const completedSlots = fillSlots(completed, 18);
     align-items: stretch;
   }
   .works-masonry :global(.card) { width: 100%; }
+  .middle-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.2rem;
+    padding: 1.5rem 0;
+  }
+  @media (max-width: 700px) { .middle-cards { grid-template-columns: 1fr; } }
   .empty-slot {
     border: 1.5px solid var(--ink-soft);
     border-radius: 18px;

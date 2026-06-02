@@ -1,0 +1,39 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Masthead from '../../components/Masthead.astro';
+import { getCollection } from 'astro:content';
+const people = (await getCollection('interviews')).sort((a, b) => a.data.order - b.data.order);
+---
+<BaseLayout title="인터뷰 — Nuh-Muh">
+  <div class="container">
+    <Masthead />
+    <div class="iv-list-wrap">
+      <a href="/" class="back">← 돌아가기</a>
+      <h1 class="iv-list-title">목소리들 <span>Voices</span></h1>
+      <ul class="iv-list">
+        {people.map(person => (
+          <li>
+            <a href={'/interview/' + person.id}>
+              <span class="nm">{person.data.name}</span>
+              <span class="ro">{person.data.title}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</BaseLayout>
+<style>
+  .iv-list-wrap { max-width: 720px; margin: 0 auto; padding: 2rem 0 6rem; }
+  .back { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.15em; color: var(--ink-soft); text-decoration: none; display: inline-block; margin-bottom: 3rem; }
+  .back:hover { color: var(--mark); }
+  .iv-list-title { font-family: 'Noto Serif KR', serif; font-weight: 500; font-size: 2.6rem; margin-bottom: 2.5rem; }
+  .iv-list-title span { font-family: 'Cormorant Unicase', serif; color: var(--mark); font-size: 1.6rem; margin-left: 0.5rem; }
+  .iv-list { list-style: none; }
+  .iv-list li { border-bottom: 1px solid var(--rule); }
+  .iv-list a { display: flex; align-items: baseline; gap: 1.2rem; padding: 1.4rem 0; text-decoration: none; color: inherit; transition: padding-left 0.3s; }
+  .iv-list a:hover { padding-left: 0.6rem; }
+  .iv-list a:hover .nm { color: var(--mark); }
+  .nm { font-family: 'Noto Serif KR', serif; font-size: 1.5rem; color: var(--ink); transition: color 0.3s; }
+  .ro { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-faint); }
+</style>

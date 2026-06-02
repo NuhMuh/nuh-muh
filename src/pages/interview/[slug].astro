@@ -1,0 +1,63 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Masthead from '../../components/Masthead.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const people = await getCollection('interviews');
+  return people.map(person => ({
+    params: { slug: person.id },
+    props: { person },
+  }));
+}
+
+const { person } = Astro.props;
+const { Content } = await render(person);
+---
+<BaseLayout title={person.data.name + ' — 인터뷰 — Nuh-Muh'}>
+  <div class="container">
+    <Masthead />
+    <article class="interview-article">
+      <a href="/" class="back">← 돌아가기</a>
+      <div class="interview-head">
+        <span class="kicker">인터뷰</span>
+        <h1>{person.data.name}</h1>
+        <p class="role">{person.data.title}</p>
+      </div>
+      <div class="interview-body">
+        <Content />
+      </div>
+    </article>
+  </div>
+</BaseLayout>
+
+<style>
+  .interview-article { max-width: 720px; margin: 0 auto; padding: 2rem 0 6rem; }
+  .back {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+    letter-spacing: 0.15em; color: var(--ink-soft); text-decoration: none;
+    display: inline-block; margin-bottom: 3rem;
+  }
+  .back:hover { color: var(--mark); }
+  .interview-head { border-bottom: 1px solid var(--rule-strong); padding-bottom: 2rem; margin-bottom: 2.5rem; }
+  .kicker {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.66rem;
+    letter-spacing: 0.3em; text-transform: uppercase; color: var(--mark);
+  }
+  .interview-head h1 {
+    font-family: 'Noto Serif KR', serif; font-weight: 500;
+    font-size: 2.8rem; margin: 0.8rem 0 0.5rem;
+  }
+  .role {
+    font-family: 'EB Garamond', serif; font-style: italic;
+    font-size: 1.2rem; color: var(--ink-soft);
+  }
+  .interview-body {
+    font-family: 'Noto Serif KR', serif; line-height: 1.9; color: var(--ink);
+  }
+  .interview-body :global(h2) { font-size: 1.6rem; margin: 2rem 0 1rem; }
+  .interview-body :global(blockquote) {
+    border-left: 3px solid var(--mark); padding-left: 1.2rem;
+    font-style: italic; color: var(--ink-soft); margin: 1.5rem 0;
+  }
+</style>
