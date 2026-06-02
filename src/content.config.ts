@@ -14,6 +14,7 @@ const works = defineCollection({
     isSpotlight: z.boolean().default(false),
     isComing: z.boolean().default(false),
     done: z.boolean().default(false),
+    slotSize: z.number().default(4),
     order: z.number().default(99),
   }),
 });

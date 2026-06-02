@@ -5,6 +5,7 @@ tag: 실패한 소설가의 복귀
 color: cold
 status: 재방문중
 done: false
+slotSize: 5
 order: 4
 ---
 

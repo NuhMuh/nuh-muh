@@ -6,6 +6,7 @@ color: ash
 status: 예열중
 isComing: true
 done: true
+slotSize: 3
 order: 7
 ---
 

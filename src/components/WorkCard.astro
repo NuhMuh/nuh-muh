@@ -10,14 +10,15 @@ interface Props {
     articleCount: number;
     isComing?: boolean;
     coverImage?: string;
+    slotSize?: number;
   };
   variant?: number;
 }
 const { work, variant = 0 } = Astro.props;
 const hasImage = !!work.coverImage;
 const href = '/work/' + work.id;
-const vClass = 'v' + (variant % 9 + 1);
-const classList = ['card', 'color-' + work.color, vClass];
+const sizeClass = 'slot-' + (work.slotSize || 4);
+const classList = ['card', 'color-' + work.color, sizeClass];
 if (work.isComing) classList.push('card-coming');
 if (hasImage) classList.push('has-image');
 const className = classList.join(' ');
@@ -56,16 +57,9 @@ const styleAttr = hasImage ? "--cover-url: url('" + work.coverImage + "')" : und
   }
 
   /* 너비(span) × 높이 조합 — 불규칙 (자동 배정) */
-  /* 한 줄 3개의 가로 비율 패턴 (12칸 기준). 줄마다 다르게 반복 */
-  .v1 { grid-column: span 5; }
-  .v2 { grid-column: span 4; }
-  .v3 { grid-column: span 3; }
-  .v4 { grid-column: span 3; }
-  .v5 { grid-column: span 5; }
-  .v6 { grid-column: span 4; }
-  .v7 { grid-column: span 4; }
-  .v8 { grid-column: span 3; }
-  .v9 { grid-column: span 5; }
+  .slot-3 { grid-column: span 3; }
+  .slot-4 { grid-column: span 4; }
+  .slot-5 { grid-column: span 5; }
 
   .card::after {
     content: ''; position: absolute; left: 0; top: 0;

@@ -40,12 +40,33 @@ function toWork(entry: CollectionEntry<'works'>, excerpt?: string) {
     articleCount: articleCountMap.get(entry.id) || 0,
     excerpt,
     isComing: entry.data.isComing,
+    slotSize: entry.data.slotSize,
   };
 }
 
+// 슬롯 패턴: 5-4-3 / 3-5-4 / 4-3-5 반복
+const SLOT_PATTERN = [5, 4, 3, 3, 5, 4, 4, 3, 5];
+
+// 작품들을 슬롯에 채우는 함수
+function fillSlots(works: CollectionEntry<'works'>[], slotCount: number) {
+  // 크기별 작품 큐
+  const queues: Record<number, CollectionEntry<'works'>[]> = { 3: [], 4: [], 5: [] };
+  for (const w of works) {
+    const s = w.data.slotSize;
+    (queues[s] || queues[4]).push(w);
+  }
+  const slots: Array<{ size: number; work: CollectionEntry<'works'> | null }> = [];
+  for (let i = 0; i < slotCount; i++) {
+    const size = SLOT_PATTERN[i % SLOT_PATTERN.length];
+    const work = queues[size] && queues[size].length ? queues[size].shift()! : null;
+    slots.push({ size, work });
+  }
+  return slots;
+}
+
 const spotlight = spotlightEntry ? toWork(spotlightEntry, spotlightLead?.data.excerpt) : null;
-const progressWorks = inProgress.map(w => toWork(w));
-const completedWorks = completed.map(w => toWork(w));
+const progressSlots = fillSlots(inProgress, 12);
+const completedSlots = fillSlots(completed, 18);
 ---
 
 <BaseLayout title="Nuh-Muh">
@@ -58,16 +79,20 @@ const completedWorks = completed.map(w => toWork(w));
     </div>
 
     <div class="works-masonry">
-      {progressWorks.map((work, i) => (
-        <WorkCard work={work} variant={i} />
+      {progressSlots.map((slot) => (
+        slot.work
+          ? <WorkCard work={toWork(slot.work)} />
+          : <div class={'empty-slot slot-' + slot.size} aria-hidden="true"></div>
       ))}
     </div>
 
     <InterviewBand />
 
     <div class="works-masonry">
-      {completedWorks.map((work, i) => (
-        <WorkCard work={work} variant={i} />
+      {completedSlots.map((slot) => (
+        slot.work
+          ? <WorkCard work={toWork(slot.work)} />
+          : <div class={'empty-slot slot-' + slot.size} aria-hidden="true"></div>
       ))}
     </div>
   </div>
@@ -87,11 +112,21 @@ const completedWorks = completed.map(w => toWork(w));
     grid-template-columns: repeat(12, 1fr);
     gap: 1.2rem;
     padding: 1.2rem 0;
+    align-items: stretch;
   }
   .works-masonry :global(.card) { width: 100%; }
+  .empty-slot {
+    border: 1.5px solid var(--ink-soft);
+    border-radius: 18px;
+    min-height: 280px;
+  }
+  .slot-3 { grid-column: span 3; }
+  .slot-4 { grid-column: span 4; }
+  .slot-5 { grid-column: span 5; }
   @media (max-width: 700px) {
     .top-grid { grid-template-columns: 1fr; }
     .works-masonry { grid-template-columns: 1fr; }
-    .works-masonry :global(.card) { grid-column: span 1 !important; }
+    .works-masonry :global(.card),
+    .empty-slot { grid-column: span 1 !important; }
   }
 </style>

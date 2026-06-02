@@ -5,6 +5,7 @@ tag: 트릴로지의 마지막이 남긴 것
 color: mossy
 status: 회고
 done: false
+slotSize: 4
 order: 6
 ---
 

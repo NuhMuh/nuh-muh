@@ -5,6 +5,7 @@ tag: 타협 거부의 13년
 color: rust
 status: 진행중
 done: true
+slotSize: 4
 order: 5
 ---
 

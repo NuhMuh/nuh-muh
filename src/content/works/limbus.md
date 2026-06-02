@@ -5,6 +5,7 @@ tag: 가챠라는 갑옷을 입은 컬트 소설
 color: deep
 status: 추적중
 done: true
+slotSize: 4
 order: 3
 ---
 
