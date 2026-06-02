@@ -4,6 +4,7 @@ import Masthead from '../components/Masthead.astro';
 import WorkCard from '../components/WorkCard.astro';
 import LatestAside from '../components/LatestAside.astro';
 import PostcardSignup from '../components/PostcardSignup.astro';
+import CardFan from '../components/CardFan.astro';
 import InterviewCard from '../components/InterviewCard.astro';
 import CritiqueCard from '../components/CritiqueCard.astro';
 import { getCollection, type CollectionEntry } from 'astro:content';
@@ -104,6 +105,7 @@ const completedSlots = fillSlots(completed, 18);
     </div>
   </div>
 
+  <CardFan />
   <PostcardSignup />
 </BaseLayout>
 

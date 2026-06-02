@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Masthead from '../../components/Masthead.astro';
+---
+<BaseLayout title="전체 글 — Nuh-Muh">
+  <div class="container">
+    <Masthead />
+    <div class="works-all">
+      <a href="/" class="back">← 돌아가기</a>
+      <h1>전체 글 <span>Archive</span></h1>
+      <p class="placeholder">(이 페이지 구성은 곧 채워집니다.)</p>
+    </div>
+  </div>
+</BaseLayout>
+<style>
+  .works-all { max-width: 860px; margin: 0 auto; padding: 2rem 0 6rem; }
+  .back { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.15em; color: var(--ink-soft); text-decoration: none; display: inline-block; margin-bottom: 3rem; }
+  .back:hover { color: var(--mark); }
+  .works-all h1 { font-family: 'Noto Serif KR', serif; font-weight: 500; font-size: 2.8rem; }
+  .works-all h1 span { font-family: 'Cormorant Unicase', serif; color: var(--mark); font-size: 1.6rem; margin-left: 0.5rem; }
+  .placeholder { font-family: 'EB Garamond', serif; font-style: italic; color: var(--ink-faint); margin-top: 2rem; }
+</style>
