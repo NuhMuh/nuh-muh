@@ -1,0 +1,40 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Masthead from '../../components/Masthead.astro';
+import { getCollection } from 'astro:content';
+const items = (await getCollection('critiques')).sort((a,b)=>new Date(b.data.date).getTime()-new Date(a.data.date).getTime());
+function fmt(iso){const p=iso.split('-');return p[0]+'. '+p[1]+'. '+p[2];}
+---
+<BaseLayout title="비평 — Nuh-Muh">
+  <div class="container">
+    <Masthead />
+    <div class="cl-wrap">
+      <a href="/" class="back">← 돌아가기</a>
+      <h1 class="cl-title">비평 <span>Critique</span></h1>
+      <ul class="cl-list">
+        {items.map(item => (
+          <li>
+            <a href={'/critique/' + item.id}>
+              <span class="d">{fmt(item.data.date)}</span>
+              <span class="t">{item.data.title}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</BaseLayout>
+<style>
+  .cl-wrap { max-width: 720px; margin: 0 auto; padding: 2rem 0 6rem; }
+  .back { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.15em; color: var(--ink-soft); text-decoration: none; display: inline-block; margin-bottom: 3rem; }
+  .back:hover { color: var(--mark); }
+  .cl-title { font-family: 'Noto Serif KR', serif; font-weight: 500; font-size: 2.6rem; margin-bottom: 2.5rem; }
+  .cl-title span { font-family: 'Cormorant Unicase', serif; color: var(--mark); font-size: 1.6rem; margin-left: 0.5rem; }
+  .cl-list { list-style: none; }
+  .cl-list li { border-bottom: 1px solid var(--rule); }
+  .cl-list a { display: flex; align-items: baseline; gap: 1.2rem; padding: 1.3rem 0; text-decoration: none; color: inherit; transition: padding-left 0.3s; }
+  .cl-list a:hover { padding-left: 0.5rem; }
+  .cl-list a:hover .t { color: var(--mark); }
+  .d { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.1em; color: var(--ink-faint); white-space: nowrap; }
+  .t { font-family: 'Noto Serif KR', serif; font-size: 1.15rem; color: var(--ink); transition: color 0.3s; }
+</style>

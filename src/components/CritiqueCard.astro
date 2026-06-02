@@ -3,55 +3,103 @@ import { getCollection } from 'astro:content';
 const items = (await getCollection('critiques'))
   .sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
 function fmt(iso) { const p = iso.split('-'); return p[1] + '.' + p[2]; }
+const pages = [];
+for (let i = 0; i < items.length; i += 4) pages.push(items.slice(i, i + 4));
 ---
-<div class="crit-card">
-  <div class="crit-label">비평 · Critique</div>
-  <ul class="crit-list">
-    {items.map(item => (
-      <li>
-        <a href="#">
-          <span class="crit-date">{fmt(item.data.date)}</span>
-          <span class="crit-title">{item.data.title}</span>
-        </a>
-      </li>
-    ))}
-  </ul>
-</div>
+<a href="/critique" class="crit-card" id="crit-card">
+  <div class="crit-label">비평 · Critique →</div>
+  <div class="crit-viewport">
+    <div class="crit-track" id="crit-track">
+      {pages.map(page => (
+        <div class="crit-page">
+          {page.map(item => (
+            <span
+              class="crit-cell"
+              data-href={'/critique/' + item.id}
+              role="link"
+              onclick="event.preventDefault(); event.stopPropagation(); window.location.href = this.dataset.href;"
+            >
+              <span class="crit-date">{fmt(item.data.date)}</span>
+              <span class="crit-title">{item.data.title}</span>
+            </span>
+          ))}
+        </div>
+      ))}
+    </div>
+  </div>
+  <div class="crit-dots" id="crit-dots">
+    {pages.map(() => <span class="dot"></span>)}
+  </div>
+</a>
 
 <style>
   .crit-card {
     display: flex; flex-direction: column;
     background: var(--paper-cold);
     border: 1px solid var(--rule-strong);
-    padding: 1.8rem 1.8rem 1rem;
+    padding: 1.8rem 1.8rem 1.2rem;
     aspect-ratio: 1 / 1;
     overflow: hidden;
+    text-decoration: none; color: inherit;
+    cursor: pointer;
   }
   .crit-label {
     font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
     letter-spacing: 0.3em; text-transform: uppercase; color: var(--mark);
-    margin-bottom: 1.2rem; flex-shrink: 0;
+    margin-bottom: 1.2rem; flex-shrink: 0; transition: letter-spacing 0.3s;
   }
-  .crit-list {
-    list-style: none; overflow-y: auto; flex: 1;
-    -webkit-mask-image: linear-gradient(to bottom, #000 88%, transparent 100%);
-    mask-image: linear-gradient(to bottom, #000 88%, transparent 100%);
+  .crit-card:hover .crit-label { letter-spacing: 0.38em; }
+  .crit-viewport { flex: 1; overflow: hidden; position: relative; }
+  .crit-track {
+    display: flex; height: 100%;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .crit-list::-webkit-scrollbar { width: 0; }
-  .crit-list li { border-bottom: 1px dashed var(--rule); }
-  .crit-list a {
-    display: flex; flex-direction: column; gap: 0.3rem;
-    padding: 0.9rem 0; text-decoration: none; color: inherit;
-    transition: padding-left 0.3s;
+  .crit-page {
+    flex: 0 0 100%; height: 100%;
+    display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
+    gap: 0.8rem; padding: 4px;
   }
-  .crit-list a:hover { padding-left: 0.4rem; }
-  .crit-list a:hover .crit-title { color: var(--mark); }
-  .crit-date {
-    font-family: 'JetBrains Mono', monospace; font-size: 0.58rem;
-    letter-spacing: 0.15em; color: var(--ink-faint);
+  .crit-cell {
+    border: 1px solid var(--rule); border-radius: 8px;
+    padding: 0.9rem 1rem;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    gap: 0.5rem; text-align: center;
+    background: var(--paper); cursor: pointer; overflow: hidden;
+    transition: border-color 0.3s, transform 0.3s;
   }
-  .crit-title {
-    font-family: 'Noto Serif KR', serif; font-size: 1.02rem;
-    line-height: 1.4; color: var(--ink);
-  }
+  .crit-cell:hover { border-color: var(--mark); transform: translateY(-2px); }
+  .crit-date { font-family: 'JetBrains Mono', monospace; font-size: 0.56rem; letter-spacing: 0.15em; color: var(--ink-faint); }
+  .crit-title { font-family: 'Noto Serif KR', serif; font-size: 0.95rem; line-height: 1.35; color: var(--ink); }
+  .crit-dots { display: flex; gap: 0.4rem; justify-content: center; margin-top: 1rem; flex-shrink: 0; }
+  .crit-dots .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ink-faint); opacity: 0.4; transition: opacity 0.3s, background 0.3s; }
+  .crit-dots .dot.active { opacity: 1; background: var(--mark); }
 </style>
+
+<script>
+  function initCritiqueCard() {
+    const card = document.getElementById('crit-card');
+    if (!card || card.dataset.init === '1') return;
+    card.dataset.init = '1';
+    const track = document.getElementById('crit-track');
+    const dots = Array.from(card.querySelectorAll('.crit-dots .dot'));
+    const pageCount = track ? track.children.length : 0;
+    if (!track || pageCount === 0) return;
+    let page = 0, lock = false;
+    function go(p) {
+      page = (p % pageCount + pageCount) % pageCount;
+      track.style.transform = 'translateX(-' + (page * 100) + '%)';
+      dots.forEach(function (d, i) { d.classList.toggle('active', i === page); });
+    }
+    go(0);
+    card.addEventListener('wheel', function (e) {
+      e.preventDefault();
+      if (lock) return;
+      lock = true;
+      window.setTimeout(function () { lock = false; }, 650);
+      if (e.deltaY > 0) go(page + 1); else go(page - 1);
+    }, { passive: false });
+  }
+  if (document.readyState !== 'loading') initCritiqueCard();
+  else document.addEventListener('DOMContentLoaded', initCritiqueCard);
+  document.addEventListener('astro:page-load', initCritiqueCard);
+</script>
