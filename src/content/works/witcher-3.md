@@ -6,6 +6,10 @@ color: mossy
 status: 회고
 done: false
 slotSize: 4
+hoverImages:
+  - /images/witcher3-a.jpg
+  - /images/witcher3-b.jpg
+  - /images/witcher3-c.jpg
 order: 6
 ---
 

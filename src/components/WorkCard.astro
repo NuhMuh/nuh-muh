@@ -11,29 +11,48 @@ interface Props {
     isComing?: boolean;
     coverImage?: string;
     slotSize?: number;
+    hoverImages?: string[];
+    articleTitles?: string[];
   };
-  variant?: number;
+  isSpotlight?: boolean;
 }
-const { work, variant = 0 } = Astro.props;
-const hasImage = !!work.coverImage;
+const { work, isSpotlight = false } = Astro.props;
 const href = '/work/' + work.id;
 const sizeClass = 'slot-' + (work.slotSize || 4);
-const classList = ['card', 'color-' + work.color, sizeClass];
+const images = work.hoverImages || [];
+const titles = work.articleTitles || [];
+const hasArticles = titles.length > 0;
+const classList = ['card', 'color-' + work.color];
+if (isSpotlight) { classList.push('card-spotlight'); } else { classList.push(sizeClass); }
 if (work.isComing) classList.push('card-coming');
-if (hasImage) classList.push('has-image');
 const className = classList.join(' ');
-const styleAttr = hasImage ? "--cover-url: url('" + work.coverImage + "')" : undefined;
+// 제목 글자를 span으로 쪼갬 (흩어짐 애니메이션용)
+const titleChars = [...work.title];
 ---
-<a href={href} class={className} style={styleAttr}>
-  {hasImage && <div class="card-cover" aria-hidden="true"></div>}
+<a href={href} class={className}>
+  <div class="hover-images" aria-hidden="true">
+    {images.map((src, i) => (
+      <div class="hover-img" style={`background-image:url('${src}')`}></div>
+    ))}
+  </div>
   <div class="card-inner">
     <div>
       <div class="card-top">
         <span>{work.number}</span>
         {work.isComing ? <span class="status">{work.status}</span> : <span>{work.articleCount}편</span>}
       </div>
-      <h3 class="card-title">{work.title}</h3>
+      <h3 class="card-title">
+        {titleChars.map((ch, i) => (
+          <span class="t-char" style={`--ci:${i}`}>{ch === ' ' ? '\u00A0' : ch}</span>
+        ))}
+      </h3>
       <p class="card-tag">{work.tag}</p>
+      <div class="hover-titles">
+        {hasArticles
+          ? <div class="titles-track" style={`animation-duration:${Math.max(titles.length, 1) * 9}s`}>{[0,1,2,3].map(() => <span class="titles-group">{titles.map(t => <span class="t-item">{t}<span class="sep">·</span></span>)}</span>)}</div>
+          : <span class="not-yet">아직</span>
+        }
+      </div>
     </div>
     <div class="card-foot">
       <span>{work.isComing ? (work.articleCount + '편') : work.status}</span>
@@ -52,42 +71,46 @@ const styleAttr = hasImage ? "--cover-url: url('" + work.coverImage + "')" : und
     border-radius: 18px;
     cursor: pointer; text-decoration: none; color: inherit;
     overflow: hidden;
-    transition: transform 0.45s cubic-bezier(0.16,1,0.3,1), border-color 0.3s, filter 0.4s;
     min-height: 280px;
+    transition: transform 0.45s cubic-bezier(0.16,1,0.3,1), border-color 0.3s, filter 0.4s;
   }
-
-  /* 너비(span) × 높이 조합 — 불규칙 (자동 배정) */
+  .card-spotlight {
+    border-radius: 0 !important;
+    min-height: 380px;
+    padding: 3rem 3rem;
+  }
+  .card-spotlight .card-title { font-size: 3rem; }
+  .card-spotlight .card-tag { font-size: 1.3rem; }
+  .card-spotlight .t-item { font-size: 1.8rem; }
   .slot-3 { grid-column: span 3; }
   .slot-4 { grid-column: span 4; }
   .slot-5 { grid-column: span 5; }
 
-  .card::after {
-    content: ''; position: absolute; left: 0; top: 0;
-    width: 3px; height: 0; background: var(--mark);
-    transition: height 0.5s cubic-bezier(0.16,1,0.3,1);
-    z-index: 3;
-  }
-  .card-cover {
-    position: absolute; inset: 0; border-radius: 18px;
-    background-image: var(--cover-url);
+  .color-warm { background: var(--paper-warm); }
+  .color-deep { background: var(--paper-deep); }
+  .color-cold { background: var(--paper-cold); }
+  .color-rust { background: var(--paper-rust); }
+  .color-mossy { background: var(--paper-mossy); }
+  .color-ash { background: var(--paper-ash); }
+
+  /* 호버 이미지 — 차례로 크로스페이드 */
+  .hover-images { position: absolute; inset: 0; z-index: 1; opacity: 0; transition: opacity 0.5s; }
+  .card:hover .hover-images { opacity: 1; }
+  .hover-img {
+    position: absolute; inset: 0;
     background-size: cover; background-position: center;
     opacity: 0;
-    filter: sepia(0.12) saturate(0.92) contrast(1);
-    transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1);
-    z-index: 1; pointer-events: none;
+    filter: sepia(0.05) saturate(1);
+    transition: opacity 1.1s ease;
   }
-  .card-cover::after {
+  .hover-img::after {
     content: ''; position: absolute; inset: 0;
-    background: linear-gradient(to bottom, rgba(236,228,207,0.82) 0%, rgba(236,228,207,0.62) 45%, rgba(236,228,207,0.78) 100%);
+    background: linear-gradient(to bottom, rgba(236,228,207,0.55), rgba(236,228,207,0.4), rgba(236,228,207,0.55));
   }
-  .card-inner {
-    position: relative; z-index: 2;
-    display: flex; flex-direction: column; justify-content: space-between;
-    height: 100%; flex: 1;
-  }
-  .card:hover { transform: translateY(-5px); border-color: var(--rule-strong); filter: brightness(1.02); }
-  .card:hover::after { height: 100%; }
-  .card.has-image:hover .card-cover { opacity: 0.85; }
+  .hover-img.is-active { opacity: 1; }
+
+  .card-inner { position: relative; z-index: 2; display: flex; flex-direction: column; justify-content: space-between; height: 100%; flex: 1; }
+  .card:hover { transform: translateY(-5px); border-color: var(--rule-strong); }
 
   .card-top {
     display: flex; justify-content: space-between; align-items: flex-start;
@@ -96,30 +119,73 @@ const styleAttr = hasImage ? "--cover-url: url('" + work.coverImage + "')" : und
     color: var(--ink-faint); margin-bottom: 1.4rem;
   }
   .card-top .status { color: var(--mark); }
-  .card-title {
-    font-family: 'Noto Serif KR', serif; font-weight: 500;
-    font-size: 1.6rem; line-height: 1.15; letter-spacing: -0.01em;
-    margin-bottom: 0.6rem; transition: letter-spacing 0.4s;
+
+  .card-title { font-family: 'Noto Serif KR', serif; font-weight: 500; font-size: 1.6rem; line-height: 1.15; margin-bottom: 0.6rem; }
+  .t-char { display: inline-block; transition: transform 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.5s; transition-delay: calc(var(--ci) * 0.02s); }
+  .card:hover .t-char {
+    opacity: 0;
+    transform: translate(calc((var(--ci) - 3) * 8px), -18px) rotate(calc((var(--ci) - 3) * 6deg));
   }
-  .card:hover .card-title { letter-spacing: 0.005em; }
-  .card-tag {
-    font-family: 'EB Garamond', serif; font-style: italic;
-    font-size: 1.02rem; color: var(--ink-soft); line-height: 1.4;
+
+  .card-tag { font-family: 'EB Garamond', serif; font-style: italic; font-size: 1.02rem; color: var(--ink-soft); line-height: 1.4; transition: opacity 0.4s; }
+  .card:hover .card-tag { opacity: 0; }
+
+  /* 호버 시 글 제목 흐름 */
+  .hover-titles {
+    position: absolute; top: 50%; left: 0; right: 0;
+    transform: translateY(-50%);
+    opacity: 0; visibility: hidden;
+    transition: opacity 0.5s 0.25s, visibility 0s 0.75s;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+    mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
   }
-  .card-foot {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-top: 1.4rem; font-family: 'JetBrains Mono', monospace;
-    font-size: 0.66rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-soft);
-  }
-  .card-foot .arrow { display: inline-block; transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), color 0.3s; }
+  .card:hover .hover-titles { opacity: 1; visibility: visible; transition: opacity 0.5s 0.25s, visibility 0s 0.25s; }
+  .titles-track { display: inline-flex; white-space: nowrap; animation: titles-scroll 18s linear infinite; animation-duration: inherit; }
+  .titles-group { display: inline-flex; }
+  .t-item { font-family: 'Noto Serif KR', serif; font-size: 1.45rem; color: var(--ink); }
+  .t-item .sep { padding: 0 1rem; color: var(--mark); }
+  .not-yet { font-family: 'EB Garamond', serif; font-style: italic; font-size: 1.3rem; color: var(--ink-soft); }
+
+  .card-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 1.4rem; font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-soft); z-index: 2; position: relative; }
+  .card-foot .arrow { display: inline-block; transition: transform 0.4s, color 0.3s; }
   .card:hover .arrow { transform: translateX(6px); color: var(--mark); }
 
-  .color-warm { background: var(--paper-warm); }
-  .color-deep { background: var(--paper-deep); }
-  .color-cold { background: var(--paper-cold); }
-  .color-rust { background: var(--paper-rust); }
-  .color-mossy { background: var(--paper-mossy); }
-  .color-ash { background: var(--paper-ash); }
-  .card-coming .card-title { font-family: 'EB Garamond', serif; font-style: italic; font-weight: 500; color: var(--ink-soft); }
-  .card-coming .card-tag { color: var(--ink-faint); }
+  .card-coming .card-title { font-family: 'EB Garamond', serif; font-style: italic; color: var(--ink-soft); }
+
+
+  @keyframes titles-scroll { from { transform: translateX(0); } to { transform: translateX(-25%); } }
 </style>
+
+<script>
+  function initCardCyclers() {
+    document.querySelectorAll('.card').forEach(card => {
+      if (card.dataset.cyclerInit === '1') return;   // 중복 방지
+      const imgs = card.querySelectorAll('.hover-img');
+      if (imgs.length === 0) return;
+      card.dataset.cyclerInit = '1';
+      let idx = 0;
+      let timer = null;
+      const show = (i) => imgs.forEach((im, k) => {
+        im.style.opacity = (k === i) ? '1' : '0';
+      });
+      card.addEventListener('mouseenter', () => {
+        if (timer) clearInterval(timer);
+        idx = 0;
+        show(0);
+        if (imgs.length > 1) {
+          timer = setInterval(() => {
+            idx = (idx + 1) % imgs.length;
+            show(idx);
+          }, 2300);
+        }
+      });
+      card.addEventListener('mouseleave', () => {
+        if (timer) { clearInterval(timer); timer = null; }
+        imgs.forEach(im => { im.style.opacity = '0'; });
+      });
+    });
+  }
+  initCardCyclers();
+  document.addEventListener('astro:page-load', initCardCyclers);
+</script>

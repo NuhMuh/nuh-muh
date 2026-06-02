@@ -15,6 +15,7 @@ const works = defineCollection({
     isComing: z.boolean().default(false),
     done: z.boolean().default(false),
     slotSize: z.number().default(4),
+    hoverImages: z.array(z.string()).default([]),
     order: z.number().default(99),
   }),
 });

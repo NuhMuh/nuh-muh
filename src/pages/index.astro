@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Masthead from '../components/Masthead.astro';
-import SpotlightCard from '../components/SpotlightCard.astro';
 import WorkCard from '../components/WorkCard.astro';
 import LatestAside from '../components/LatestAside.astro';
 import InterviewBand from '../components/InterviewBand.astro';
@@ -22,10 +21,10 @@ for (const article of allArticles) {
   articleCountMap.set(article.data.work, (articleCountMap.get(article.data.work) || 0) + 1);
 }
 
-const spotlightArticles = allArticles
-  .filter(a => a.data.work === spotlightEntry?.id)
-  .sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
-const spotlightLead = spotlightArticles.find(a => a.data.isLead) || spotlightArticles[0];
+// 최신 글이 올라온 작품 = 스포트라이트
+const articlesByDate = [...allArticles].sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
+const latestArticle = articlesByDate[0];
+const spotlightWorkId = latestArticle ? latestArticle.data.work : (spotlightEntry ? spotlightEntry.id : null);
 
 function toWork(entry: CollectionEntry<'works'>, excerpt?: string) {
   return {
@@ -41,6 +40,8 @@ function toWork(entry: CollectionEntry<'works'>, excerpt?: string) {
     excerpt,
     isComing: entry.data.isComing,
     slotSize: entry.data.slotSize,
+    hoverImages: entry.data.hoverImages,
+    articleTitles: allArticles.filter(a => a.data.work === entry.id).sort((a,b)=>new Date(b.data.date).getTime()-new Date(a.data.date).getTime()).map(a => a.data.title),
   };
 }
 
@@ -64,7 +65,8 @@ function fillSlots(works: CollectionEntry<'works'>[], slotCount: number) {
   return slots;
 }
 
-const spotlight = spotlightEntry ? toWork(spotlightEntry, spotlightLead?.data.excerpt) : null;
+const spotlightWorkEntry = sorted.find(w => w.id === spotlightWorkId);
+const spotlight = spotlightWorkEntry ? toWork(spotlightWorkEntry) : null;
 const progressSlots = fillSlots(inProgress, 12);
 const completedSlots = fillSlots(completed, 18);
 ---
@@ -74,7 +76,7 @@ const completedSlots = fillSlots(completed, 18);
     <Masthead />
 
     <div class="top-grid">
-      {spotlight && <SpotlightCard work={spotlight} revealClass="reveal-2" />}
+      {spotlight && <div class="spotlight-wrap"><WorkCard work={spotlight} isSpotlight={true} /></div>}
       <LatestAside />
     </div>
 
@@ -106,7 +108,10 @@ const completedSlots = fillSlots(completed, 18);
     grid-template-columns: repeat(12, 1fr);
     gap: 1.1rem;
     padding: 1rem 0 1.2rem;
+    align-items: stretch;
   }
+  .spotlight-wrap { grid-column: span 8; display: flex; }
+  .spotlight-wrap :global(.card) { width: 100%; }
   .works-masonry {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
