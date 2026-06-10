@@ -1,0 +1,69 @@
+---
+import CardFan from './CardFan.astro';
+import DiscordCrack from './DiscordCrack.astro';
+---
+<aside class="side-panel">
+  <div class="sp-item sp-question">
+    <button class="question-trigger" id="question-trigger" aria-label="?">?</button>
+    <button class="signup-box" id="signup-box">가입</button>
+  </div>
+  <div class="sp-item sp-fan"><CardFan /></div>
+  <div class="sp-item sp-crack"><DiscordCrack /></div>
+</aside>
+
+<style>
+  .side-panel {
+    grid-column: span 3;
+    background: var(--paper-latest, var(--paper));
+    border: 1px solid var(--rule);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: space-evenly;
+    gap: 1rem;
+    padding: 1.6rem 1rem;
+  }
+  .sp-item { display: flex; align-items: center; justify-content: center; }
+
+  .sp-question { gap: 0.6rem; }
+  .question-trigger {
+    width: 2.6rem; height: 2.6rem;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent; border: none; cursor: pointer;
+    font-family: 'EB Garamond', serif;
+    font-size: 2rem; line-height: 1;
+    color: var(--ink-soft);
+    transition: color 0.4s, transform 0.4s, text-shadow 0.4s;
+    padding: 0;
+  }
+  .question-trigger:hover {
+    color: var(--mark);
+    transform: scale(1.15);
+    text-shadow: 0 0 16px rgba(139, 58, 46, 0.5);
+  }
+  .signup-box {
+    display: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase;
+    padding: 0.4rem 0.7rem;
+    background: var(--ink); color: var(--paper);
+    border: none; cursor: pointer;
+    transition: background 0.3s;
+  }
+  .signup-box.visible { display: inline-block; }
+  .signup-box:hover { background: var(--mark); }
+
+  /* 카드팬/균열: fixed 해제하되 자기 크기 유지 (relative) */
+  .sp-fan :global(.card-fan) {
+    position: relative !important;
+    left: auto !important; top: auto !important;
+    transform: none !important;
+  }
+  .sp-crack :global(.crk) {
+    position: relative !important;
+    left: auto !important; top: auto !important;
+    transform: none !important;
+  }
+
+  @media (max-width: 700px) {
+    .side-panel { grid-column: span 1; }
+  }
+</style>
