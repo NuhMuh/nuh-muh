@@ -4,13 +4,12 @@ import DiscordCrack from './DiscordCrack.astro';
 ---
 <aside class="side-panel">
   <div class="sp-item sp-question">
-    <button class="question-trigger" id="question-trigger" aria-label="?">?</button>
+    <button class="question-trigger" id="question-trigger" aria-label="구독 안내 열기">?</button>
     <button class="signup-box" id="signup-box">가입</button>
   </div>
   <div class="sp-item sp-fan"><CardFan /></div>
   <div class="sp-item sp-crack"><DiscordCrack /></div>
 </aside>
-
 <style>
   .side-panel {
     grid-column: span 3;
@@ -22,7 +21,6 @@ import DiscordCrack from './DiscordCrack.astro';
     padding: 3.5rem 1rem;
   }
   .sp-item { display: flex; align-items: center; justify-content: center; }
-
   .sp-question { gap: 0.6rem; }
   .question-trigger {
     width: 2.6rem; height: 2.6rem;
@@ -50,7 +48,6 @@ import DiscordCrack from './DiscordCrack.astro';
   }
   .signup-box.visible { display: inline-block; }
   .signup-box:hover { background: var(--mark); }
-
   /* 카드팬/균열: fixed 해제하되 자기 크기 유지 (relative) */
   .sp-fan :global(.card-fan) {
     position: relative !important;
@@ -62,8 +59,23 @@ import DiscordCrack from './DiscordCrack.astro';
     left: auto !important; top: auto !important;
     transform: none !important;
   }
-
   @media (max-width: 700px) {
     .side-panel { grid-column: span 1; }
   }
 </style>
+
+<script>
+  // 물음표 이스터에그: 가끔 신비한 기호로 바뀜 (페이지 로드마다 랜덤)
+  function initQuestionGlyph() {
+    const trigger = document.getElementById('question-trigger');
+    if (!trigger) return;
+    const GLYPHS = ['✦', '✧', '☽', '⚸', '⚹', '✶'];
+    const CHANCE = 0.25; // 25% 확률로 다른 기호
+    trigger.textContent = (Math.random() < CHANCE)
+      ? GLYPHS[Math.floor(Math.random() * GLYPHS.length)]
+      : '?';
+  }
+  if (document.readyState !== 'loading') initQuestionGlyph();
+  else document.addEventListener('DOMContentLoaded', initQuestionGlyph);
+  document.addEventListener('astro:page-load', initQuestionGlyph);
+</script>
