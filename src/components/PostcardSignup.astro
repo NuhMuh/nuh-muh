@@ -125,6 +125,17 @@
   .postcard.subscribed .postcard-form { display: none; }
   .postcard.subscribed .postcard-already { display: block; }
 
+  /* 전송 실패: 엽서 흔들림 */
+  .postcard.shake {
+    animation: postcard-shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  }
+  @keyframes postcard-shake {
+    10%, 90% { transform: translate(calc(-50% - 2px), -50%); }
+    20%, 80% { transform: translate(calc(-50% + 4px), -50%); }
+    30%, 50%, 70% { transform: translate(calc(-50% - 7px), -50%); }
+    40%, 60% { transform: translate(calc(-50% + 7px), -50%); }
+  }
+
   .spider-rig {
     position: fixed; top: 0; left: 50%;
     transform: translateX(-50%) translateY(-100%);
@@ -154,16 +165,13 @@
     width: 480px !important;
     max-width: 80vw;
   }
-  /* 내려옴 — 거미가 화면 중앙 엽서에 닿음 */
   .spider-rig.descending {
     transform: translateX(-50%) translateY(-37vh);
   }
-  /* 움켜쥐는 순간 */
   .spider-rig.grabbing {
     transform: translateX(-50%) translateY(-39vh) scale(1.02);
     transition: transform 0.25s ease;
   }
-  /* 엽서 들고 올라감 */
   .spider-rig.ascending {
     transform: translateX(-50%) translateY(-110vh);
     transition: transform 1.1s cubic-bezier(0.5, 0, 0.75, 0);
@@ -251,21 +259,47 @@
 
     form.addEventListener('submit', async function (e) {
       e.preventDefault();
-      if (!emailInput.value) return;
+      const email = emailInput.value;
+      if (!email) return;
 
-      // (가짜) 이메일 저장만, 실제 전송은 B-2에서
+      // 실제 전송 시도
+      let ok = false;
+      try {
+        const res = await fetch('/.netlify/functions/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email }),
+        });
+        ok = res.ok;
+      } catch (err) {
+        ok = false;
+      }
+
+      // 실패 → 엽서 흔들고 멈춤
+      if (!ok) {
+        const original = emailInput.placeholder;
+        postcard.classList.add('shake');
+        emailInput.value = '';
+        emailInput.placeholder = '잠시 후 다시 시도해주세요';
+        setTimeout(function () {
+          postcard.classList.remove('shake');
+        }, 500);
+        setTimeout(function () {
+          emailInput.placeholder = original;
+        }, 2600);
+        return;
+      }
+
+      // 성공 → 구독 표시 후 거미 시퀀스
       try { localStorage.setItem('nuhmuh_subscribed', 'true'); } catch (e2) {}
 
-      // 시퀀스 시작
       darken.classList.add('darkened');
-      await sleep(600);              // 어두워지는 거 충분히 보여줌
+      await sleep(600);
       spiderRig.classList.add('descending');
-      await sleep(950);              // 발이 내려옴
-      // 잡는 순간 — 움찔
+      await sleep(950);
       spiderRig.classList.add('grabbing');
       postcard.classList.add('grabbed');
       await sleep(400);
-      // 엽서를 거미 rig 안으로 옮겨 한 덩어리로 (안 어긋남)
       const carried = document.getElementById('carried-postcard');
       postcard.style.position = 'static';
       postcard.style.transform = 'none';
@@ -274,7 +308,6 @@
       postcard.style.left = 'auto';
       postcard.style.top = 'auto';
       carried.appendChild(postcard);
-      // 함께 올라감
       spiderRig.classList.remove('grabbing');
       spiderRig.classList.remove('descending');
       spiderRig.classList.add('ascending');
