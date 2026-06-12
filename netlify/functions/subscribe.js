@@ -33,27 +33,31 @@ export default async (req) => {
     });
   }
 
-  // 1. DB에 먼저 줄 추가 시도
-  const { error: dbError } = await supabase
+  // 환경변수 존재 여부 로그 (값은 안 찍음, 안전)
+  console.log('SUPABASE_URL exists:', !!process.env.SUPABASE_URL);
+  console.log('SUPABASE_SECRET_KEY exists:', !!process.env.SUPABASE_SECRET_KEY);
+
+  const { data, error: dbError } = await supabase
     .from('members')
-    .insert({ email: email });
+    .insert({ email: email })
+    .select();
+
+  console.log('insert data:', JSON.stringify(data));
+  console.log('insert error:', JSON.stringify(dbError));
 
   if (dbError) {
-    // 중복(unique 위반)이면 코드 23505 — "이미 다녀가셨습니다"
     if (dbError.code === '23505') {
       return new Response(JSON.stringify({ status: 'already' }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       });
     }
-    // 그 외 DB 오류 → 진짜 실패
-    return new Response(JSON.stringify({ error: 'DB error' }), {
+    return new Response(JSON.stringify({ error: 'DB error', detail: dbError.message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  // 2. 저장 성공 → 환영 메일 발송
   try {
     await resend.emails.send({
       from: 'Nuh-Muh <desk@nuh-muh.com>',
@@ -62,8 +66,7 @@ export default async (req) => {
       text: 'Nuh-Muh에 오신 것을 환영합니다.\n\n이 편지는 당신이 문을 지나쳤다는 표식입니다.\n곧, 책상 위에서 고른 이야기들이 당신에게 도착할 것입니다.\n\n— Nuh-Muh',
     });
   } catch (err) {
-    // 메일은 실패해도 가입(DB)은 됐으므로 성공으로 처리
-    // (메일 재발송은 추후 과제)
+    console.log('email error:', err.message);
   }
 
   return new Response(JSON.stringify({ status: 'ok' }), {
