@@ -32,10 +32,10 @@ export default async (req) => {
 
   try {
     await resend.emails.send({
-      from: '너머 편집실 <desk@nuh-muh.com>',
+      from: 'Nuh-Muh <desk@nuh-muh.com>',
       to: email,
       subject: '당신은 벽을 지나쳤습니다',
-      text: '너머에 오신 것을 환영합니다.\n\n이 편지는 당신이 문을 지나쳤다는 표식입니다.\n곧, 책상 위에서 고른 이야기들이 당신에게 도착할 것입니다.\n\n— 너머 편집실',
+      text: 'Nuh-Muh에 오신 것을 환영합니다.\n\n이 편지는 당신이 문을 지나쳤다는 표식입니다.\n곧, 책상 위에서 고른 이야기들이 당신에게 도착할 것입니다.\n\n— Nuh-Muh',
     });
 
     return new Response(JSON.stringify({ ok: true }), {
