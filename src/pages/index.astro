@@ -4,6 +4,7 @@ import Masthead from '../components/Masthead.astro';
 import WorkCard from '../components/WorkCard.astro';
 import SidePanel from '../components/SidePanel.astro';
 import PostcardSignup from '../components/PostcardSignup.astro';
+import JoinScroll from '../components/JoinScroll.astro';
 import InterviewCard from '../components/InterviewCard.astro';
 import CritiqueCard from '../components/CritiqueCard.astro';
 import { getCollection, type CollectionEntry } from 'astro:content';
@@ -105,6 +106,7 @@ const completedSlots = fillSlots(completed, 18);
   </div>
 
   <PostcardSignup />
+<JoinScroll />
 </BaseLayout>
 
 <style>

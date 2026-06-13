@@ -1,0 +1,181 @@
+---
+---
+<section class="join-scroll" id="join-scroll" aria-hidden="true">
+  <div class="scroll-paper" id="scroll-paper">
+    <div class="scroll-inner">
+      <p class="join-title">열쇠를 받는 자리</p>
+      <p class="join-sub">당신의 주소는 이미 우리에게 있습니다. 이제 봉인을 정하십시오.</p>
+      <form class="join-form" id="join-form">
+        <input type="email" id="join-email" placeholder="엽서에 남긴 주소" autocomplete="off" required />
+        <input type="text" id="join-nick" placeholder="불릴 이름" autocomplete="off" required />
+        <input type="password" id="join-pass" placeholder="봉인 (비밀번호)" autocomplete="off" required />
+        <button type="submit" class="join-submit">봉인한다</button>
+      </form>
+      <p class="join-msg" id="join-msg"></p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .join-scroll {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.7s cubic-bezier(0.5, 0, 0.3, 1);
+    padding: 0 1.2rem;
+  }
+  /* 1단계: 공간만 열림 (종이는 아직 clip으로 숨겨짐) */
+  .join-scroll.space {
+    max-height: 700px;
+    padding: 2rem 1.2rem 5rem;
+  }
+
+  .scroll-paper {
+    width: 100%;
+    max-width: 460px;
+    background: var(--paper);
+    border: 1px solid var(--rule-strong);
+    box-shadow: 0 20px 50px rgba(28, 35, 64, 0.22);
+    /* 위에서 아래로 풀려 내려오는 두루마리 — 처음엔 완전히 가려짐 */
+    clip-path: inset(0 0 100% 0);
+    transition: clip-path 1.1s cubic-bezier(0.45, 0.05, 0.3, 1);
+    position: relative;
+  }
+  /* 2단계: 종이가 풀려 내려옴 */
+  .join-scroll.unfurl .scroll-paper {
+    clip-path: inset(0 0 0 0);
+  }
+  .scroll-paper::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.05; mix-blend-mode: multiply;
+  }
+  /* 안쪽 액자선 (두 줄 테두리) */
+  .scroll-paper::after {
+    content: ''; position: absolute;
+    inset: 7px;
+    border: 1px solid var(--rule-strong);
+    pointer-events: none;
+  }
+
+  .scroll-inner {
+    padding: 3rem 2.5rem 2.8rem;
+    text-align: center;
+  }
+  .join-title {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 1.5rem; font-weight: 400;
+    color: var(--ink); margin-bottom: 0.8rem;
+  }
+  .join-sub {
+    font-family: 'EB Garamond', serif; font-style: italic;
+    font-size: 1rem; color: var(--ink-soft);
+    margin-bottom: 2.2rem; line-height: 1.6;
+  }
+  .join-form {
+    display: flex; flex-direction: column; gap: 1rem;
+    align-items: stretch;
+  }
+  .join-form input {
+    font-family: 'EB Garamond', serif;
+    font-size: 1rem; padding: 0.8rem 1rem;
+    background: transparent;
+    border: none; border-bottom: 1px solid var(--rule-strong);
+    color: var(--ink); text-align: center;
+    outline: none; transition: border-color 0.3s;
+  }
+  .join-form input:focus { border-color: var(--mark); }
+  .join-form input::placeholder { color: var(--ink-faint); font-style: italic; }
+  .join-submit {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; letter-spacing: 0.25em; text-transform: uppercase;
+    padding: 0.9rem; margin-top: 0.6rem;
+    background: var(--ink); color: var(--paper);
+    border: none; cursor: pointer;
+    transition: background 0.3s;
+  }
+  .join-submit:hover { background: var(--mark); }
+  .join-msg {
+    font-family: 'EB Garamond', serif; font-style: italic;
+    font-size: 0.95rem; color: var(--ink-faint);
+    margin-top: 1.2rem; min-height: 1.2em;
+  }
+</style>
+
+<script>
+  function initJoinScroll() {
+    const section = document.getElementById('join-scroll');
+    const trigger = document.getElementById('signup-box');
+    if (!section || !trigger) return;
+
+    trigger.addEventListener('click', function () {
+      // 1단계: 빈 공간 열기
+      section.classList.add('space');
+      section.setAttribute('aria-hidden', 'false');
+      // 공간 펼침(0.7s)이 끝난 뒤 스크롤 — 페이지가 다 길어진 후라야 끝까지 감
+      setTimeout(function () {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      }, 750);
+      // 2단계: 스크롤 도착 후 종이 펼침
+      setTimeout(function () {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        section.classList.add('unfurl');
+      }, 1500);
+    });
+
+    // 폼 제출 → join 함수 호출
+    const form = document.getElementById('join-form');
+    const msg = document.getElementById('join-msg');
+    const emailEl = document.getElementById('join-email');
+    const nickEl = document.getElementById('join-nick');
+    const passEl = document.getElementById('join-pass');
+
+    if (form) {
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        msg.style.color = '';
+        msg.textContent = '봉인하는 중...';
+
+        let result = 'error';
+        try {
+          const res = await fetch('/.netlify/functions/join', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: emailEl.value,
+              password: passEl.value,
+              nickname: nickEl.value,
+            }),
+          });
+          const data = await res.json();
+          result = data.status;
+        } catch (err) {
+          result = 'error';
+        }
+
+        if (result === 'ok') {
+          msg.textContent = '봉인되었습니다. 당신은 이제 열쇠를 가졌습니다.';
+          form.style.display = 'none';
+          try { localStorage.setItem('nuhmuh_logged_in', 'true'); } catch (e2) {}
+        } else if (result === 'not_initiate') {
+          msg.textContent = '당신은 아직 벽을 지나지 않았습니다. 먼저 엽서를 남기십시오.';
+        } else if (result === 'already_keyholder') {
+          msg.textContent = '당신은 이미 열쇠를 가지셨습니다.';
+        } else if (result === 'weak_password') {
+          msg.textContent = '봉인은 여섯 글자 이상이어야 합니다.';
+        } else if (result === 'no_nickname') {
+          msg.textContent = '불릴 이름을 적으십시오.';
+        } else if (result === 'invalid_email') {
+          msg.textContent = '올바른 주소가 아닙니다.';
+        } else {
+          msg.textContent = '봉인에 실패했습니다. 잠시 후 다시 시도하십시오.';
+        }
+      });
+    }
+  }
+  if (document.readyState !== 'loading') initJoinScroll();
+  else document.addEventListener('DOMContentLoaded', initJoinScroll);
+  document.addEventListener('astro:page-load', initJoinScroll);
+</script>
