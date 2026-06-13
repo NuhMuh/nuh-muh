@@ -159,8 +159,11 @@
           msg.textContent = '봉인되었습니다. 당신은 이제 열쇠를 가졌습니다.';
           form.style.display = 'none';
           try { localStorage.setItem('nuhmuh_logged_in', 'true'); } catch (e2) {}
-          // 메시지 잠깐 보여준 뒤 새로고침 → 균열 등장 + 폼 사라짐
-          setTimeout(function () { location.reload(); }, 2200);
+          // 메시지 잠깐 보여준 뒤 맨 위로 올라가서 새로고침 → 균열 등장 보임
+          setTimeout(function () {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(function () { location.reload(); }, 900);
+          }, 1600);
         } else if (result === 'not_initiate') {
           msg.textContent = '당신은 아직 벽을 지나지 않았습니다. 먼저 엽서를 남기십시오.';
         } else if (result === 'already_keyholder') {
