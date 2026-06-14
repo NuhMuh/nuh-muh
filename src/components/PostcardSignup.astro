@@ -262,45 +262,65 @@
       const email = emailInput.value;
       if (!email) return;
 
-      // 전송 시도
-      let result = 'fail';
+      // 확인 중 표시
+      const submitBtn = form.querySelector('.postcard-submit');
+      const origBtnText = submitBtn ? submitBtn.textContent : '';
+      if (submitBtn) { submitBtn.textContent = '확인하는 중...'; submitBtn.disabled = true; }
+
+      // 상태 조회
+      let state = 'error';
       try {
-        const res = await fetch('/.netlify/functions/subscribe', {
+        const res = await fetch('/.netlify/functions/check', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: email }),
         });
-        if (res.ok) {
-          const data = await res.json();
-          result = data.status; // 'ok' 또는 'already'
-        } else {
-          result = 'fail';
-        }
+        const data = await res.json();
+        state = data.state;
       } catch (err) {
-        result = 'fail';
+        state = 'error';
       }
 
-      // 이미 가입된 이메일 → 흔들림 대신 "이미 다녀가셨습니다"
-      if (result === 'already') {
+      if (submitBtn) { submitBtn.textContent = origBtnText; submitBtn.disabled = false; }
+
+      // invalid/error → 흔들기
+      if (state === 'invalid' || state === 'error') {
+        const original = emailInput.placeholder;
+        postcard.classList.add('shake');
+        emailInput.value = '';
+        emailInput.placeholder = (state === 'invalid') ? '올바른 주소가 아닙니다' : '잠시 후 다시 시도해주세요';
+        setTimeout(function () { postcard.classList.remove('shake'); }, 500);
+        setTimeout(function () { emailInput.placeholder = original; }, 2600);
+        return;
+      }
+
+      // initiate → 이미 다녀감 + 가입 버튼
+      if (state === 'initiate') {
         try { localStorage.setItem('nuhmuh_subscribed', 'true'); } catch (e2) {}
         postcard.classList.add('subscribed');
         refreshSignupBox();
         return;
       }
 
-      // 진짜 실패 → 엽서 흔들기
-      if (result !== 'ok') {
-        const original = emailInput.placeholder;
-        postcard.classList.add('shake');
-        emailInput.value = '';
-        emailInput.placeholder = '잠시 후 다시 시도해주세요';
-        setTimeout(function () { postcard.classList.remove('shake'); }, 500);
-        setTimeout(function () { emailInput.placeholder = original; }, 2600);
+      // keyholder → (임시) 메시지만. 로그인 폼은 다음 단계
+      if (state === 'keyholder') {
+        try { localStorage.setItem('nuhmuh_subscribed', 'true'); } catch (e2) {}
+        textEl.textContent = '이미 열쇠를 가진 분이군요.';
+        form.style.display = 'none';
         return;
       }
 
-      // 새 가입 성공 → 구독 표시 후 거미 시퀀스
+      // new → 거미 시퀀스 (신규 가입)
       try { localStorage.setItem('nuhmuh_subscribed', 'true'); } catch (e2) {}
+
+      // DB에 실제 등록은 거미 시퀀스 중 subscribe 함수가 함 — 기존 흐름 유지
+      try {
+        await fetch('/.netlify/functions/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email }),
+        });
+      } catch (err) {}
 
       darken.classList.add('darkened');
       await sleep(600);
