@@ -214,14 +214,14 @@
   @keyframes card-part {
     0% {
       opacity: 1;
-      -webkit-mask-image: linear-gradient(to right, #000 0%, #000 100%);
-      mask-image: linear-gradient(to right, #000 0%, #000 100%);
+      -webkit-mask-image: linear-gradient(to right, #000 0%, #000 42%, #000 58%, #000 100%);
+      mask-image: linear-gradient(to right, #000 0%, #000 42%, #000 58%, #000 100%);
     }
     60% { opacity: 1; }
     100% {
       opacity: 0;
-      -webkit-mask-image: linear-gradient(to right, transparent 48%, #000 48%, #000 52%, transparent 52%);
-      mask-image: linear-gradient(to right, transparent 48%, #000 48%, #000 52%, transparent 52%);
+      -webkit-mask-image: linear-gradient(to right, #000 0%, transparent 42%, transparent 58%, #000 100%);
+      mask-image: linear-gradient(to right, #000 0%, transparent 42%, transparent 58%, #000 100%);
     }
   }
 
@@ -241,7 +241,7 @@
   }
   .login-box.show {
     display: flex;
-    animation: login-fade 1s ease forwards;
+    animation: login-fade 2s ease forwards;
   }
   @keyframes login-fade {
     0%   { opacity: 0; transform: translate(-50%, calc(-50% + 10px)); }
