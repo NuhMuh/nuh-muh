@@ -344,7 +344,7 @@
     return new Promise(function (resolve) { setTimeout(resolve, ms); });
   }
 
-  document.addEventListener('DOMContentLoaded', function () {
+  function initPostcard() {
     const stage = document.getElementById('postcard-stage');
     const darken = document.getElementById('stage-darken');
     const postcard = document.getElementById('postcard');
@@ -566,5 +566,9 @@
       closePostcard();
       refreshSignupBox();
     });
-  });
+  }
+  // 모듈 스크립트는 이미 DOM 로드 후 실행됨 → 바로/대기 양쪽 대응
+  if (document.readyState !== 'loading') initPostcard();
+  else document.addEventListener('DOMContentLoaded', initPostcard);
+  document.addEventListener('astro:page-load', initPostcard);
 </script>
