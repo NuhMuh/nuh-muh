@@ -11,6 +11,13 @@
       <button type="submit" class="postcard-submit">남긴다</button>
     </form>
     <p class="postcard-already" id="postcard-already">이미 한 번 다녀가셨습니다.</p>
+    <form class="login-form" id="login-form">
+      <p class="login-title">열쇠를 맞춰 주십시오.</p>
+      <input type="email" id="login-email" autocomplete="off" readonly />
+      <input type="password" id="login-pass" placeholder="봉인 (비밀번호)" autocomplete="off" required />
+      <button type="submit" class="postcard-submit">연다</button>
+      <p class="login-msg" id="login-msg"></p>
+    </form>
   </div>
 
   <div class="spider-rig" id="spider-rig" aria-hidden="true">
@@ -198,6 +205,60 @@
     .postcard { padding: 2.8rem 1.8rem 2.2rem; }
     .foot img { width: 90px; }
   }
+  /* keyholder: 엽서 본문이 가운데→양옆으로 흐려지며 열림 */
+  .postcard.splitting .postcard-text,
+  .postcard.splitting .postcard-form,
+  .postcard.splitting .postcard-already {
+    animation: paper-part 1.1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+  @keyframes paper-part {
+    0% {
+      opacity: 1;
+      -webkit-mask-image: linear-gradient(to right, #000 0%, #000 100%);
+      mask-image: linear-gradient(to right, #000 0%, #000 100%);
+    }
+    100% {
+      opacity: 0;
+      -webkit-mask-image: linear-gradient(to right, transparent 45%, #000 45%, #000 55%, transparent 55%);
+      mask-image: linear-gradient(to right, transparent 45%, #000 45%, #000 55%, transparent 55%);
+      letter-spacing: 0.3em;
+    }
+  }
+
+  /* 로그인 폼 — 평소 숨김, show-login일 때 떠오름 */
+  .login-form {
+    display: none;
+    flex-direction: column; gap: 0.9rem;
+    align-items: stretch;
+  }
+  .postcard.show-login .login-form { display: flex; animation: login-rise 0.9s ease forwards; }
+  .postcard.show-login .postcard-text,
+  .postcard.show-login .postcard-form,
+  .postcard.show-login .postcard-already { display: none; }
+  @keyframes login-rise {
+    0%   { opacity: 0; transform: translateY(12px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  .login-title {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 1.3rem; font-weight: 400;
+    color: var(--ink); margin-bottom: 1.4rem;
+  }
+  .login-form input {
+    font-family: 'EB Garamond', serif;
+    font-size: 1rem; padding: 0.8rem 1rem;
+    background: transparent;
+    border: none; border-bottom: 1px solid var(--rule-strong);
+    color: var(--ink); text-align: center;
+    outline: none; transition: border-color 0.3s;
+  }
+  .login-form input:focus { border-color: var(--mark); }
+  .login-form input[readonly] { color: var(--ink-soft); cursor: default; }
+  .login-msg {
+    font-family: 'EB Garamond', serif; font-style: italic;
+    font-size: 0.9rem; color: var(--ink-faint);
+    margin-top: 0.8rem; min-height: 1.1em;
+  }
 </style>
 
 <script>
@@ -241,7 +302,7 @@
     function openPostcard() {
       const s = SENTENCES[Math.floor(Math.random() * SENTENCES.length)];
       textEl.textContent = s;
-      postcard.classList.remove('taken');
+      postcard.classList.remove('taken', 'splitting', 'show-login');
       spiderRig.classList.remove('descending', 'ascending', 'grabbing');
       residue.classList.remove('show');
       if (isSubscribed()) postcard.classList.add('subscribed');
@@ -302,11 +363,19 @@
         return;
       }
 
-      // keyholder → (임시) 메시지만. 로그인 폼은 다음 단계
+      // keyholder → 엽서 갈라짐 → 로그인 폼 등장
       if (state === 'keyholder') {
         try { localStorage.setItem('nuhmuh_subscribed', 'true'); } catch (e2) {}
-        textEl.textContent = '이미 열쇠를 가진 분이군요.';
-        form.style.display = 'none';
+        const loginEmail = document.getElementById('login-email');
+        if (loginEmail) loginEmail.value = email; // 이메일 자동완성
+        postcard.classList.add('splitting');
+        // 갈라짐 연출(1.1s) 끝난 뒤 로그인 폼 등장
+        setTimeout(function () {
+          postcard.classList.remove('splitting');
+          postcard.classList.add('show-login');
+          const lp = document.getElementById('login-pass');
+          if (lp) lp.focus();
+        }, 1100);
         return;
       }
 
