@@ -424,9 +424,8 @@
           return;
         }
 
-        // 로그인 성공 → 세션 저장됨. 균열 보이게 + 닫고 새로고침
+        // 로그인 성공 → Supabase 세션 저장됨. 새로고침하면 균열이 세션 보고 표시됨
         if (msgEl) msgEl.textContent = '문이 열립니다.';
-        try { localStorage.setItem('nuhmuh_logged_in', 'true'); } catch (e) {}
         setTimeout(function () {
           window.scrollTo({ top: 0, behavior: 'smooth' });
           setTimeout(function () { location.reload(); }, 800);

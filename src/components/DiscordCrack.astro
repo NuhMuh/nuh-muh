@@ -74,11 +74,15 @@ const DISCORD_URL = "https://discord.gg/your-invite";
 </style>
 
 <script>
-  function initCrk() {
+  import { supabase } from '../lib/supabaseClient.js';
+  async function initCrk() {
     const el = document.getElementById('discord-crack');
     if (!el) return;
     let loggedIn = false;
-    try { loggedIn = localStorage.getItem('nuhmuh_logged_in') === 'true'; } catch (e) {}
+    try {
+      const { data } = await supabase.auth.getSession();
+      loggedIn = !!(data && data.session);
+    } catch (e) {}
     el.classList.toggle('unlocked', loggedIn);
 
     if (loggedIn) {

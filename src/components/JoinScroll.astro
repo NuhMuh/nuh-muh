@@ -105,6 +105,7 @@
 </style>
 
 <script>
+  import { supabase } from '../lib/supabaseClient.js';
   function initJoinScroll() {
     const section = document.getElementById('join-scroll');
     const trigger = document.getElementById('signup-box');
@@ -156,10 +157,18 @@
         }
 
         if (result === 'ok') {
-          msg.textContent = '봉인되었습니다. 당신은 이제 열쇠를 가졌습니다.';
+          msg.textContent = '봉인되었습니다. 문을 엽니다...';
           form.style.display = 'none';
-          try { localStorage.setItem('nuhmuh_logged_in', 'true'); } catch (e2) {}
-          // 메시지 잠깐 보여준 뒤 맨 위로 올라가서 새로고침 → 균열 등장 보임
+          // 방금 만든 열쇠로 바로 로그인 → 세션 생성 (가입=자동 로그인)
+          const emailEl2 = document.getElementById('join-email');
+          const passEl2 = document.getElementById('join-pass');
+          try {
+            await supabase.auth.signInWithPassword({
+              email: emailEl2 ? emailEl2.value : '',
+              password: passEl2 ? passEl2.value : '',
+            });
+          } catch (e2) {}
+          // 세션 저장된 뒤 맨 위로 올라가서 새로고침 → 균열이 세션 보고 등장
           setTimeout(function () {
             window.scrollTo({ top: 0, behavior: 'smooth' });
             setTimeout(function () { location.reload(); }, 900);
