@@ -331,6 +331,7 @@
 </style>
 
 <script>
+  import { supabase } from '../lib/supabaseClient.js';
   const SENTENCES = [
     '당신은 벽을 지나쳤습니까, 문을 지나쳤습니까.',
     '여기까지 온 사람은 그리 많지 않습니다.',
@@ -396,6 +397,42 @@
     closeBtn.addEventListener('click', closePostcard);
     var loginClose = document.getElementById('login-close');
     if (loginClose) loginClose.addEventListener('click', closePostcard);
+
+    // 로그인 처리 — '연다' 버튼
+    var loginSubmit = document.getElementById('login-submit');
+    if (loginSubmit) {
+      loginSubmit.addEventListener('click', async function () {
+        const emailEl = document.getElementById('login-email');
+        const passEl = document.getElementById('login-pass');
+        const msgEl = document.getElementById('login-msg');
+        const email = emailEl ? emailEl.value : '';
+        const password = passEl ? passEl.value : '';
+        if (!password) { if (msgEl) msgEl.textContent = '봉인을 입력하십시오.'; return; }
+
+        if (msgEl) msgEl.textContent = '여는 중...';
+        loginSubmit.disabled = true;
+
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email, password: password,
+        });
+
+        loginSubmit.disabled = false;
+
+        if (error) {
+          if (msgEl) msgEl.textContent = '열쇠가 맞지 않습니다.';
+          if (passEl) { passEl.value = ''; passEl.focus(); }
+          return;
+        }
+
+        // 로그인 성공 → 세션 저장됨. 균열 보이게 + 닫고 새로고침
+        if (msgEl) msgEl.textContent = '문이 열립니다.';
+        try { localStorage.setItem('nuhmuh_logged_in', 'true'); } catch (e) {}
+        setTimeout(function () {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          setTimeout(function () { location.reload(); }, 800);
+        }, 1200);
+      });
+    }
 
     form.addEventListener('submit', async function (e) {
       e.preventDefault();
