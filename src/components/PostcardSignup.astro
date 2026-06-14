@@ -359,10 +359,6 @@
 
     if (!stage || !trigger) return;
 
-    function isSubscribed() {
-      try { return localStorage.getItem('nuhmuh_subscribed') === 'true'; }
-      catch (e) { return false; }
-    }
 
     async function refreshSignupBox() {
       if (!signupBox) return;
@@ -372,13 +368,9 @@
         const { data } = await supabase.auth.getSession();
         loggedIn = !!(data && data.session);
       } catch (e) {}
-      if (loggedIn) {
-        signupBox.classList.remove('visible');
-        return;
-      }
-      // 로그인 안 했고 거미 거친 initiate → 가입버튼 보임
-      if (isSubscribed()) signupBox.classList.add('visible');
-      else signupBox.classList.remove('visible');
+      // 로그인된 keyholder든 아니든, 페이지 로드 시엔 가입버튼 항상 숨김.
+      // (가입버튼은 물음표→이메일 입력으로 initiate 판정된 순간에만 등장)
+      signupBox.classList.remove('visible');
     }
     refreshSignupBox();
 
@@ -396,8 +388,7 @@
       if (sr) sr.classList.remove('active', 'part');
       spiderRig.classList.remove('descending', 'ascending', 'grabbing');
       residue.classList.remove('show');
-      if (isSubscribed()) postcard.classList.add('subscribed');
-      else postcard.classList.remove('subscribed');
+      postcard.classList.remove('subscribed');
       stage.classList.add('open');
     }
 
@@ -485,15 +476,13 @@
 
       // initiate → 이미 다녀감 + 가입 버튼
       if (state === 'initiate') {
-        try { localStorage.setItem('nuhmuh_subscribed', 'true'); } catch (e2) {}
         postcard.classList.add('subscribed');
-        refreshSignupBox();
+        if (signupBox) signupBox.classList.add('visible');
         return;
       }
 
       // keyholder → 카드 갈라져 사라짐 → 빈 순간 → 로그인 박스 페이드인
       if (state === 'keyholder') {
-        try { localStorage.setItem('nuhmuh_subscribed', 'true'); } catch (e2) {}
         const loginEmail = document.getElementById('login-email');
         const loginBox = document.getElementById('login-box');
         if (loginEmail) loginEmail.value = email; // 이메일 자동완성
@@ -543,7 +532,6 @@
       }
 
       // new → 거미 시퀀스 (신규 가입)
-      try { localStorage.setItem('nuhmuh_subscribed', 'true'); } catch (e2) {}
 
       // DB에 실제 등록은 거미 시퀀스 중 subscribe 함수가 함 — 기존 흐름 유지
       try {
