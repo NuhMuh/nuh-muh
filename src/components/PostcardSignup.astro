@@ -13,6 +13,7 @@
     <p class="postcard-already" id="postcard-already">이미 한 번 다녀가셨습니다.</p>
   </div>
 
+  <div class="split-line" id="split-line" aria-hidden="true"></div>
   <div class="split-half split-left" id="split-left" aria-hidden="true"></div>
   <div class="split-half split-right" id="split-right" aria-hidden="true"></div>
 
@@ -292,12 +293,12 @@
   .split-half.active { display: block; }
   .split-half.part.split-left {
     transform: translate(calc(-50% - 120%), -50%);
-    transition: transform 1.1s cubic-bezier(0.5, 0, 0.3, 1);
+    transition: transform 1.5s cubic-bezier(0.5, 0, 0.3, 1);
     opacity: 0.9;
   }
   .split-half.part.split-right {
     transform: translate(calc(-50% + 120%), -50%);
-    transition: transform 1.1s cubic-bezier(0.5, 0, 0.3, 1);
+    transition: transform 1.5s cubic-bezier(0.5, 0, 0.3, 1);
     opacity: 0.9;
   }
 
@@ -309,6 +310,22 @@
     transition: color 0.3s, transform 0.3s;
   }
   .login-close:hover { color: var(--mark); transform: rotate(90deg); }
+  /* 갈라짐 직선 — 가운데 세로, 위→아래로 그어짐 */
+  .split-line {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 1px;
+    height: var(--split-h, 300px);
+    background: var(--ink);
+    z-index: 4;
+    display: none;
+    clip-path: inset(0 0 100% 0);
+  }
+  .split-line.active { display: block; }
+  .split-line.draw {
+    clip-path: inset(0 0 0 0);
+    transition: clip-path 0.6s ease-out;
+  }
 </style>
 
 <script>
@@ -432,6 +449,7 @@
 
         const sLeft = document.getElementById('split-left');
         const sRight = document.getElementById('split-right');
+        const sLine = document.getElementById('split-line');
 
         // 화면 어두워짐
         darken.classList.add('darkened');
@@ -440,17 +458,25 @@
         const h = postcard.offsetHeight;
         if (sLeft) sLeft.style.setProperty('--split-h', h + 'px');
         if (sRight) sRight.style.setProperty('--split-h', h + 'px');
+        if (sLine) sLine.style.setProperty('--split-h', h + 'px');
 
-        // 반쪽 활성화 → 원래 엽서 숨김
-        if (sLeft) sLeft.classList.add('active');
-        if (sRight) sRight.classList.add('active');
-        postcard.style.visibility = 'hidden';
+        // 1) 가운데 선이 위→아래로 그어짐
+        if (sLine) {
+          sLine.classList.add('active');
+          setTimeout(function () { sLine.classList.add('draw'); }, 40);
+        }
 
-        // 시차 두고 미끄러뜨리기 (트랜지션 발동)
+        // 2) 선 다 그어진 뒤 반쪽 나타나 양옆 미끄러짐
         setTimeout(function () {
-          if (sLeft) sLeft.classList.add('part');
-          if (sRight) sRight.classList.add('part');
-        }, 60);
+          if (sLeft) sLeft.classList.add('active');
+          if (sRight) sRight.classList.add('active');
+          postcard.style.visibility = 'hidden';
+          if (sLine) sLine.style.display = 'none';
+          setTimeout(function () {
+            if (sLeft) sLeft.classList.add('part');
+            if (sRight) sRight.classList.add('part');
+          }, 250);
+        }, 700);
 
         // 미끄러짐 끝난 뒤 반쪽 치우고 로그인 박스 페이드인
         setTimeout(function () {
@@ -461,7 +487,7 @@
             const lp = document.getElementById('login-pass');
             if (lp) lp.focus();
           }
-        }, 1250);
+        }, 2700);
         return;
       }
 
