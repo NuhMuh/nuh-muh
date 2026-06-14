@@ -430,21 +430,38 @@
         const loginBox = document.getElementById('login-box');
         if (loginEmail) loginEmail.value = email; // 이메일 자동완성
 
-        // 1) 화면 어두워짐 + 카드 갈라져 사라짐 (1.1s)
-        darken.classList.add('darkened');
-        postcard.classList.add('splitting');
+        const sLeft = document.getElementById('split-left');
+        const sRight = document.getElementById('split-right');
 
-        // 2) 완전히 사라진 뒤 카드 숨기고, 빈 순간(0.3s) 두고 로그인 박스 페이드인
+        // 화면 어두워짐
+        darken.classList.add('darkened');
+
+        // 반쪽 높이를 원래 엽서에 맞춤
+        const h = postcard.offsetHeight;
+        if (sLeft) sLeft.style.setProperty('--split-h', h + 'px');
+        if (sRight) sRight.style.setProperty('--split-h', h + 'px');
+
+        // 반쪽 활성화 → 원래 엽서 숨김
+        if (sLeft) sLeft.classList.add('active');
+        if (sRight) sRight.classList.add('active');
+        postcard.style.visibility = 'hidden';
+
+        // 시차 두고 미끄러뜨리기 (트랜지션 발동)
         setTimeout(function () {
-          postcard.style.display = 'none';
-          setTimeout(function () {
-            if (loginBox) {
-              loginBox.classList.add('show');
-              const lp = document.getElementById('login-pass');
-              if (lp) lp.focus();
-            }
-          }, 300);
-        }, 1150);
+          if (sLeft) sLeft.classList.add('part');
+          if (sRight) sRight.classList.add('part');
+        }, 60);
+
+        // 미끄러짐 끝난 뒤 반쪽 치우고 로그인 박스 페이드인
+        setTimeout(function () {
+          if (sLeft) sLeft.classList.remove('active', 'part');
+          if (sRight) sRight.classList.remove('active', 'part');
+          if (loginBox) {
+            loginBox.classList.add('show');
+            const lp = document.getElementById('login-pass');
+            if (lp) lp.focus();
+          }
+        }, 1250);
         return;
       }
 
