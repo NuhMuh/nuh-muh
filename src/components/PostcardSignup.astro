@@ -564,7 +564,9 @@
       darken.classList.remove('darkened');
       await sleep(600);
       closePostcard();
-      refreshSignupBox();
+      // 방금 거미가 가져감 = 이 순간 initiate가 됨 → 가입버튼 등장
+      // (localStorage 저장 안 함 — 새로고침하면 사라지는 게 맞음)
+      if (signupBox) signupBox.classList.add('visible');
     });
   }
   // 모듈 스크립트는 이미 DOM 로드 후 실행됨 → 바로/대기 양쪽 대응
