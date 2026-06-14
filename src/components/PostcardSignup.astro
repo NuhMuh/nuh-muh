@@ -214,14 +214,13 @@
   @keyframes card-part {
     0% {
       opacity: 1;
-      -webkit-mask-image: linear-gradient(to right, #000 0%, #000 42%, #000 58%, #000 100%);
-      mask-image: linear-gradient(to right, #000 0%, #000 42%, #000 58%, #000 100%);
+      -webkit-mask-image: linear-gradient(to right, #000 49.5%, transparent 49.5%, transparent 50.5%, #000 50.5%);
+      mask-image: linear-gradient(to right, #000 49.5%, transparent 49.5%, transparent 50.5%, #000 50.5%);
     }
-    60% { opacity: 1; }
     100% {
-      opacity: 0;
-      -webkit-mask-image: linear-gradient(to right, #000 0%, transparent 42%, transparent 58%, #000 100%);
-      mask-image: linear-gradient(to right, #000 0%, transparent 42%, transparent 58%, #000 100%);
+      opacity: 0.85;
+      -webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 50%, transparent 50%, transparent 100%);
+      mask-image: linear-gradient(to right, transparent 0%, transparent 50%, transparent 50%, transparent 100%);
     }
   }
 
@@ -381,7 +380,8 @@
         const loginBox = document.getElementById('login-box');
         if (loginEmail) loginEmail.value = email; // 이메일 자동완성
 
-        // 1) 카드 갈라져 사라짐 (1.1s)
+        // 1) 화면 어두워짐 + 카드 갈라져 사라짐 (1.1s)
+        darken.classList.add('darkened');
         postcard.classList.add('splitting');
 
         // 2) 완전히 사라진 뒤 카드 숨기고, 빈 순간(0.3s) 두고 로그인 박스 페이드인
