@@ -364,8 +364,21 @@
       catch (e) { return false; }
     }
 
-    function refreshSignupBox() {
-      if (signupBox && isSubscribed()) signupBox.classList.add('visible');
+    async function refreshSignupBox() {
+      if (!signupBox) return;
+      // 로그인(세션)된 keyholder → 가입버튼 숨김
+      let loggedIn = false;
+      try {
+        const { data } = await supabase.auth.getSession();
+        loggedIn = !!(data && data.session);
+      } catch (e) {}
+      if (loggedIn) {
+        signupBox.classList.remove('visible');
+        return;
+      }
+      // 로그인 안 했고 거미 거친 initiate → 가입버튼 보임
+      if (isSubscribed()) signupBox.classList.add('visible');
+      else signupBox.classList.remove('visible');
     }
     refreshSignupBox();
 
