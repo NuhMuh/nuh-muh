@@ -2,28 +2,26 @@
 ---
 <button class="gate" id="gothic-gate" aria-label="열쇠를 가진 자의 방">
   <svg class="gate-svg" viewBox="0 0 100 130" aria-hidden="true">
-    <!-- 바깥 첨두아치 프레임 (뾰족하게) -->
+    <!-- 첨두아치 문틀 (바깥, 고정) -->
     <path class="gate-frame" d="M12 130 L12 50 L50 6 L88 50 L88 130 Z"
       fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round"/>
 
-    <!-- 아치 꼭대기 안쪽: 장미창 모티프 -->
+    <!-- 아치 꼭대기 장미창 -->
     <circle class="gate-rose" cx="50" cy="40" r="7" fill="none" stroke="var(--ink)" stroke-width="1.2"/>
     <path class="gate-rose" d="M50 33 L50 47 M43 40 L57 40 M45 35 L55 45 M55 35 L45 45"
       stroke="var(--ink)" stroke-width="0.8" opacity="0.8"/>
 
-    <!-- 가운데 분할선 -->
-    <line class="gate-split" x1="50" y1="52" x2="50" y2="130" stroke="var(--ink)" stroke-width="1.5"/>
+    <!-- 문짝 한 짝 (살짝 안쪽, 왼쪽 경첩) -->
+    <path class="gate-leaf" d="M18 124 L18 54 L50 18 L82 54 L82 124 Z"
+      fill="none" stroke="var(--ink)" stroke-width="1.6" stroke-linejoin="round"/>
 
-    <!-- 왼쪽 문짝 트레이서리: 작은 첨두아치 -->
-    <path class="leaf-deco" d="M20 122 L20 72 L35 58 L46 70 L46 122 Z"
-      fill="none" stroke="var(--ink)" stroke-width="1" opacity="0.65"/>
-    <!-- 오른쪽 문짝 트레이서리 -->
-    <path class="leaf-deco" d="M80 122 L80 72 L65 58 L54 70 L54 122 Z"
-      fill="none" stroke="var(--ink)" stroke-width="1" opacity="0.65"/>
+    <!-- 문짝 안 트레이서리: 작은 첨두아치 -->
+    <path class="leaf-deco" d="M30 116 L30 66 L50 42 L70 66 L70 116 Z"
+      fill="none" stroke="var(--ink)" stroke-width="1" opacity="0.6"/>
+    <line class="leaf-deco" x1="50" y1="44" x2="50" y2="116" stroke="var(--ink)" stroke-width="0.8" opacity="0.5"/>
 
-    <!-- 손잡이 (양쪽 가운데 가까이) -->
-    <circle cx="44" cy="92" r="2.2" fill="var(--ink)"/>
-    <circle cx="56" cy="92" r="2.2" fill="var(--ink)"/>
+    <!-- 손잡이 (오른쪽, 여는 쪽) -->
+    <circle cx="74" cy="92" r="2.4" fill="var(--ink)"/>
   </svg>
 </button>
 
