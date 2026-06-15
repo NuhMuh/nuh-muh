@@ -1,0 +1,110 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Masthead from '../../components/Masthead.astro';
+---
+<BaseLayout title="방 — Nuh-Muh">
+  <div class="container">
+    <Masthead />
+    <div class="room-wrap" id="room-wrap" style="opacity:0;">
+      <a href="/" class="back">← 돌아가기</a>
+      <h1 class="room-title">방 <span>Room</span></h1>
+      <p class="room-greet" id="room-greet">열쇠를 가진 이여.</p>
+
+      <ul class="room-list">
+        <li class="room-item disabled">
+          <span class="ri-label">이름</span>
+          <span class="ri-sub" id="ri-nick">—</span>
+        </li>
+        <li class="room-item disabled">
+          <span class="ri-label">계정 정보</span>
+          <span class="ri-sub">곧 열립니다</span>
+        </li>
+        <li class="room-item disabled">
+          <span class="ri-label">신분</span>
+          <span class="ri-sub">곧 열립니다</span>
+        </li>
+        <li class="room-item disabled">
+          <span class="ri-label">구독</span>
+          <span class="ri-sub">곧 열립니다</span>
+        </li>
+        <li class="room-item disabled">
+          <span class="ri-label">발자취</span>
+          <span class="ri-sub">곧 열립니다</span>
+        </li>
+        <li class="room-item logout" id="logout-item">
+          <span class="ri-label">나가기</span>
+          <span class="ri-sub">열쇠를 내려놓고 떠납니다</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .room-wrap { max-width: 720px; margin: 0 auto; padding: 2rem 0 6rem; transition: opacity 0.6s ease; }
+  .back { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.15em; color: var(--ink-soft); text-decoration: none; display: inline-block; margin-bottom: 3rem; }
+  .back:hover { color: var(--mark); }
+  .room-title { font-family: 'Noto Serif KR', serif; font-weight: 500; font-size: 2.6rem; margin-bottom: 0.6rem; }
+  .room-title span { font-family: 'Cormorant Unicase', serif; color: var(--mark); font-size: 1.6rem; margin-left: 0.5rem; }
+  .room-greet { font-family: 'EB Garamond', serif; font-style: italic; font-size: 1.1rem; color: var(--ink-soft); margin-bottom: 2.8rem; }
+  .room-list { list-style: none; }
+  .room-item { display: flex; align-items: baseline; gap: 1.2rem; padding: 1.4rem 0; border-bottom: 1px solid var(--rule); }
+  .ri-label { font-family: 'Noto Serif KR', serif; font-size: 1.3rem; color: var(--ink); min-width: 8rem; }
+  .ri-sub { font-family: 'EB Garamond', serif; font-size: 0.95rem; color: var(--ink-faint); }
+  .room-item.disabled { opacity: 0.5; }
+  .room-item.logout { cursor: pointer; transition: padding-left 0.3s; }
+  .room-item.logout:hover { padding-left: 0.6rem; }
+  .room-item.logout:hover .ri-label { color: var(--mark); }
+</style>
+
+<script>
+  import { supabase } from '../../lib/supabaseClient.js';
+
+  async function initRoom() {
+    const wrap = document.getElementById('room-wrap');
+    // 로그인 검사 — 세션 없으면 메인으로 돌려보냄
+    let session = null;
+    try {
+      const { data } = await supabase.auth.getSession();
+      session = data ? data.session : null;
+    } catch (e) {}
+
+    if (!session) {
+      window.location.href = '/';
+      return;
+    }
+
+    // 로그인됨 → 닉네임 표시
+    const email = session.user ? session.user.email : '';
+    let nick = '';
+    try {
+      const { data: member } = await supabase
+        .from('members').select('nickname').eq('email', email).maybeSingle();
+      nick = member && member.nickname ? member.nickname : '';
+    } catch (e) {}
+
+    const nickEl = document.getElementById('ri-nick');
+    const greetEl = document.getElementById('room-greet');
+    if (nick) {
+      if (nickEl) nickEl.textContent = nick;
+      if (greetEl) greetEl.textContent = nick + '님, 오셨습니까.';
+    }
+
+    if (wrap) wrap.style.opacity = '1';
+
+    // 나가기(로그아웃)
+    const logoutItem = document.getElementById('logout-item');
+    if (logoutItem) {
+      logoutItem.addEventListener('click', async function () {
+        const sub = logoutItem.querySelector('.ri-sub');
+        if (sub) sub.textContent = '문을 닫는 중...';
+        try { await supabase.auth.signOut(); } catch (e) {}
+        window.location.href = '/';
+      });
+    }
+  }
+
+  if (document.readyState !== 'loading') initRoom();
+  else document.addEventListener('DOMContentLoaded', initRoom);
+  document.addEventListener('astro:page-load', initRoom);
+</script>

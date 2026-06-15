@@ -81,7 +81,22 @@
     gate.classList.toggle('unlocked', loggedIn);
   }
 
-  if (document.readyState !== 'loading') initGate();
-  else document.addEventListener('DOMContentLoaded', initGate);
-  document.addEventListener('astro:page-load', initGate);
+  function bindGateClick() {
+    const gate = document.getElementById('gothic-gate');
+    if (gate && !gate.dataset.bound) {
+      gate.dataset.bound = 'true';
+      gate.addEventListener('click', function () {
+        window.location.href = '/room';
+      });
+    }
+  }
+
+  function initGateAll() {
+    initGate();
+    bindGateClick();
+  }
+
+  if (document.readyState !== 'loading') initGateAll();
+  else document.addEventListener('DOMContentLoaded', initGateAll);
+  document.addEventListener('astro:page-load', initGateAll);
 </script>
