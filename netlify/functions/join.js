@@ -72,6 +72,7 @@ export default async (req) => {
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
     email: email,
     password: password,
+    email_confirm: false,
     user_metadata: { nickname: nickname.trim() },
   });
 
