@@ -2,9 +2,16 @@
 ---
 <button class="gate" id="gothic-gate" aria-label="열쇠를 가진 자의 방">
   <svg class="gate-svg" viewBox="0 0 100 130" aria-hidden="true">
+    <defs>
+      <linearGradient id="gate-depth" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#0a0c14"/>
+        <stop offset="60%" stop-color="var(--ink)"/>
+        <stop offset="100%" stop-color="var(--ink)"/>
+      </linearGradient>
+    </defs>
     <!-- 문 안쪽 어둠 (문짝 뒤에 깔림) -->
     <path class="gate-dark" d="M18 124 L18 62 Q27 22 50 14 Q73 22 82 62 L82 124 Z"
-      fill="var(--ink)" opacity="0"/>
+      fill="url(#gate-depth)" opacity="0"/>
 
     <!-- 첨두아치 문틀 (고정) -->
     <path class="gate-frame" d="M12 130 L12 58 Q22 12 50 4 Q78 12 88 58 L88 130 Z"
@@ -34,7 +41,7 @@
   .gate.unlocked { display: block; }
   .gate-svg {
     width: 100%; height: 100%; display: block; overflow: visible;
-    perspective: 320px;
+    perspective: 170px;
   }
 
   /* 문짝: 왼쪽 모서리(경첩) 축으로 안쪽으로 회전하며 열림 */
@@ -44,7 +51,7 @@
     transition: transform 0.9s cubic-bezier(0.45, 0, 0.25, 1);
   }
   .gate:hover .gate-leaf-group {
-    transform: rotateY(-72deg);    /* 안쪽으로 젖혀짐 */
+    transform: rotateY(-64deg);    /* 안쪽으로 젖혀짐 */
   }
 
   /* 어둠: 문 열릴 때 드러남 */
