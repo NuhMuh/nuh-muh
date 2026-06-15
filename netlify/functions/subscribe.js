@@ -33,17 +33,12 @@ export default async (req) => {
     });
   }
 
-  // 환경변수 존재 여부 로그 (값은 안 찍음, 안전)
-  console.log('SUPABASE_URL exists:', !!process.env.SUPABASE_URL);
-  console.log('SUPABASE_SECRET_KEY exists:', !!process.env.SUPABASE_SECRET_KEY);
 
   const { data, error: dbError } = await supabase
     .from('members')
     .insert({ email: email })
     .select();
 
-  console.log('insert data:', JSON.stringify(data));
-  console.log('insert error:', JSON.stringify(dbError));
 
   if (dbError) {
     if (dbError.code === '23505') {
