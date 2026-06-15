@@ -72,7 +72,6 @@ export default async (req) => {
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
     email: email,
     password: password,
-    email_confirm: true,
     user_metadata: { nickname: nickname.trim() },
   });
 
@@ -91,7 +90,7 @@ export default async (req) => {
   // 3. members를 keyholder로 전환 + 닉네임 채움
   const { error: updateError } = await supabase
     .from('members')
-    .update({ status: 'keyholder', nickname: nickname.trim() })
+    .update({ status: 'pending', nickname: nickname.trim() })
     .eq('id', member.id);
 
   if (updateError) {
@@ -100,6 +99,16 @@ export default async (req) => {
     });
   }
 
+  // 4. 확인 메일 발송 (Supabase가 Resend SMTP 통해)
+  const { error: mailError } = await supabase.auth.resend({
+    type: 'signup',
+    email: email,
+  });
+  if (mailError) {
+    return new Response(JSON.stringify({ status: 'ok_no_mail', detail: mailError.message }), {
+      status: 200, headers: { 'Content-Type': 'application/json' },
+    });
+  }
   return new Response(JSON.stringify({ status: 'ok' }), {
     status: 200, headers: { 'Content-Type': 'application/json' },
   });
