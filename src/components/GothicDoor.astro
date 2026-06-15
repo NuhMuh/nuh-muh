@@ -41,17 +41,18 @@
   .gate.unlocked { display: block; }
   .gate-svg {
     width: 100%; height: 100%; display: block; overflow: visible;
-    perspective: 170px;
+    perspective: 200px;
+    perspective-origin: 50% 80%;
   }
 
   /* 문짝: 왼쪽 모서리(경첩) 축으로 안쪽으로 회전하며 열림 */
   .gate-leaf-group {
-    transform-origin: 18px 93px;   /* 왼쪽 경첩 라인 */
+    transform-origin: 18px 88px;   /* 왼쪽 경첩 라인 */
     transform: rotateY(0deg);
     transition: transform 0.9s cubic-bezier(0.45, 0, 0.25, 1);
   }
   .gate:hover .gate-leaf-group {
-    transform: rotateY(-64deg);    /* 안쪽으로 젖혀짐 */
+    transform: rotateY(-72deg);    /* 안쪽으로 젖혀짐 */
   }
 
   /* 어둠: 문 열릴 때 드러남 */
