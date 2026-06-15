@@ -1,0 +1,60 @@
+---
+---
+<button class="gate" id="gothic-gate" aria-label="열쇠를 가진 자의 방">
+  <svg class="gate-svg" viewBox="0 0 100 120" aria-hidden="true">
+    <!-- 바깥 고딕 아치 프레임 -->
+    <path class="gate-frame" d="M10 120 L10 45 Q10 10 50 4 Q90 10 90 45 L90 120 Z"
+      fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round"/>
+
+    <!-- 가운데 분할선 -->
+    <line class="gate-split" x1="50" y1="9" x2="50" y2="120" stroke="var(--ink)" stroke-width="1.5"/>
+
+    <!-- 왼쪽 문짝 장식: 뾰족 아치 모티프 -->
+    <path class="leaf-deco" d="M22 110 L22 60 Q22 40 48 34 L48 110 Z"
+      fill="none" stroke="var(--ink)" stroke-width="1.2" opacity="0.7"/>
+    <!-- 오른쪽 문짝 장식 -->
+    <path class="leaf-deco" d="M78 110 L78 60 Q78 40 52 34 L52 110 Z"
+      fill="none" stroke="var(--ink)" stroke-width="1.2" opacity="0.7"/>
+
+    <!-- 손잡이 (양쪽) -->
+    <circle cx="42" cy="78" r="2.5" fill="var(--ink)"/>
+    <circle cx="58" cy="78" r="2.5" fill="var(--ink)"/>
+  </svg>
+</button>
+
+<style>
+  .gate {
+    position: fixed; left: 0.6rem; top: 86%;
+    transform: translateY(-50%);
+    width: 112px; height: 112px;
+    background: none; border: none; padding: 0;
+    cursor: pointer;
+    display: none;
+    z-index: 70;
+  }
+  .gate.unlocked { display: block; }
+  .gate-svg { width: 100%; height: 100%; display: block; overflow: visible; }
+</style>
+
+<script>
+  import { supabase } from '../lib/supabaseClient.js';
+
+  function initGate() {
+    const gate = document.getElementById('gothic-gate');
+    if (!gate) return;
+    initGateSession(gate);
+  }
+
+  async function initGateSession(gate) {
+    let loggedIn = false;
+    try {
+      const { data } = await supabase.auth.getSession();
+      loggedIn = !!(data && data.session);
+    } catch (e) {}
+    gate.classList.toggle('unlocked', loggedIn);
+  }
+
+  if (document.readyState !== 'loading') initGate();
+  else document.addEventListener('DOMContentLoaded', initGate);
+  document.addEventListener('astro:page-load', initGate);
+</script>
