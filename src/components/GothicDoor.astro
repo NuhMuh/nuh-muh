@@ -2,17 +2,22 @@
 ---
 <button class="gate" id="gothic-gate" aria-label="열쇠를 가진 자의 방">
   <svg class="gate-svg" viewBox="0 0 100 130" aria-hidden="true">
-    <!-- 첨두아치 문틀: 가파른 곡선이 꼭대기에서 뾰족하게 -->
+    <!-- 문 안쪽 어둠 (문짝 뒤에 깔림) -->
+    <path class="gate-dark" d="M18 124 L18 62 Q27 22 50 14 Q73 22 82 62 L82 124 Z"
+      fill="var(--ink)" opacity="0"/>
+
+    <!-- 첨두아치 문틀 (고정) -->
     <path class="gate-frame" d="M12 130 L12 58 Q22 12 50 4 Q78 12 88 58 L88 130 Z"
       fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round"/>
-    <!-- 문짝 한 짝 (왼쪽 경첩), 가파른 곡선 첨두 -->
-    <path class="gate-leaf" d="M18 124 L18 62 Q27 22 50 14 Q73 22 82 62 L82 124 Z"
-      fill="none" stroke="var(--ink)" stroke-width="1.6" stroke-linejoin="round"/>
-    <!-- 문짝 안 트레이서리: 작은 첨두아치 -->
-    <path class="leaf-deco" d="M30 116 L30 70 Q37 44 50 38 Q63 44 70 70 L70 116 Z"
-      fill="none" stroke="var(--ink)" stroke-width="1" opacity="0.6"/>
-    <!-- 손잡이 (오른쪽, 여는 쪽) -->
-    <circle cx="73" cy="92" r="3.4" fill="var(--ink)"/>
+
+    <!-- 문짝 그룹 (왼쪽 경첩 축으로 열림) -->
+    <g class="gate-leaf-group">
+      <path class="gate-leaf" d="M18 124 L18 62 Q27 22 50 14 Q73 22 82 62 L82 124 Z"
+        fill="var(--paper)" stroke="var(--ink)" stroke-width="1.6" stroke-linejoin="round"/>
+      <path class="leaf-deco" d="M30 116 L30 70 Q37 44 50 38 Q63 44 70 70 L70 116 Z"
+        fill="none" stroke="var(--ink)" stroke-width="1" opacity="0.6"/>
+      <circle class="leaf-handle" cx="73" cy="92" r="3.4" fill="var(--ink)"/>
+    </g>
   </svg>
 </button>
 
@@ -27,7 +32,28 @@
     z-index: 70;
   }
   .gate.unlocked { display: block; }
-  .gate-svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .gate-svg {
+    width: 100%; height: 100%; display: block; overflow: visible;
+    perspective: 320px;
+  }
+
+  /* 문짝: 왼쪽 모서리(경첩) 축으로 안쪽으로 회전하며 열림 */
+  .gate-leaf-group {
+    transform-origin: 18px 93px;   /* 왼쪽 경첩 라인 */
+    transform: rotateY(0deg);
+    transition: transform 0.9s cubic-bezier(0.45, 0, 0.25, 1);
+  }
+  .gate:hover .gate-leaf-group {
+    transform: rotateY(-72deg);    /* 안쪽으로 젖혀짐 */
+  }
+
+  /* 어둠: 문 열릴 때 드러남 */
+  .gate-dark {
+    transition: opacity 0.9s ease;
+  }
+  .gate:hover .gate-dark {
+    opacity: 0.92;
+  }
 </style>
 
 <script>
