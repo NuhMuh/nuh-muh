@@ -481,6 +481,22 @@
         return;
       }
 
+      // pending → 가입했으나 미확인. 확인 편지 자동 재발송
+      if (state === 'pending') {
+        textEl.textContent = '봉인은 정해졌으나, 아직 문이 확인되지 않았습니다. 편지를 다시 보냅니다…';
+        form.style.display = 'none';
+        try {
+          await supabase.auth.resend({
+            type: 'signup',
+            email: email,
+            options: { emailRedirectTo: 'https://nuh-muh.com/welcome' },
+          });
+          textEl.textContent = '확인의 편지를 다시 보냈습니다. 메일함과 스팸함을 살펴 문을 여십시오.';
+        } catch (e) {
+          textEl.textContent = '편지를 다시 보내지 못했습니다. 잠시 후 다시 시도해 주십시오.';
+        }
+        return;
+      }
       // keyholder → 카드 갈라져 사라짐 → 빈 순간 → 로그인 박스 페이드인
       if (state === 'keyholder') {
         const loginEmail = document.getElementById('login-email');
