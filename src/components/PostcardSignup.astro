@@ -491,10 +491,34 @@
             email: email,
             options: { emailRedirectTo: 'https://nuh-muh.com/welcome' },
           });
-          textEl.textContent = '확인의 편지를 다시 보냈습니다. 메일함과 스팸함을 살피십시오. 편지의 문을 연 뒤 이 자리에 다시 주소를 남기면, 열쇠가 당신을 맞이합니다.';
+          textEl.textContent = '확인의 편지를 다시 보냈습니다. 메일함과 스팸함을 살피십시오. 편지의 문을 열면, 이 자리가 스스로 당신을 맞이합니다.';
         } catch (e) {
           textEl.textContent = '편지를 다시 보내지 못했습니다. 잠시 후 다시 시도해 주십시오.';
         }
+        // 폴링: 다른 곳에서 확인이 끝나면 이 화면이 감지해 새로고침
+        var pPollEmail = email;
+        var pPollCount = 0;
+        var pPollMax = 75; // 4초 * 75 = 약 5분
+        var pPollTimer = setInterval(async function () {
+          pPollCount++;
+          if (pPollCount > pPollMax) { clearInterval(pPollTimer); return; }
+          try {
+            const res = await fetch('/.netlify/functions/confirm', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: pPollEmail }),
+            });
+            const data = await res.json();
+            if (data.status === 'ok') {
+              clearInterval(pPollTimer);
+              textEl.textContent = '문이 열립니다…';
+              setTimeout(function () {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                setTimeout(function () { location.reload(); }, 900);
+              }, 1200);
+            }
+          } catch (e2) {}
+        }, 4000);
         return;
       }
       // keyholder → 카드 갈라져 사라짐 → 빈 순간 → 로그인 박스 페이드인
