@@ -104,6 +104,7 @@ export default async (req) => {
   const { error: mailError } = await supabase.auth.resend({
     type: 'signup',
     email: email,
+    options: { emailRedirectTo: 'https://nuh-muh.com/welcome' },
   });
   if (mailError) {
     return new Response(JSON.stringify({ status: 'ok_no_mail', detail: mailError.message }), {
