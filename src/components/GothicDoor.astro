@@ -39,6 +39,14 @@
     z-index: 70;
   }
   .gate.unlocked { display: block; }
+  /* 등장: 왼쪽에서 오른쪽으로 쓸리며 드러남 (세션 1회) */
+  .gate.revealing {
+    animation: gate-reveal 1.4s ease-out both;
+  }
+  @keyframes gate-reveal {
+    0%   { clip-path: inset(0 100% 0 0); }
+    100% { clip-path: inset(0 0 0 0); }
+  }
   .gate-svg {
     width: 100%; height: 100%; display: block; overflow: visible;
     perspective: 320px;
@@ -79,6 +87,20 @@
       loggedIn = !!(data && data.session);
     } catch (e) {}
     gate.classList.toggle('unlocked', loggedIn);
+
+    if (loggedIn) {
+      // 등장 연출: 세션당 1회만 (균열과 동일 방식)
+      let revealed = false;
+      try { revealed = sessionStorage.getItem('nuhmuh_gate_revealed') === 'true'; } catch (e) {}
+      if (!revealed) {
+        gate.classList.add('revealing');
+        try { sessionStorage.setItem('nuhmuh_gate_revealed', 'true'); } catch (e) {}
+        gate.addEventListener('animationend', () => gate.classList.remove('revealing'), { once: true });
+      }
+    } else {
+      gate.classList.remove('revealing');
+      try { sessionStorage.removeItem('nuhmuh_gate_revealed'); } catch (e) {}
+    }
   }
 
   function bindGateClick() {
