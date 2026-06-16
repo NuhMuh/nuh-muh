@@ -161,6 +161,7 @@
           form.style.display = 'none';
           // 폴링: 다른 화면/기기에서 확인이 끝나면 이 화면이 감지해 스스로 반영
           var pollEmail = emailEl.value;
+          var pollPassword = passEl.value;
           var pollCount = 0;
           var pollMax = 75; // 4초 * 75 = 약 5분
           var pollTimer = setInterval(async function () {
@@ -180,6 +181,12 @@
               if (data.status === 'ok') {
                 clearInterval(pollTimer);
                 msg.textContent = '문이 열립니다…';
+                // 확인 완료 → 이 화면이 갖고 있던 비번으로 로그인 → 세션 생성
+                try {
+                  await supabase.auth.signInWithPassword({
+                    email: pollEmail, password: pollPassword,
+                  });
+                } catch (e2) {}
                 setTimeout(function () {
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                   setTimeout(function () { location.reload(); }, 900);
