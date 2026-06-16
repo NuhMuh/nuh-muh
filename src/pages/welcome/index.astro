@@ -1,0 +1,73 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Masthead from '../../components/Masthead.astro';
+---
+<BaseLayout title="환영 — Nuh-Muh">
+  <div class="container">
+    <Masthead />
+    <div class="welcome-wrap" id="welcome-wrap">
+      <p class="welcome-state" id="welcome-state">문을 확인하는 중입니다…</p>
+      <div class="welcome-body" id="welcome-body" style="display:none;">
+        <h1 class="welcome-title">환영합니다 <span>Welcome</span></h1>
+        <p class="welcome-msg" id="welcome-msg">당신의 주소가 확인되었습니다. 이제 열쇠가 당신의 것입니다.</p>
+        <a href="/" class="welcome-enter">너머로 들어가기 →</a>
+      </div>
+      <div class="welcome-fail" id="welcome-fail" style="display:none;">
+        <p class="welcome-msg">확인을 마치지 못했습니다. 편지의 링크가 만료되었거나 이미 사용되었을 수 있습니다.</p>
+        <a href="/" class="welcome-enter">너머로 돌아가기 →</a>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .welcome-wrap { max-width: 640px; margin: 0 auto; padding: 4rem 0 6rem; text-align: center; }
+  .welcome-state { font-family: 'EB Garamond', serif; font-style: italic; font-size: 1.1rem; color: var(--ink-soft); }
+  .welcome-title { font-family: 'Noto Serif KR', serif; font-weight: 500; font-size: 2.6rem; margin-bottom: 1.2rem; }
+  .welcome-title span { font-family: 'Cormorant Unicase', serif; color: var(--mark); font-size: 1.6rem; margin-left: 0.5rem; }
+  .welcome-msg { font-family: 'Noto Serif KR', serif; font-weight: 300; font-size: 1.15rem; line-height: 1.7; color: var(--ink); margin-bottom: 2.5rem; }
+  .welcome-enter { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--rule-strong); padding-bottom: 0.3rem; transition: color 0.3s, border-color 0.3s; }
+  .welcome-enter:hover { color: var(--mark); border-color: var(--mark); }
+</style>
+
+<script>
+  import { supabase } from '../../lib/supabaseClient.js';
+
+  async function initWelcome() {
+    const stateEl = document.getElementById('welcome-state');
+    const bodyEl = document.getElementById('welcome-body');
+    const failEl = document.getElementById('welcome-fail');
+
+    // Supabase가 메일 링크의 토큰으로 세션을 만들었는지 확인
+    // (확인 성공 시 이 페이지 도착 시점에 세션이 생겨 있음)
+    let session = null;
+    for (let i = 0; i < 5; i++) {
+      try {
+        const { data } = await supabase.auth.getSession();
+        session = data ? data.session : null;
+      } catch (e) {}
+      if (session) break;
+      await new Promise(r => setTimeout(r, 400)); // 토큰 처리에 시간이 걸릴 수 있어 잠깐 대기 후 재확인
+    }
+
+    if (!session) {
+      // 확인 실패 (만료/재사용 등)
+      if (stateEl) stateEl.style.display = 'none';
+      if (failEl) failEl.style.display = 'block';
+      return;
+    }
+
+    // 확인됨 → members를 keyholder로 승격
+    const email = session.user ? session.user.email : '';
+    try {
+      await supabase.from('members').update({ status: 'keyholder' }).eq('email', email);
+    } catch (e) {}
+
+    if (stateEl) stateEl.style.display = 'none';
+    if (bodyEl) bodyEl.style.display = 'block';
+  }
+
+  if (document.readyState !== 'loading') initWelcome();
+  else document.addEventListener('DOMContentLoaded', initWelcome);
+  document.addEventListener('astro:page-load', initWelcome);
+</script>
