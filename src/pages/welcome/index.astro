@@ -56,10 +56,14 @@ import Masthead from '../../components/Masthead.astro';
       return;
     }
 
-    // 확인됨 → members를 keyholder로 승격
+    // 확인됨 → 서버 함수로 members를 keyholder로 승격 (RLS 때문에 서버에서)
     const email = session.user ? session.user.email : '';
     try {
-      await supabase.from('members').update({ status: 'keyholder' }).eq('email', email);
+      await fetch('/.netlify/functions/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email }),
+      });
     } catch (e) {}
 
     if (stateEl) stateEl.style.display = 'none';
