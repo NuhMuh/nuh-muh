@@ -132,8 +132,17 @@
     const emailEl = document.getElementById('join-email');
     const nickEl = document.getElementById('join-nick');
     if (nickEl) {
-      nickEl.addEventListener('input', function () {
+      var composing = false;
+      var normalizeNick = function () {
         nickEl.value = nickEl.value.toLowerCase().replace(/[^a-z0-9가-힣_-]/g, '');
+      };
+      nickEl.addEventListener('compositionstart', function () { composing = true; });
+      nickEl.addEventListener('compositionend', function () {
+        composing = false;
+        normalizeNick(); // 한글 조합이 끝난 뒤 정규화
+      });
+      nickEl.addEventListener('input', function () {
+        if (!composing) normalizeNick(); // 조합 중이 아닐 때(영문·숫자 등)만 즉시 정규화
       });
     }
     const passEl = document.getElementById('join-pass');
