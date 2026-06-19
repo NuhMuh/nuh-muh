@@ -35,8 +35,27 @@ export default async (req) => {
       status: 200, headers: { 'Content-Type': 'application/json' },
     });
   }
-  if (!nickname || !nickname.trim()) {
+  // 닉네임 정규화: 양끝 공백 제거 + 소문자 변환
+  nickname = (nickname || '').trim().toLowerCase();
+  if (!nickname) {
     return new Response(JSON.stringify({ status: 'no_nickname' }), {
+      status: 200, headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  // 형식: 영문소문자/숫자/한글/-/_ 만, 2~20자
+  if (!/^[a-z0-9가-힣_-]{2,20}$/.test(nickname)) {
+    return new Response(JSON.stringify({ status: 'bad_nickname' }), {
+      status: 200, headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  // 중복 검사
+  const { data: nickDup } = await supabase
+    .from('members')
+    .select('id')
+    .eq('nickname', nickname)
+    .maybeSingle();
+  if (nickDup) {
+    return new Response(JSON.stringify({ status: 'nickname_taken' }), {
       status: 200, headers: { 'Content-Type': 'application/json' },
     });
   }
@@ -73,7 +92,7 @@ export default async (req) => {
     email: email,
     password: password,
     email_confirm: false,
-    user_metadata: { nickname: nickname.trim() },
+    user_metadata: { nickname: nickname },
   });
 
   if (authError) {
@@ -91,7 +110,7 @@ export default async (req) => {
   // 3. members를 keyholder로 전환 + 닉네임 채움
   const { error: updateError } = await supabase
     .from('members')
-    .update({ status: 'pending', nickname: nickname.trim() })
+    .update({ status: 'pending', nickname: nickname })
     .eq('id', member.id);
 
   if (updateError) {
