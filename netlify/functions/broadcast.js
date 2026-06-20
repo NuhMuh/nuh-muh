@@ -9,6 +9,9 @@ const resend = new Resend(process.env.RESEND_BROADCAST_KEY);
 
 const FROM = 'Nuh-Muh <desk@nuh-muh.com>';
 
+// Resend 초당 2요청 제한 → 호출 사이 간격
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
 export default async (req) => {
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
@@ -71,7 +74,7 @@ export default async (req) => {
     recipients = members.map(m => m.email);
   }
 
-  // 3. Audience에 연락처 추가 (이미 있으면 무시, 수신거부 상태는 건드리지 않음)
+  // 3. Audience에 연락처 추가 (초당 2요청 제한 → 600ms 간격, 이미 있으면 무시)
   for (const email of recipients) {
     try {
       await resend.contacts.create({
@@ -82,7 +85,11 @@ export default async (req) => {
     } catch (e) {
       // 이미 존재 등 → 무시하고 계속
     }
+    await sleep(600);
   }
+
+  // 호출 간격 확보
+  await sleep(600);
 
   // 4. Broadcast 생성 + 발송
   const { data: created, error: createErr } = await resend.broadcasts.create({
@@ -96,6 +103,8 @@ export default async (req) => {
       status: 200, headers: { 'Content-Type': 'application/json' },
     });
   }
+
+  await sleep(600);
 
   const { error: sendErr } = await resend.broadcasts.send(created.id);
   if (sendErr) {
