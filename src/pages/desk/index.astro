@@ -1,0 +1,200 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout title="발행소 — Nuh-Muh">
+  <div class="desk-wrap" id="desk-wrap" style="opacity:0;">
+    <a href="/" class="desk-back">← 나가기</a>
+    <h1 class="desk-title">발행소</h1>
+    <p class="desk-note" id="desk-note">불러오는 중...</p>
+
+    <div class="desk-form" id="desk-form" style="display:none;">
+      <label class="f-label">제목</label>
+      <input type="text" id="f-title" class="f-input" placeholder="글 제목" />
+
+      <label class="f-label">부제 / 한 줄 소개</label>
+      <input type="text" id="f-subtitle" class="f-input" placeholder="비워도 됩니다" />
+
+      <label class="f-label">분류</label>
+      <select id="f-category" class="f-input">
+        <option value="소설 너머">소설 너머</option>
+        <option value="영상 너머">영상 너머</option>
+        <option value="인물 너머">인물 너머</option>
+        <option value="뉴스 너머">뉴스 너머</option>
+      </select>
+
+      <label class="f-label">주소(slug)</label>
+      <input type="text" id="f-slug" class="f-input" placeholder="제목에서 자동 생성됩니다" />
+
+      <label class="f-label">소속 작품 <span class="f-hint">비우면 단독 글</span></label>
+      <input type="text" id="f-work" class="f-input" placeholder="예: 디스코 엘리시움 (비워도 됩니다)" />
+      <label class="f-label">태그 <span class="f-hint">쉼표로 구분</span></label>
+      <input type="text" id="f-tags" class="f-input" placeholder="예: 서사, 분기, 선택 (비워도 됩니다)" />
+
+      <label class="f-label">대표 이미지 주소</label>
+      <input type="text" id="f-cover" class="f-input" placeholder="https://... (비워도 됩니다)" />
+
+      <label class="f-label">대표 이미지 설명(alt)</label>
+      <input type="text" id="f-coveralt" class="f-input" placeholder="이미지를 설명하는 짧은 글 (비워도 됩니다)" />
+
+      <label class="f-label">본문 <span class="f-hint">지금은 HTML 직접 입력 — 에디터는 다음 단계</span></label>
+      <textarea id="f-body" class="f-textarea" rows="16" placeholder="&lt;p&gt;본문을 여기에...&lt;/p&gt;"></textarea>
+      <details class="f-details">
+        <summary>검색·공유 설정 (SEO)</summary>
+        <label class="f-label">메타 설명</label>
+        <input type="text" id="f-metadesc" class="f-input" placeholder="검색결과에 뜨는 요약 (비우면 자동)" />
+        <label class="f-label">OG 이미지 주소</label>
+        <input type="text" id="f-ogimage" class="f-input" placeholder="링크 공유 시 썸네일 (비우면 대표이미지)" />
+      </details>
+
+      <div class="f-row">
+        <div>
+          <label class="f-label">발행 상태</label>
+          <select id="f-status" class="f-input">
+            <option value="draft">초안 (저장만)</option>
+            <option value="published">게시 (공개)</option>
+            <option value="hidden">숨김</option>
+          </select>
+        </div>
+        <label class="f-check">
+          <input type="checkbox" id="f-pinned" /> 고정 글
+        </label>
+      </div>
+
+      <button type="button" id="f-save" class="f-save">저장</button>
+      <p class="f-result" id="f-result"></p>
+    </div>
+  </div>
+
+<style>
+  .desk-wrap { max-width: 760px; margin: 0 auto; padding: 2rem 1.2rem 6rem; transition: opacity 0.4s ease; }
+  .desk-back { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.15em; color: var(--ink-soft); text-decoration: none; display: inline-block; margin-bottom: 2rem; }
+  .desk-back:hover { color: var(--mark); }
+  .desk-title { font-family: 'Noto Serif KR', serif; font-weight: 500; font-size: 2.2rem; margin-bottom: 0.4rem; }
+  .desk-note { font-family: 'EB Garamond', serif; font-style: italic; color: var(--ink-soft); margin-bottom: 2.4rem; }
+  .desk-form { display: flex; flex-direction: column; }
+  .f-label { font-family: 'Noto Serif KR', serif; font-size: 0.95rem; color: var(--ink); margin: 1.3rem 0 0.4rem; }
+  .f-hint { font-family: 'EB Garamond', serif; font-style: italic; font-size: 0.8rem; color: var(--ink-faint); margin-left: 0.4rem; }
+  .f-input, .f-textarea { font-family: 'Noto Serif KR', serif; font-size: 1rem; color: var(--ink); background: rgba(255,255,255,0.5); border: 1px solid var(--rule); border-radius: 4px; padding: 0.7rem 0.8rem; width: 100%; }
+  .f-input:focus, .f-textarea:focus { outline: none; border-color: var(--mark); }
+  .f-textarea { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.6; resize: vertical; }
+  .f-details { margin-top: 1.3rem; border: 1px dashed var(--rule); border-radius: 4px; padding: 0.4rem 0.9rem; }
+  .f-details summary { font-family: 'Noto Serif KR', serif; font-size: 0.9rem; color: var(--ink-soft); cursor: pointer; padding: 0.4rem 0; }
+  .f-row { display: flex; gap: 2rem; align-items: flex-end; margin-top: 0.4rem; }
+  .f-row > div { flex: 1; }
+  .f-check { font-family: 'Noto Serif KR', serif; font-size: 0.95rem; color: var(--ink); display: flex; align-items: center; gap: 0.4rem; padding-bottom: 0.7rem; white-space: nowrap; }
+  .f-save { font-family: 'Noto Serif KR', serif; font-size: 1.05rem; color: #fff; background: var(--mark); border: none; border-radius: 4px; padding: 0.9rem; margin-top: 2rem; cursor: pointer; transition: opacity 0.2s; }
+  .f-save:hover { opacity: 0.85; }
+  .f-save:disabled { opacity: 0.4; cursor: default; }
+  .f-result { font-family: 'EB Garamond', serif; font-size: 0.95rem; margin-top: 1rem; min-height: 1.4rem; }
+</style>
+
+<script>
+  import { supabase } from '../../lib/supabaseClient.js';
+
+  function slugify(s) {
+    return (s || '').trim().toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9가-힣\-]/g, '')
+      .replace(/\-+/g, '-')
+      .replace(/^\-+|\-+$/g, '');
+  }
+
+  async function initDesk() {
+    const wrap = document.getElementById('desk-wrap');
+    const note = document.getElementById('desk-note');
+    const form = document.getElementById('desk-form');
+    if (wrap) wrap.style.opacity = '1';
+
+    let session = null;
+    try {
+      const { data } = await supabase.auth.getSession();
+      session = data ? data.session : null;
+    } catch (e) {}
+
+    if (!session) { window.location.href = '/'; return; }
+
+    const email = session.user ? session.user.email : '';
+    const { data: chk } = await supabase.functions.invoke('admin-check', {
+      body: { token: session.access_token }
+    }).catch(() => ({ data: null }));
+
+    // admin-check 함수가 없으면(아직), 화면 검사는 생략하고 폼은 보여주되
+    // 진짜 차단은 저장 시 save-article 자물쇠가 함.
+    if (note) note.textContent = '글을 씁니다.';
+    if (form) form.style.display = 'flex';
+
+    const titleEl = document.getElementById('f-title');
+    const slugEl = document.getElementById('f-slug');
+    let slugTouched = false;
+    if (slugEl) slugEl.addEventListener('input', () => { slugTouched = true; });
+    if (titleEl && slugEl) {
+      titleEl.addEventListener('input', () => {
+        if (!slugTouched) slugEl.value = slugify(titleEl.value);
+      });
+    }
+
+    setupSave(session);
+  }
+
+  function setupSave(session) {
+    const btn = document.getElementById('f-save');
+    const result = document.getElementById('f-result');
+    if (!btn) return;
+
+    btn.addEventListener('click', async () => {
+      const get = (id) => {
+        const el = document.getElementById(id);
+        return el ? el.value.trim() : '';
+      };
+      const tagsRaw = get('f-tags');
+      const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+
+      const article = {
+        title: get('f-title'),
+        subtitle: get('f-subtitle'),
+        category: get('f-category'),
+        slug: get('f-slug'),
+        work: get('f-work'),
+        tags: tags,
+        cover_image: get('f-cover'),
+        cover_alt: get('f-coveralt'),
+        body: get('f-body'),
+        meta_desc: get('f-metadesc'),
+        og_image: get('f-ogimage'),
+        status: get('f-status'),
+        pinned: document.getElementById('f-pinned').checked,
+      };
+
+      if (!article.title || !article.body || !article.slug) {
+        if (result) { result.style.color = '#a33'; result.textContent = '제목·주소·본문은 비울 수 없습니다.'; }
+        return;
+      }
+
+      btn.disabled = true;
+      if (result) { result.style.color = 'var(--ink-soft)'; result.textContent = '저장하는 중...'; }
+
+      try {
+        const res = await fetch('/.netlify/functions/save-article', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: session.access_token, article })
+        });
+        const data = await res.json();
+        if (data.status === 'ok') {
+          if (result) { result.style.color = 'var(--mark)'; result.textContent = '저장되었습니다. (주소: /' + data.slug + ')'; }
+        } else if (data.status === 'forbidden') {
+          if (result) { result.style.color = '#a33'; result.textContent = '권한이 없습니다.'; }
+        } else {
+          if (result) { result.style.color = '#a33'; result.textContent = '오류: ' + (data.detail || '알 수 없음'); }
+        }
+      } catch (e) {
+        if (result) { result.style.color = '#a33'; result.textContent = '발송 실패: ' + e.message; }
+      }
+      btn.disabled = false;
+    });
+  }
+
+  if (document.readyState !== 'loading') initDesk();
+  else document.addEventListener('DOMContentLoaded', initDesk);
+  document.addEventListener('astro:page-load', initDesk);
+</script>
