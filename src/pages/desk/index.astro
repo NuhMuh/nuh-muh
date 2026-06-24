@@ -113,13 +113,18 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
     if (!session) { window.location.href = '/'; return; }
 
-    const email = session.user ? session.user.email : '';
-    const { data: chk } = await supabase.functions.invoke('admin-check', {
-      body: { token: session.access_token }
-    }).catch(() => ({ data: null }));
-
-    // admin-check 함수가 없으면(아직), 화면 검사는 생략하고 폼은 보여주되
-    // 진짜 차단은 저장 시 save-article 자물쇠가 함.
+    // 관리자 판정 — 아니면 메인으로 튕김
+    let isAdmin = false;
+    try {
+      const res = await fetch('/.netlify/functions/admin-check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: session.access_token }),
+      });
+      const data = await res.json();
+      isAdmin = !!data.admin;
+    } catch (e) {}
+    if (!isAdmin) { window.location.href = '/'; return; }
     if (note) note.textContent = '글을 씁니다.';
     if (form) form.style.display = 'flex';
 
