@@ -4,6 +4,7 @@
 
 [build.environment]
   SECRETS_SCAN_OMIT_KEYS = "SUPABASE_URL"
+  NODE_VERSION = "22.12.0"
 
 [functions]
   directory = "netlify/functions"
