@@ -1,7 +1,7 @@
-import { c as createComponent } from './astro-component_CZdX6Vh9.mjs';
+import { c as createComponent } from './astro-component_VqB1K2kZ.mjs';
 import 'piccolore';
-import { r as renderComponent, p as renderTemplate, m as maybeRenderHead, j as addAttribute } from './ssr-function_CxRb9YEO.mjs';
-import { $ as $$BaseLayout } from './BaseLayout_D80zDiYj.mjs';
+import { r as renderComponent, p as renderTemplate, m as maybeRenderHead, j as addAttribute } from './ssr-function_unIz6y3u.mjs';
+import { $ as $$BaseLayout } from './BaseLayout_CUnFCPZz.mjs';
 import { createClient } from '@supabase/supabase-js';
 
 const prerender = false;

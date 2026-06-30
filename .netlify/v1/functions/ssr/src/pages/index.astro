@@ -138,25 +138,27 @@ const sets = weekNums.map(week => {
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(
+    background: repeating-linear-gradient(
       115deg,
-      transparent 30%,
-      rgba(255, 252, 240, 0.55) 50%,
-      transparent 70%
+      transparent 0%,
+      transparent 18%,
+      rgba(255, 252, 240, 0.38) 25%,
+      transparent 32%,
+      transparent 50%
     );
-    background-size: 250% 100%;
-    background-position: 150% 0;
+    background-size: 200% 100%;
+    background-position: 0 0;
     opacity: 0;
-    transition: opacity 0.4s ease;
+    transition: opacity 0.5s ease;
     pointer-events: none;
   }
   .empty-card:hover::after {
     opacity: 1;
-    animation: empty-shimmer 1.8s ease-in-out infinite;
+    animation: empty-shimmer 3.6s linear infinite;
   }
   @keyframes empty-shimmer {
-    0%   { background-position: 150% 0; }
-    100% { background-position: -150% 0; }
+    from { background-position: 0 0; }
+    to   { background-position: -200% 0; }
   }
 
   @media (max-width: 700px) {
