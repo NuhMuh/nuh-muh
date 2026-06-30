@@ -5,8 +5,6 @@ import WorkCard from '../components/WorkCard.astro';
 import SidePanel from '../components/SidePanel.astro';
 import PostcardSignup from '../components/PostcardSignup.astro';
 import JoinScroll from '../components/JoinScroll.astro';
-import InterviewCard from '../components/InterviewCard.astro';
-import CritiqueCard from '../components/CritiqueCard.astro';
 import { getCollection, type CollectionEntry } from 'astro:content';
 
 const allWorks = await getCollection('works');
@@ -91,10 +89,7 @@ const completedSlots = fillSlots(completed, 18);
     </div>
 
 
-    <div class="middle-cards">
-      <InterviewCard />
-      <CritiqueCard />
-    </div>
+    
 
     <div class="works-masonry">
       {completedSlots.map((slot) => (
