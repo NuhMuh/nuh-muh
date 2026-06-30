@@ -1,7 +1,7 @@
-import { c as createComponent } from './astro-component_C41A4_7D.mjs';
+import { c as createComponent } from './astro-component_NuEPx54V.mjs';
 import 'piccolore';
-import { m as maybeRenderHead, p as renderTemplate, j as addAttribute, r as renderComponent } from './ssr-function_CZuiKWq4.mjs';
-import { r as renderScript, $ as $$BaseLayout } from './BaseLayout_BdNVSKLT.mjs';
+import { m as maybeRenderHead, p as renderTemplate, j as addAttribute, r as renderComponent } from './ssr-function_BFz0zot2.mjs';
+import { r as renderScript, $ as $$BaseLayout } from './BaseLayout_C3M7clZZ.mjs';
 import 'clsx';
 import { createClient } from '@supabase/supabase-js';
 
@@ -98,7 +98,7 @@ const $$Index = createComponent(async ($$result, $$props, $$slots) => {
     }
     return { week, cards };
   });
-  return renderTemplate`${renderComponent($$result, "BaseLayout", $$BaseLayout, { "title": "Nuh-Muh", "data-astro-cid-j7pv25f6": true }, { "default": async ($$result2) => renderTemplate` ${maybeRenderHead()}<div class="container" data-astro-cid-j7pv25f6> ${renderComponent($$result2, "Masthead", $$Masthead, { "data-astro-cid-j7pv25f6": true })} <div class="top-grid" data-astro-cid-j7pv25f6> ${renderComponent($$result2, "SidePanel", $$SidePanel, { "data-astro-cid-j7pv25f6": true })} </div> <div class="week-sets" data-astro-cid-j7pv25f6> ${sets.map((set) => renderTemplate`<div class="week-set" data-astro-cid-j7pv25f6> <div class="week-num" data-astro-cid-j7pv25f6>${set.week}주</div> <div class="set-cards" data-astro-cid-j7pv25f6> ${["ga", "na", "da", "ra"].map((pos) => set.cards[pos] ? renderTemplate`${renderComponent($$result2, "WorkCard", $$WorkCard, { "work": set.cards[pos], "data-astro-cid-j7pv25f6": true })}` : renderTemplate`<div class="empty-card" aria-hidden="true" data-astro-cid-j7pv25f6></div>`)} </div> </div>`)} </div> </div> ${renderComponent($$result2, "PostcardSignup", $$PostcardSignup, { "data-astro-cid-j7pv25f6": true })} ${renderComponent($$result2, "JoinScroll", $$JoinScroll, { "data-astro-cid-j7pv25f6": true })} ` })}`;
+  return renderTemplate`${renderComponent($$result, "BaseLayout", $$BaseLayout, { "title": "Nuh-Muh", "data-astro-cid-j7pv25f6": true }, { "default": async ($$result2) => renderTemplate` ${maybeRenderHead()}<div class="container" data-astro-cid-j7pv25f6> ${renderComponent($$result2, "Masthead", $$Masthead, { "data-astro-cid-j7pv25f6": true })} <div class="top-grid" data-astro-cid-j7pv25f6> ${renderComponent($$result2, "SidePanel", $$SidePanel, { "data-astro-cid-j7pv25f6": true })} </div> <div class="week-sets" data-astro-cid-j7pv25f6> ${sets.map((set, i) => renderTemplate`<div${addAttribute("week-set" + (i % 2 === 1 ? " mirrored" : ""), "class")} data-astro-cid-j7pv25f6> <div class="set-cards" data-astro-cid-j7pv25f6> ${["ga", "na", "da", "ra"].map((pos) => renderTemplate`<div${addAttribute("slot pos-" + pos, "class")} data-astro-cid-j7pv25f6> ${set.cards[pos] ? renderTemplate`${renderComponent($$result2, "WorkCard", $$WorkCard, { "work": set.cards[pos], "data-astro-cid-j7pv25f6": true })}` : renderTemplate`<div class="empty-card" aria-hidden="true" data-astro-cid-j7pv25f6></div>`} </div>`)} </div> </div>`)} </div> </div> ${renderComponent($$result2, "PostcardSignup", $$PostcardSignup, { "data-astro-cid-j7pv25f6": true })} ${renderComponent($$result2, "JoinScroll", $$JoinScroll, { "data-astro-cid-j7pv25f6": true })} ` })}`;
 }, "/workspaces/nuh-muh/src/pages/index.astro", void 0);
 
 const $$file = "/workspaces/nuh-muh/src/pages/index.astro";
