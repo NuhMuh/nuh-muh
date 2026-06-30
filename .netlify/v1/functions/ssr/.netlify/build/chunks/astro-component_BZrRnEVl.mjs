@@ -1,4 +1,4 @@
-import { A as AstroError, f as InvalidComponentArgs } from './ssr-function_unIz6y3u.mjs';
+import { A as AstroError, f as InvalidComponentArgs } from './ssr-function_CwdjN2EC.mjs';
 
 function validateArgs(args) {
   if (args.length !== 3) return false;

@@ -1,6 +1,12 @@
 :root {
   --paper: #ece4cf;
   --paper-warm: #ebe2c2;
+  --card-1: #dcdac9;
+  --card-2: #e5dac8;
+  --card-3: #d7dbd5;
+  --card-4: #e8ddc3;
+  --card-5: #e2d8d0;
+  --card-6: #dbd8d2;
   --paper-deep: #ddd4ba;
   --paper-cold: #e0dcc8;
   --paper-rust: #ebe0c5;

@@ -56,10 +56,19 @@ function toCard(w) {
 
 // 주차별로 묶기 (최신 주차 먼저)
 const weekNums = [...new Set(allWorks.map(w => w.week))].sort((a, b) => b - a);
+const CARD_COLORS = ['c1', 'c2', 'c3', 'c4', 'c5', 'c6'];
+let colorSeq = 0;  // 전역 순번 — 세트를 넘어가며 색이 순환, 인접 안 겹침
 const sets = weekNums.map(week => {
   const cards = {};
   for (const w of allWorks.filter(x => x.week === week)) {
     cards[CATEGORY_INFO[w.category]?.spot || 'da'] = toCard(w);
+  }
+  // 가나다라 순서로 색 순환 배정 (있는 자리만)
+  for (const pos of ['ga', 'na', 'da', 'ra']) {
+    if (cards[pos]) {
+      cards[pos].color = CARD_COLORS[colorSeq % CARD_COLORS.length];
+      colorSeq++;
+    }
   }
   return { week, cards };  // cards.ga / cards.na / cards.da / cards.ra (없으면 undefined = 빈 카드)
 });

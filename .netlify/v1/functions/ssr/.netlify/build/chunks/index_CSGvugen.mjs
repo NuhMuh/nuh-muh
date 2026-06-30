@@ -1,7 +1,7 @@
-import { c as createComponent } from './astro-component_VqB1K2kZ.mjs';
+import { c as createComponent } from './astro-component_BZrRnEVl.mjs';
 import 'piccolore';
-import { m as maybeRenderHead, p as renderTemplate, j as addAttribute, r as renderComponent } from './ssr-function_unIz6y3u.mjs';
-import { r as renderScript, $ as $$BaseLayout } from './BaseLayout_CUnFCPZz.mjs';
+import { m as maybeRenderHead, p as renderTemplate, j as addAttribute, r as renderComponent } from './ssr-function_CwdjN2EC.mjs';
+import { r as renderScript, $ as $$BaseLayout } from './BaseLayout_DhgthC0i.mjs';
 import 'clsx';
 import { createClient } from '@supabase/supabase-js';
 
@@ -91,10 +91,18 @@ const $$Index = createComponent(async ($$result, $$props, $$slots) => {
     };
   }
   const weekNums = [...new Set(allWorks.map((w) => w.week))].sort((a, b) => b - a);
+  const CARD_COLORS = ["c1", "c2", "c3", "c4", "c5", "c6"];
+  let colorSeq = 0;
   const sets = weekNums.map((week) => {
     const cards = {};
     for (const w of allWorks.filter((x) => x.week === week)) {
       cards[CATEGORY_INFO[w.category]?.spot || "da"] = toCard(w);
+    }
+    for (const pos of ["ga", "na", "da", "ra"]) {
+      if (cards[pos]) {
+        cards[pos].color = CARD_COLORS[colorSeq % CARD_COLORS.length];
+        colorSeq++;
+      }
     }
     return { week, cards };
   });
