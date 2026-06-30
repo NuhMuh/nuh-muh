@@ -5,7 +5,7 @@ const supabase = createClient(
   process.env.SUPABASE_SECRET_KEY
 );
 
-const ALLOWED_CATEGORIES = ['소설 너머', '영상 너머', '인물 너머', '소식 너머'];
+const ALLOWED_CATEGORIES = ['소설 너머', '영상 너머', '인물 너머', '소식 너머', '공지'];
 const ALLOWED_STATUS = ['draft', 'published', 'hidden'];
 
 const json = (obj) => new Response(JSON.stringify(obj), {
