@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { injectAnchors } from './_anchors.mjs';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -39,7 +40,7 @@ export default async (req) => {
 
   const a = body.article || {};
   const title = (a.title || '').trim();
-  const bodyHtml = a.body || '';
+  const bodyHtml = injectAnchors(a.body || '');
   const slug = (a.slug || '').trim();
 
   if (!title) return json({ status: 'error', detail: 'title required' });
