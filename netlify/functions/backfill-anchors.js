@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { injectAnchors } from './_anchors.mjs';
+import { injectAnchors, verifyAnchors } from './_anchors.mjs';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -42,8 +42,16 @@ export default async (req) => {
     const after = injectAnchors(before);
     const changed = before !== after;
 
-    // 앵커 개수 세기 (확인용)
-    const anchorCount = (after.match(/data-anchor=/g) || []).length;
+    // 검증 (마틴 지시: 어긋난 주입은 저장 금지)
+    const check = verifyAnchors(after);
+    if (!check.ok) {
+      report.errors.push({
+        id: art.id, slug: art.slug,
+        error: '검증 실패: 블록 ' + check.blocks + ' / 앵커 ' + check.anchors,
+      });
+      report.details.push({ id: art.id, slug: art.slug, changed: false, anchors: check.anchors, verifyFailed: true });
+      continue; // 이 글은 건너뜀 (저장 안 함)
+    }
 
     if (changed) {
       report.changed++;
@@ -57,7 +65,7 @@ export default async (req) => {
     } else {
       report.unchanged++;
     }
-    report.details.push({ id: art.id, slug: art.slug, changed, anchors: anchorCount });
+    report.details.push({ id: art.id, slug: art.slug, changed, anchors: check.anchors });
   }
 
   return json({ status: 'ok', dryRun, report });

@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { injectAnchors } from './_anchors.mjs';
+import { injectAnchors, verifyAnchors } from './_anchors.mjs';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -45,6 +45,16 @@ export default async (req) => {
 
   if (!title) return json({ status: 'error', detail: 'title required' });
   if (!bodyHtml) return json({ status: 'error', detail: 'body required' });
+
+  // 앵커 주입 검증 (마틴 지시: 조용한 부분 실패 금지)
+  // 대상 블록 개수 ≠ 앵커 개수면 주입이 어긋난 것 → 저장 중단
+  const anchorCheck = verifyAnchors(bodyHtml);
+  if (!anchorCheck.ok) {
+    return json({
+      status: 'error',
+      detail: '앵커 주입 검증 실패: 블록 ' + anchorCheck.blocks + '개 중 앵커 ' + anchorCheck.anchors + '개. 본문 구조를 확인하세요.',
+    });
+  }
   if (!slug) return json({ status: 'error', detail: 'slug required' });
 
   const status = ALLOWED_STATUS.includes(a.status) ? a.status : 'draft';
