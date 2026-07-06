@@ -15,9 +15,21 @@ import Masthead from '../../components/Masthead.astro';
           <span class="ri-label">이름</span>
           <span class="ri-sub" id="ri-nick">—</span>
         </li>
-        <li class="room-item disabled">
+        <li class="room-item account" id="account-item">
           <span class="ri-label">계정 정보</span>
-          <span class="ri-sub">곧 열립니다</span>
+          <span class="ri-sub" id="account-sub">비밀번호 변경</span>
+        </li>
+        <li class="room-panel" id="account-panel" style="display:none;">
+          <div class="pw-form">
+            <label class="pw-label">현재 비밀번호</label>
+            <input type="password" id="pw-current" class="pw-input" autocomplete="current-password" />
+            <label class="pw-label">새 비밀번호 <span class="pw-hint">8자 이상</span></label>
+            <input type="password" id="pw-new" class="pw-input" autocomplete="new-password" />
+            <label class="pw-label">새 비밀번호 확인</label>
+            <input type="password" id="pw-new2" class="pw-input" autocomplete="new-password" />
+            <button type="button" id="pw-save" class="pw-save">변경</button>
+            <p class="pw-result" id="pw-result"></p>
+          </div>
         </li>
         <li class="room-item disabled">
           <span class="ri-label">신분</span>
@@ -55,6 +67,19 @@ import Masthead from '../../components/Masthead.astro';
   .room-item.logout { cursor: pointer; transition: padding-left 0.3s; }
   .room-item.logout:hover { padding-left: 0.6rem; }
   .room-item.logout:hover .ri-label { color: var(--mark); }
+  .room-item.account { cursor: pointer; transition: padding-left 0.3s; }
+  .room-item.account:hover { padding-left: 0.6rem; }
+  .room-item.account:hover .ri-label { color: var(--mark); }
+  .room-panel { list-style: none; padding: 0 0 1.4rem; border-bottom: 1px solid var(--rule); }
+  .pw-form { display: flex; flex-direction: column; max-width: 380px; padding: 0.5rem 0 0; }
+  .pw-label { font-family: 'Noto Serif KR', serif; font-size: 0.9rem; color: var(--ink-soft); margin: 0.9rem 0 0.35rem; }
+  .pw-hint { font-family: 'EB Garamond', serif; font-style: italic; font-size: 0.78rem; color: var(--ink-faint); margin-left: 0.4rem; }
+  .pw-input { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--ink); background: rgba(255,255,255,0.5); border: 1px solid var(--rule); border-radius: 4px; padding: 0.6rem 0.7rem; }
+  .pw-input:focus { outline: none; border-color: var(--mark); }
+  .pw-save { font-family: 'Noto Serif KR', serif; font-size: 0.98rem; color: #fff; background: var(--mark); border: none; border-radius: 4px; padding: 0.7rem; margin-top: 1.3rem; cursor: pointer; transition: opacity 0.2s; }
+  .pw-save:hover { opacity: 0.85; }
+  .pw-save:disabled { opacity: 0.4; cursor: default; }
+  .pw-result { font-family: 'EB Garamond', serif; font-size: 0.9rem; margin-top: 0.8rem; min-height: 1.3rem; }
 </style>
 
 <script>
@@ -91,6 +116,58 @@ import Masthead from '../../components/Masthead.astro';
     }
 
     if (wrap) wrap.style.opacity = '1';
+
+    // 계정 정보 — 비밀번호 변경
+    const accountItem = document.getElementById('account-item');
+    const accountPanel = document.getElementById('account-panel');
+    if (accountItem && accountPanel) {
+      accountItem.addEventListener('click', function () {
+        accountPanel.style.display = (accountPanel.style.display === 'none') ? 'block' : 'none';
+      });
+    }
+    const pwSave = document.getElementById('pw-save');
+    if (pwSave) {
+      pwSave.addEventListener('click', async function () {
+        const cur = document.getElementById('pw-current');
+        const nw = document.getElementById('pw-new');
+        const nw2 = document.getElementById('pw-new2');
+        const result = document.getElementById('pw-result');
+        const setMsg = (msg, ok) => {
+          if (result) { result.style.color = ok ? 'var(--mark)' : '#a33'; result.textContent = msg; }
+        };
+        const currentPassword = cur ? cur.value : '';
+        const newPassword = nw ? nw.value : '';
+        const newPassword2 = nw2 ? nw2.value : '';
+
+        if (!currentPassword || !newPassword) { setMsg('현재/새 비밀번호를 입력하세요.', false); return; }
+        if (newPassword.length < 8) { setMsg('새 비밀번호는 8자 이상이어야 합니다.', false); return; }
+        if (newPassword !== newPassword2) { setMsg('새 비밀번호 확인이 일치하지 않습니다.', false); return; }
+
+        pwSave.disabled = true;
+        setMsg('변경하는 중...', true);
+        try {
+          const res = await fetch('/.netlify/functions/change-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              token: session.access_token,
+              currentPassword: currentPassword,
+              newPassword: newPassword,
+            }),
+          });
+          const data = await res.json();
+          if (data.status === 'ok') {
+            setMsg('비밀번호가 변경되었습니다.', true);
+            if (cur) cur.value = ''; if (nw) nw.value = ''; if (nw2) nw2.value = '';
+          } else {
+            setMsg(data.detail || '변경에 실패했습니다.', false);
+          }
+        } catch (e) {
+          setMsg('변경 실패: ' + e.message, false);
+        }
+        pwSave.disabled = false;
+      });
+    }
 
     // 나가기(로그아웃)
     const logoutItem = document.getElementById('logout-item');
