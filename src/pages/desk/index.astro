@@ -189,23 +189,29 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   // ===== 기존 글 수정 =====
   let editingId = null;  // 수정 중인 글 id (null이면 신규)
+  let deskToken = null;  // 서버 함수 호출용 access_token
 
   // 발행된(그리고 초안 포함) 글 목록을 select에 채움
   async function loadArticleList() {
     const sel = document.getElementById('f-editpick');
     if (!sel) return;
     try {
-      const { data: arts } = await supabase
-        .from('articles')
-        .select('id, title, slug, status, created_at')
-        .order('created_at', { ascending: false });
+      const res = await fetch('/.netlify/functions/list-articles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: deskToken, action: 'list' }),
+      });
+      const data = await res.json();
+      if (data.status !== 'ok') {
+        sel.innerHTML = '<option value="">(목록을 불러오지 못했습니다)</option>';
+        return;
+      }
       const opts = ['<option value="">— 새 글 쓰기 —</option>'];
-      (arts || []).forEach(a => {
+      (data.articles || []).forEach(a => {
         const mark = a.status === 'published' ? '' : ' [' + a.status + ']';
         opts.push('<option value="' + a.id + '">' + (a.title || '(제목 없음)') + mark + '</option>');
       });
       sel.innerHTML = opts.join('');
-      // 편집 중이던 글이 있으면 선택 유지
       if (editingId) sel.value = String(editingId);
     } catch (e) {
       sel.innerHTML = '<option value="">(목록을 불러오지 못했습니다)</option>';
@@ -231,12 +237,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   async function pickArticle(id) {
     if (!id) { resetToNew(); return; }
     try {
-      const { data: art, error } = await supabase
-        .from('articles')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
-      if (error || !art) { alert('글을 불러오지 못했습니다.'); return; }
+      const res = await fetch('/.netlify/functions/list-articles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: deskToken, action: 'get', id: id }),
+      });
+      const data = await res.json();
+      if (data.status !== 'ok' || !data.article) { alert('글을 불러오지 못했습니다.'); return; }
+      const art = data.article;
 
       editingId = art.id;
       const set = (fid, val) => { const el = document.getElementById(fid); if (el) el.value = (val != null ? val : ''); };
@@ -341,6 +349,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       });
     }
 
+    deskToken = session.access_token;
     setupSave(session);
   }
 
