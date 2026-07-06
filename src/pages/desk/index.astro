@@ -354,6 +354,30 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     setupSave(session);
   }
 
+  // 본문 HTML 구조 건전성 검증 (마틴: 클라이언트 DOMParser, 2단 방어의 앞단)
+  // 입력 HTML을 브라우저가 파싱→재직렬화한 결과와 원본을 정규화 비교.
+  // 브라우저가 "보정"했다면 = 원본 구조가 깨져 있었다는 뜻 → 저장 중단.
+  function checkBodyStructure(html) {
+    // 정규화: 태그 사이 공백 차이 등 무해한 차이는 흡수
+    const normalize = (s) => s
+      .replace(/\s+/g, ' ')           // 연속 공백 → 하나
+      .replace(/>\s+</g, '><')        // 태그 사이 공백 제거
+      .replace(/\s+>/g, '>')          // 태그 닫기 앞 공백
+      .trim();
+
+    // 브라우저 파서로 파싱 후 재직렬화
+    const doc = new DOMParser().parseFromString('<div id="__wrap__">' + html + '</div>', 'text/html');
+    const wrap = doc.getElementById('__wrap__');
+    if (!wrap) return { ok: false, reason: '파싱 실패' };
+    const reserialized = wrap.innerHTML;
+
+    const a = normalize(html);
+    const b = normalize(reserialized);
+
+    if (a === b) return { ok: true };
+    return { ok: false, reason: '구조 불일치', original: a, corrected: b };
+  }
+
   function setupSave(session) {
     const btn = document.getElementById('f-save');
     const result = document.getElementById('f-result');
@@ -411,6 +435,15 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
       if (!article.title || !article.body || !article.slug) {
         showErr('제목·주소·본문은 비울 수 없습니다.');
+        return;
+      }
+
+      // 본문 구조 건전성 검증 (저장 전, 클라이언트 방어선)
+      const struct = checkBodyStructure(article.body);
+      if (!struct.ok) {
+        showErr('본문 HTML 구조에 문제가 있어 저장을 중단했습니다 (태그가 안 닫혔거나 잘못 중첩됨). 확인 후 다시 저장하세요.');
+        console.log('구조 검증 실패 — 원본:', struct.original);
+        console.log('구조 검증 실패 — 브라우저 보정:', struct.corrected);
         return;
       }
 
