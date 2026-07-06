@@ -130,6 +130,27 @@ export default async (req) => {
 
   let result;
   if (a.id) {
+    // 수정 이력 보존 (요구3): 덮어쓰기 직전 기존 body를 article_revisions에 남긴다.
+    // 원본 보존이 목적이므로 — 이력 저장이 실패하면 본 저장(덮어쓰기)도 중단한다.
+    // 백업 없이 덮어쓰면 그 순간의 원본이 영구 소실되기 때문. (수정된 나)
+    const prev = await supabase.from('articles').select('body').eq('id', a.id).maybeSingle();
+    if (prev.error) {
+      return json({ status: 'error', detail: '기존 글을 읽지 못해 저장을 중단했습니다: ' + prev.error.message });
+    }
+    // 기존 글에 body가 있으면 반드시 이력에 남긴 뒤에만 덮어쓴다.
+    if (prev.data && prev.data.body != null) {
+      const rev = await supabase.from('article_revisions').insert({
+        article_id: a.id,
+        body: prev.data.body,
+      });
+      if (rev.error) {
+        // 이력 실패 → 덮어쓰기 중단 (원본 보존 우선). 실패를 명확히 알린다.
+        return json({
+          status: 'error',
+          detail: '이력 백업 실패로 저장을 중단했습니다 (원본 보존). 다시 시도하거나 관리자에게 문의하세요. 원인: ' + rev.error.message,
+        });
+      }
+    }
     result = await supabase.from('articles').update(row).eq('id', a.id).select('id, slug').maybeSingle();
   } else {
     result = await supabase.from('articles').insert(row).select('id, slug').maybeSingle();

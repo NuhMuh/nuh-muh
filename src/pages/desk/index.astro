@@ -8,6 +8,15 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     <p class="desk-note" id="desk-note">불러오는 중...</p>
 
     <div class="desk-form" id="desk-form" style="display:none;">
+      <div class="f-editbar">
+        <label class="f-label">기존 글 수정 <span class="f-hint">발행된 글을 불러와 고칩니다</span></label>
+        <div class="f-editrow">
+          <select id="f-editpick" class="f-input"><option value="">— 새 글 쓰기 —</option></select>
+          <button type="button" id="f-newbtn" class="f-newbtn">새 글</button>
+        </div>
+        <p class="f-editmode" id="f-editmode"></p>
+      </div>
+
       <label class="f-label">제목</label>
       <input type="text" id="f-title" class="f-input" placeholder="글 제목" />
 
@@ -68,6 +77,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       <input type="text" id="f-coveralt" class="f-input" placeholder="이미지를 설명하는 짧은 글 (비워도 됩니다)" />
 
       <label class="f-label">본문 <span class="f-hint">지금은 HTML 직접 입력 — 에디터는 다음 단계</span></label>
+      <p class="f-warn" id="f-bodywarn" style="display:none;">⚠ 문단 태그의 <code>data-anchor</code> 속성은 지우지 마십시오. (담기 기능이 이 표식으로 위치를 기억합니다)</p>
       <textarea id="f-body" class="f-textarea" rows="16" placeholder="&lt;p&gt;본문을 여기에...&lt;/p&gt;"></textarea>
 
       <details class="f-details">
@@ -104,6 +114,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .desk-title { font-family: 'Noto Serif KR', serif; font-weight: 500; font-size: 2.2rem; margin-bottom: 0.4rem; }
   .desk-note { font-family: 'EB Garamond', serif; font-style: italic; color: var(--ink-soft); margin-bottom: 2.4rem; }
   .desk-form { display: flex; flex-direction: column; }
+  .f-editbar { border: 1px dashed var(--rule); border-radius: 4px; padding: 0.3rem 0.9rem 0.9rem; margin-bottom: 0.6rem; background: rgba(139,58,46,0.03); }
+  .f-editrow { display: flex; gap: 0.6rem; align-items: center; }
+  .f-editrow .f-input { flex: 1; }
+  .f-newbtn { font-family: 'Noto Serif KR', serif; font-size: 0.9rem; color: var(--ink); background: transparent; border: 1px solid var(--rule); border-radius: 4px; padding: 0.7rem 1rem; cursor: pointer; white-space: nowrap; transition: border-color 0.2s, color 0.2s; }
+  .f-newbtn:hover { border-color: var(--mark); color: var(--mark); }
+  .f-editmode { font-family: 'EB Garamond', serif; font-style: italic; font-size: 0.88rem; color: var(--mark); margin-top: 0.6rem; min-height: 1.2rem; }
+  .f-warn { font-family: 'Noto Serif KR', serif; font-size: 0.85rem; color: var(--mark); background: rgba(139,58,46,0.06); border-radius: 4px; padding: 0.6rem 0.8rem; margin: 0.5rem 0 0.3rem; line-height: 1.5; }
+  .f-warn code { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; background: rgba(139,58,46,0.12); padding: 0.05rem 0.3rem; border-radius: 3px; }
   .f-label { font-family: 'Noto Serif KR', serif; font-size: 0.95rem; color: var(--ink); margin: 1.3rem 0 0.4rem; }
   .f-hint { font-family: 'EB Garamond', serif; font-style: italic; font-size: 0.8rem; color: var(--ink-faint); margin-left: 0.4rem; }
   .f-input, .f-textarea { font-family: 'Noto Serif KR', serif; font-size: 1rem; color: var(--ink); background: rgba(255,255,255,0.5); border: 1px solid var(--rule); border-radius: 4px; padding: 0.7rem 0.8rem; width: 100%; }
@@ -169,6 +187,96 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     }
   }
 
+  // ===== 기존 글 수정 =====
+  let editingId = null;  // 수정 중인 글 id (null이면 신규)
+
+  // 발행된(그리고 초안 포함) 글 목록을 select에 채움
+  async function loadArticleList() {
+    const sel = document.getElementById('f-editpick');
+    if (!sel) return;
+    try {
+      const { data: arts } = await supabase
+        .from('articles')
+        .select('id, title, slug, status, created_at')
+        .order('created_at', { ascending: false });
+      const opts = ['<option value="">— 새 글 쓰기 —</option>'];
+      (arts || []).forEach(a => {
+        const mark = a.status === 'published' ? '' : ' [' + a.status + ']';
+        opts.push('<option value="' + a.id + '">' + (a.title || '(제목 없음)') + mark + '</option>');
+      });
+      sel.innerHTML = opts.join('');
+      // 편집 중이던 글이 있으면 선택 유지
+      if (editingId) sel.value = String(editingId);
+    } catch (e) {
+      sel.innerHTML = '<option value="">(목록을 불러오지 못했습니다)</option>';
+    }
+  }
+
+  // 폼 전체를 비우고 신규 모드로
+  function resetToNew() {
+    editingId = null;
+    const ids = ['f-title','f-subtitle','f-slug','f-tags','f-cover','f-coveralt','f-body','f-metadesc','f-ogimage','f-nw-title','f-nw-slug','f-nw-week'];
+    ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    const status = document.getElementById('f-status'); if (status) status.value = 'draft';
+    const pinned = document.getElementById('f-pinned'); if (pinned) pinned.checked = false;
+    const warn = document.getElementById('f-bodywarn'); if (warn) warn.style.display = 'none';
+    const mode = document.getElementById('f-editmode'); if (mode) mode.textContent = '';
+    const pick = document.getElementById('f-editpick'); if (pick) pick.value = '';
+    // 주제 카드 모드는 단독으로 되돌림
+    const solo = document.querySelector('input[name="topic-mode"][value="solo"]');
+    if (solo) { solo.checked = true; updateTopicUI(); }
+  }
+
+  // 선택한 글을 폼에 불러옴 — body는 저장된 그대로(data-anchor 포함) 넣는다 (생명줄)
+  async function pickArticle(id) {
+    if (!id) { resetToNew(); return; }
+    try {
+      const { data: art, error } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+      if (error || !art) { alert('글을 불러오지 못했습니다.'); return; }
+
+      editingId = art.id;
+      const set = (fid, val) => { const el = document.getElementById(fid); if (el) el.value = (val != null ? val : ''); };
+      set('f-title', art.title);
+      set('f-subtitle', art.subtitle);
+      set('f-slug', art.slug);
+      set('f-tags', Array.isArray(art.tags) ? art.tags.join(', ') : '');
+      set('f-cover', art.cover_image);
+      set('f-coveralt', art.cover_alt);
+      set('f-body', art.body);   // ★ 앵커 붙은 원본 그대로
+      set('f-metadesc', art.meta_desc);
+      set('f-ogimage', art.og_image);
+      const status = document.getElementById('f-status'); if (status) status.value = art.status || 'draft';
+      const pinned = document.getElementById('f-pinned'); if (pinned) pinned.checked = !!art.pinned;
+
+      // 주제 카드 모드 설정: work_id 있으면 기존카드, 없으면 단독(공지 등)
+      if (art.work_id) {
+        const ex = document.querySelector('input[name="topic-mode"][value="existing"]');
+        if (ex) { ex.checked = true; updateTopicUI(); }
+        const wsel = document.getElementById('f-workid');
+        if (wsel) wsel.value = String(art.work_id);
+      } else {
+        const solo = document.querySelector('input[name="topic-mode"][value="solo"]');
+        if (solo) { solo.checked = true; updateTopicUI(); }
+        const cat = document.getElementById('f-category');
+        if (cat && art.category) cat.value = art.category;
+      }
+
+      // 수정 모드 표시 + 주의 문구 켬
+      const mode = document.getElementById('f-editmode');
+      if (mode) mode.textContent = '수정 중: ' + (art.title || '(제목 없음)') + ' (/' + art.slug + ')';
+      const warn = document.getElementById('f-bodywarn');
+      if (warn) warn.style.display = 'block';
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (e) {
+      alert('불러오기 실패: ' + e.message);
+    }
+  }
+
   async function initDesk() {
     const wrap = document.getElementById('desk-wrap');
     const note = document.getElementById('desk-note');
@@ -203,6 +311,13 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     });
     updateTopicUI();
     loadWorks();
+
+    // 기존 글 수정 동선
+    loadArticleList();
+    const pickEl = document.getElementById('f-editpick');
+    if (pickEl) pickEl.addEventListener('change', () => pickArticle(pickEl.value));
+    const newBtn = document.getElementById('f-newbtn');
+    if (newBtn) newBtn.addEventListener('click', resetToNew);
 
     // 글 제목 → 글 slug 자동
     const titleEl = document.getElementById('f-title');
@@ -277,6 +392,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         };
       }
 
+      // 수정 모드면 id를 실어 보냄 (신규면 insert)
+      if (editingId) article.id = editingId;
+
       function showErr(msg) {
         if (result) { result.style.color = '#a33'; result.textContent = msg; }
       }
@@ -297,8 +415,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         });
         const data = await res.json();
         if (data.status === 'ok') {
-          if (result) { result.style.color = 'var(--mark)'; result.textContent = '저장되었습니다. (주소: /' + data.slug + ')'; }
+          const wasEdit = !!editingId;
+          if (result) {
+            result.style.color = 'var(--mark)';
+            result.textContent = (wasEdit ? '수정되었습니다' : '저장되었습니다') + '. (주소: /' + data.slug + ')';
+          }
+          if (data.id) editingId = data.id;
           loadWorks();
+          loadArticleList();
         } else if (data.status === 'forbidden') {
           showErr('권한이 없습니다.');
         } else {
