@@ -45,7 +45,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       <div class="f-topic-new" id="topic-new" style="display:none;">
         <div class="f-row">
           <div>
-            <label class="f-label">주차</label>
+            <label class="f-label">넘기 번호 <span class="f-hint">몇 번째 넘기인가 (발행 회차, 누적)</span></label>
             <input type="number" id="f-nw-week" class="f-input" placeholder="1" min="1" />
           </div>
           <div>
@@ -144,6 +144,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 <script>
   import { supabase } from '../../lib/supabaseClient.js';
 
+  // NOTE: works.week = '넘기' 번호 (발행 회차, 1부터 누적, 쉬어가도 연속). 달력 주차·week 표기는 독자에게 노출 금지 — 표기는 'N번째 넘기'.
+
   function slugify(s) {
     return (s || '').trim().toLowerCase()
       .replace(/\s+/g, '-')
@@ -180,8 +182,15 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         return;
       }
       sel.innerHTML = works.map(w =>
-        '<option value="' + w.id + '">' + w.week + '주 · ' + w.category + ' · ' + w.title + '</option>'
+        '<option value="' + w.id + '">' + w.week + '번째 넘기 · ' + w.category + ' · ' + w.title + '</option>'
       ).join('');
+
+      // 넘기 번호 자동 제안: 직전 최대 넘기 + 1 (works가 week 내림차순이라 [0]이 최대). 수정 가능한 기본값.
+      const nwWeekEl = document.getElementById('f-nw-week');
+      if (nwWeekEl && !nwWeekEl.value) {
+        const maxWeek = works[0] ? Number(works[0].week) : 0;
+        if (Number.isFinite(maxWeek)) nwWeekEl.value = String(maxWeek + 1);
+      }
     } catch (e) {
       sel.innerHTML = '<option value="">(목록을 불러오지 못했습니다)</option>';
     }
@@ -417,7 +426,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         const nwTitle = get('f-nw-title');
         const nwSlug = get('f-nw-slug');
         const nwWeek = get('f-nw-week');
-        if (!nwTitle || !nwSlug || !nwWeek) { showErr('새 주제 카드의 주차·제목·주소를 채우십시오.'); return; }
+        if (!nwTitle || !nwSlug || !nwWeek) { showErr('새 주제 카드의 넘기 번호·제목·주소를 채우십시오.'); return; }
         article.newWork = {
           week: nwWeek,
           category: get('f-nw-category'),

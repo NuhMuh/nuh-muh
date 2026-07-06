@@ -16,6 +16,7 @@ const supabase = createClient(
 // 주제 카드 + 글 읽기
 const { data: works } = await supabase
   .from('works')
+  // NOTE: works.week = '넘기' 번호 (발행 회차, 1부터 누적). 달력 주차 아님. 독자 표기는 'N번째 넘기'.
   .select('id, week, category, title, slug, hover_images')
   .order('week', { ascending: false });
 
