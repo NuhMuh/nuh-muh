@@ -321,6 +321,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     loadWorks();
 
     // 기존 글 수정 동선
+    deskToken = session.access_token;
     loadArticleList();
     const pickEl = document.getElementById('f-editpick');
     if (pickEl) pickEl.addEventListener('change', () => pickArticle(pickEl.value));
