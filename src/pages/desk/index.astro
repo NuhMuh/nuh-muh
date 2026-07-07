@@ -143,6 +143,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
 <script>
   import { supabase } from '../../lib/supabaseClient.js';
+  import { preprocessBody } from '../../lib/editor/anchor-client.js';
 
   // NOTE: works.week = '넘기' 번호 (발행 회차, 1부터 누적, 쉬어가도 연속). 달력 주차·week 표기는 독자에게 노출 금지 — 표기는 'N번째 넘기'.
 
@@ -454,6 +455,13 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         console.log('구조 검증 실패 — 원본:', struct.original);
         console.log('구조 검증 실패 — 브라우저 보정:', struct.corrected);
         return;
+      }
+
+      // 본문 전처리 (마틴 파이프라인: 빈 블록 제거 → 앵커 주입). 결과를 body로.
+      const prep = preprocessBody(article.body);
+      article.body = prep.html;
+      if (prep.removed > 0) {
+        console.log('빈 블록 ' + prep.removed + '개 제거됨 (저장 전 전처리)');
       }
 
       btn.disabled = true;

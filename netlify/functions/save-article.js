@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { injectAnchors, verifyAnchors } from './_anchors.mjs';
+import { verifyAnchors } from './_anchors.mjs';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -40,19 +40,20 @@ export default async (req) => {
 
   const a = body.article || {};
   const title = (a.title || '').trim();
-  const bodyHtml = injectAnchors(a.body || '');
+  // 앵커 주입은 클라이언트(anchor-client.js)에서 완료되어 도착함. 서버는 주입하지 않고 검증만.
+  const bodyHtml = a.body || '';
   const slug = (a.slug || '').trim();
 
   if (!title) return json({ status: 'error', detail: 'title required' });
   if (!bodyHtml) return json({ status: 'error', detail: 'body required' });
 
-  // 앵커 주입 검증 (마틴 지시: 조용한 부분 실패 금지)
-  // 대상 블록 개수 ≠ 앵커 개수면 주입이 어긋난 것 → 저장 중단
+  // 서버 최종 방어선 검증 (마틴 3규칙: 우회 저장 차단)
+  // 주입은 클라이언트가 완료. 서버는 "주입 미경유 저장"을 막는다.
   const anchorCheck = verifyAnchors(bodyHtml);
   if (!anchorCheck.ok) {
     return json({
       status: 'error',
-      detail: '앵커 주입 검증 실패: 블록 ' + anchorCheck.blocks + '개 중 앵커 ' + anchorCheck.anchors + '개. 본문 구조를 확인하세요.',
+      detail: '앵커 검증 실패(' + (anchorCheck.reason || '') + '): ' + (anchorCheck.detail || '본문 구조를 확인하세요.'),
     });
   }
   if (!slug) return json({ status: 'error', detail: 'slug required' });

@@ -1,9 +1,9 @@
-import { c as createComponent } from './astro-component_DH4wSQPH.mjs';
+import { c as createComponent } from './astro-component_DIZ9YQ3U.mjs';
 import 'piccolore';
-import { m as maybeRenderHead, p as renderTemplate, j as addAttribute, r as renderComponent } from './ssr-function_DZGrXcJL.mjs';
-import { $ as $$BaseLayout } from './BaseLayout_BUHHMUyg.mjs';
+import { m as maybeRenderHead, p as renderTemplate, j as addAttribute, r as renderComponent } from './ssr-function_B3prxcpv.mjs';
+import { $ as $$BaseLayout } from './BaseLayout_Bh9sY3Li.mjs';
 import 'clsx';
-import { r as renderScript } from './script_B2OseMw1.mjs';
+import { r as renderScript } from './script_ykdgUG11.mjs';
 import { createClient } from '@supabase/supabase-js';
 
 const $$Masthead = createComponent(($$result, $$props, $$slots) => {

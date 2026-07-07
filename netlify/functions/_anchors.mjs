@@ -1,82 +1,87 @@
-// 앵커 주입 — 외부 파서 의존성 없음 (정규식 기반).
-// 너머 본문은 정형화된 단순 블록 구조(문단·소제목·인용·목록, 중첩 없음)라
-// 정규식으로 안전. 주입 후 카운트 검증으로 예상 밖 구조를 감지(조용한 실패 금지).
+// 앵커 서버 검증 — 최종 방어선 (마틴: (ㄴ) 주입은 클라이언트로 이전됨).
+//
+// [변경 이력] 앵커 주입(injectAnchors)은 클라이언트(src/lib/editor/anchor-client.js)로
+// 이전되었다. 이유: 내부 p 구분은 구조 판단이고, 그것은 파서(클라이언트 DOMParser)의 일.
+// 서버 정규식은 중첩을 해석하지 않고 "우회 저장"만 막는 최종 방어선으로 남는다.
+//
+// 방어선 3규칙 (마틴 지시):
+//  1. p 이외 대상 태그(h2,h3,blockquote,ul,ol,li)는 여는 태그 전수가 data-anchor 필수.
+//     (이 태그들은 "내부에 생겨 앵커 없어도 되는" 경우가 없음 → 중첩 해석 불요)
+//  2. 앵커 없는 p 개수 ≤ (blockquote 여는 태그 수 + li 여는 태그 수).
+//     (앵커 없는 p가 합법인 유일한 경우 = blockquote/li 내부 p. 산술 상한만 확인)
+//  3. anchor ID 중복 거부 (글 내 유일성).
 
-// 앵커를 부여할 블록 요소 (이미지 제외)
-const ANCHOR_TAGS = ['p', 'h2', 'h3', 'blockquote', 'ul', 'ol', 'li'];
+// --- 정규식 헬퍼 ---
 
-// 여는 태그 매칭: <p>, <p class="x">, <p ...> 등. 닫는 태그(</p>)는 제외.
-// 태그명 뒤에 공백이나 > 가 오는 경우만 (ppp 같은 오매칭 방지)
-const TAG_OPEN_RE = new RegExp(
-  '<(' + ANCHOR_TAGS.join('|') + ')(\\s[^>]*)?>',
-  'gi'
-);
-
-// 순서 무관 랜덤 ID (8자 base36). 순서번호 절대 금지.
-function makeId(existing) {
-  let id;
-  do {
-    id = Math.random().toString(36).slice(2, 10);
-    if (id.length < 8) id = (id + '00000000').slice(0, 8);
-  } while (existing.has(id));
-  existing.add(id);
-  return id;
+// 특정 태그의 여는 태그 전체를 매칭 (닫는 태그 제외)
+function openTagRe(tag) {
+  return new RegExp('<' + tag + '(\\s[^>]*)?>', 'gi');
 }
 
-// 대상 블록 여는 태그의 개수를 셈 (검증용)
-export function countBlocks(html) {
-  if (!html || typeof html !== 'string') return 0;
-  const m = html.match(TAG_OPEN_RE);
+// 특정 태그의 여는 태그 수
+function countOpenTags(html, tag) {
+  const m = html.match(openTagRe(tag));
   return m ? m.length : 0;
 }
 
-// data-anchor 속성의 개수를 셈 (검증용)
-export function countAnchors(html) {
-  if (!html || typeof html !== 'string') return 0;
-  const m = html.match(/data-anchor\s*=/gi);
-  return m ? m.length : 0;
+// 특정 태그의 여는 태그 중 data-anchor 없는 것의 수
+function countOpenTagsWithoutAnchor(html, tag) {
+  const m = html.match(openTagRe(tag));
+  if (!m) return 0;
+  return m.filter((frag) => !/\sdata-anchor\s*=/i.test(frag)).length;
 }
 
 /**
- * body HTML의 각 블록 요소에 data-anchor를 멱등 주입.
- * - 이미 data-anchor 있는 태그는 건드리지 않음 (기존 ID 불변)
- * - 없는 블록에만 새 ID 부여
- * 반환: 앵커 주입된 HTML 문자열
- */
-export function injectAnchors(html) {
-  if (!html || typeof html !== 'string') return html;
-
-  // 기존 앵커 수집 (충돌 방지 + 멱등)
-  const existing = new Set();
-  const existingMatch = html.match(/data-anchor\s*=\s*"([^"]+)"/gi);
-  if (existingMatch) {
-    existingMatch.forEach((frag) => {
-      const v = frag.match(/data-anchor\s*=\s*"([^"]+)"/i);
-      if (v && v[1]) existing.add(v[1]);
-    });
-  }
-
-  // 각 대상 여는 태그를 검사해서, data-anchor 없으면 주입
-  const out = html.replace(TAG_OPEN_RE, (full, tag, attrs) => {
-    // 이미 이 태그에 data-anchor가 있으면 그대로 둠 (멱등)
-    if (attrs && /\sdata-anchor\s*=/i.test(attrs)) {
-      return full;
-    }
-    const id = makeId(existing);
-    const attrStr = attrs || '';
-    return '<' + tag + attrStr + ' data-anchor="' + id + '">';
-  });
-
-  return out;
-}
-
-/**
- * 주입 결과 검증 (마틴 지시: 조용한 부분 실패 금지).
- * 대상 블록 개수 === 앵커 개수 여야 정상.
- * 반환: { ok, blocks, anchors }
+ * 서버 최종 방어선 검증. 3규칙.
+ * 반환: { ok, reason?, detail? }
  */
 export function verifyAnchors(html) {
-  const blocks = countBlocks(html);
-  const anchors = countAnchors(html);
-  return { ok: blocks === anchors, blocks, anchors };
+  if (!html || typeof html !== 'string') {
+    return { ok: true }; // 빈 본문은 검증 대상 아님 (상위에서 body 필수 검사함)
+  }
+
+  // 규칙 1: p 이외 대상 태그는 전수 data-anchor 필수
+  const strictTags = ['h2', 'h3', 'blockquote', 'ul', 'ol', 'li'];
+  for (const tag of strictTags) {
+    const missing = countOpenTagsWithoutAnchor(html, tag);
+    if (missing > 0) {
+      return {
+        ok: false,
+        reason: 'missing-anchor',
+        detail: '<' + tag + '> 태그 중 ' + missing + '개가 앵커 없이 저장 시도됨 (주입 미경유 의심)',
+      };
+    }
+  }
+
+  // 규칙 2: 앵커 없는 p 개수 ≤ blockquote 수 + li 수
+  const pWithoutAnchor = countOpenTagsWithoutAnchor(html, 'p');
+  const bqCount = countOpenTags(html, 'blockquote');
+  const liCount = countOpenTags(html, 'li');
+  const innerPAllowance = bqCount + liCount;
+  if (pWithoutAnchor > innerPAllowance) {
+    return {
+      ok: false,
+      reason: 'unanchored-p',
+      detail: '앵커 없는 <p> ' + pWithoutAnchor + '개가 허용치(' + innerPAllowance + ')를 초과 (독립 p 주입 미경유 의심)',
+    };
+  }
+
+  // 규칙 3: anchor ID 중복 거부
+  const ids = [];
+  const idMatch = html.match(/data-anchor\s*=\s*"([^"]+)"/gi);
+  if (idMatch) {
+    for (const frag of idMatch) {
+      const v = frag.match(/data-anchor\s*=\s*"([^"]+)"/i);
+      if (v && v[1]) ids.push(v[1]);
+    }
+  }
+  const seen = new Set();
+  for (const id of ids) {
+    if (seen.has(id)) {
+      return { ok: false, reason: 'duplicate-anchor', detail: '중복 앵커 ID: ' + id };
+    }
+    seen.add(id);
+  }
+
+  return { ok: true };
 }
