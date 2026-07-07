@@ -15,6 +15,7 @@
     "@astrojs/netlify": "^7.0.13",
     "@supabase/supabase-js": "^2.108.1",
     "@tiptap/core": "^3.27.3",
+    "@tiptap/extension-image": "^3.27.3",
     "@tiptap/extension-link": "^3.27.3",
     "@tiptap/pm": "^3.27.3",
     "@tiptap/starter-kit": "^3.27.3",
