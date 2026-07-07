@@ -1,0 +1,100 @@
+---
+// Tiptap 오디션 페이지 (마틴 지시) — 앵커 보존 실증용. 격리된 테스트 경로.
+// 본 발행소와 무관. 통과 확인 후 삭제 예정.
+export const prerender = false;
+---
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>Tiptap 오디션</title>
+  <style>
+    body { font-family: sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.3rem; }
+    .tt-editor { border: 1px solid #999; border-radius: 4px; padding: 1rem; min-height: 200px; margin: 1rem 0; }
+    .tt-editor:focus-within { border-color: #8b3a2e; }
+    .tt-toolbar { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+    .tt-toolbar button { padding: 0.3rem 0.6rem; cursor: pointer; }
+    .out { background: #1c2340; color: #ece4cf; padding: 1rem; border-radius: 4px; white-space: pre-wrap; word-break: break-all; font-family: monospace; font-size: 0.8rem; line-height: 1.5; }
+    .btn-row { display: flex; gap: 0.6rem; margin: 1rem 0; flex-wrap: wrap; }
+    .btn-row button { padding: 0.5rem 1rem; cursor: pointer; }
+    .label { font-weight: bold; margin-top: 1.5rem; }
+    ul, ol { padding-left: 1.5rem; }
+    blockquote { border-left: 3px solid #8b3a2e; padding-left: 1rem; color: #555; }
+  </style>
+</head>
+<body>
+  <h1>Tiptap 오디션 — 앵커 보존 실증</h1>
+  <p>아래 에디터엔 앵커 붙은 샘플 글이 로드됩니다. 편집 후 "HTML 출력"을 눌러 앵커 생존을 확인하세요.</p>
+
+  <div class="tt-toolbar" id="toolbar">
+    <button data-cmd="bold"><b>B</b></button>
+    <button data-cmd="italic"><i>I</i></button>
+    <button data-cmd="h2">H2</button>
+    <button data-cmd="h3">H3</button>
+    <button data-cmd="quote">인용</button>
+    <button data-cmd="bullet">• 목록</button>
+    <button data-cmd="ordered">1. 목록</button>
+  </div>
+
+  <div class="tt-editor" id="editor"></div>
+
+  <div class="btn-row">
+    <button id="btn-out">HTML 출력</button>
+    <button id="btn-reload">샘플 다시 로드</button>
+  </div>
+
+  <div class="label">현재 HTML 출력 (getHTML):</div>
+  <div class="out" id="output">(HTML 출력을 누르세요)</div>
+
+  <script type="module">
+    import { Editor } from '@tiptap/core';
+    import StarterKit from '@tiptap/starter-kit';
+    import Link from '@tiptap/extension-link';
+    import { AnchorPreserve } from '../../lib/editor/anchor-extension.js';
+
+    // 앵커 붙은 샘플 글 (오디션 항목 커버: 문단·소제목·인용·목록)
+    const SAMPLE = [
+      '<p data-anchor="aaa11111">첫 문단이다. 이걸 편집해본다.</p>',
+      '<h2 data-anchor="bbb22222">소제목</h2>',
+      '<p data-anchor="ccc33333">둘째 문단이다.</p>',
+      '<blockquote data-anchor="ddd44444">인용한 문장.</blockquote>',
+      '<ul data-anchor="eee55555"><li data-anchor="fff66666">목록 항목 하나</li><li data-anchor="ggg77777">목록 항목 둘</li></ul>',
+    ].join('');
+
+    const editor = new Editor({
+      element: document.getElementById('editor'),
+      extensions: [
+        StarterKit.configure({ heading: { levels: [2, 3] } }),
+        Link,
+        AnchorPreserve,
+      ],
+      content: SAMPLE,
+    });
+
+    // 툴바
+    document.getElementById('toolbar').addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      const cmd = btn.dataset.cmd;
+      const c = editor.chain().focus();
+      if (cmd === 'bold') c.toggleBold().run();
+      else if (cmd === 'italic') c.toggleItalic().run();
+      else if (cmd === 'h2') c.toggleHeading({ level: 2 }).run();
+      else if (cmd === 'h3') c.toggleHeading({ level: 3 }).run();
+      else if (cmd === 'quote') c.toggleBlockquote().run();
+      else if (cmd === 'bullet') c.toggleBulletList().run();
+      else if (cmd === 'ordered') c.toggleOrderedList().run();
+    });
+
+    document.getElementById('btn-out').addEventListener('click', () => {
+      document.getElementById('output').textContent = editor.getHTML();
+    });
+    document.getElementById('btn-reload').addEventListener('click', () => {
+      editor.commands.setContent(SAMPLE);
+      document.getElementById('output').textContent = '(다시 로드됨)';
+    });
+
+    window.__editor = editor; // 콘솔 디버깅용
+  </script>
+</body>
+</html>
