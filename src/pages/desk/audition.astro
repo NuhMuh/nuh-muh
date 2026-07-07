@@ -46,55 +46,8 @@ export const prerender = false;
   <div class="label">현재 HTML 출력 (getHTML):</div>
   <div class="out" id="output">(HTML 출력을 누르세요)</div>
 
-  <script type="module">
-    import { Editor } from '@tiptap/core';
-    import StarterKit from '@tiptap/starter-kit';
-    import Link from '@tiptap/extension-link';
-    import { AnchorPreserve } from '../../lib/editor/anchor-extension.js';
-
-    // 앵커 붙은 샘플 글 (오디션 항목 커버: 문단·소제목·인용·목록)
-    const SAMPLE = [
-      '<p data-anchor="aaa11111">첫 문단이다. 이걸 편집해본다.</p>',
-      '<h2 data-anchor="bbb22222">소제목</h2>',
-      '<p data-anchor="ccc33333">둘째 문단이다.</p>',
-      '<blockquote data-anchor="ddd44444">인용한 문장.</blockquote>',
-      '<ul data-anchor="eee55555"><li data-anchor="fff66666">목록 항목 하나</li><li data-anchor="ggg77777">목록 항목 둘</li></ul>',
-    ].join('');
-
-    const editor = new Editor({
-      element: document.getElementById('editor'),
-      extensions: [
-        StarterKit.configure({ heading: { levels: [2, 3] } }),
-        Link,
-        AnchorPreserve,
-      ],
-      content: SAMPLE,
-    });
-
-    // 툴바
-    document.getElementById('toolbar').addEventListener('click', (e) => {
-      const btn = e.target.closest('button');
-      if (!btn) return;
-      const cmd = btn.dataset.cmd;
-      const c = editor.chain().focus();
-      if (cmd === 'bold') c.toggleBold().run();
-      else if (cmd === 'italic') c.toggleItalic().run();
-      else if (cmd === 'h2') c.toggleHeading({ level: 2 }).run();
-      else if (cmd === 'h3') c.toggleHeading({ level: 3 }).run();
-      else if (cmd === 'quote') c.toggleBlockquote().run();
-      else if (cmd === 'bullet') c.toggleBulletList().run();
-      else if (cmd === 'ordered') c.toggleOrderedList().run();
-    });
-
-    document.getElementById('btn-out').addEventListener('click', () => {
-      document.getElementById('output').textContent = editor.getHTML();
-    });
-    document.getElementById('btn-reload').addEventListener('click', () => {
-      editor.commands.setContent(SAMPLE);
-      document.getElementById('output').textContent = '(다시 로드됨)';
-    });
-
-    window.__editor = editor; // 콘솔 디버깅용
+  <script>
+    import '../../lib/editor/audition.js';
   </script>
 </body>
 </html>
