@@ -53,17 +53,39 @@ export function verifyAnchors(html) {
     }
   }
 
-  // 규칙 2: 앵커 없는 p 개수 ≤ blockquote 수 + li 수
-  const pWithoutAnchor = countOpenTagsWithoutAnchor(html, 'p');
-  const bqCount = countOpenTags(html, 'blockquote');
-  const liCount = countOpenTags(html, 'li');
-  const innerPAllowance = bqCount + liCount;
-  if (pWithoutAnchor > innerPAllowance) {
-    return {
-      ok: false,
-      reason: 'unanchored-p',
-      detail: '앵커 없는 <p> ' + pWithoutAnchor + '개가 허용치(' + innerPAllowance + ')를 초과 (독립 p 주입 미경유 의심)',
-    };
+  // 규칙 2: 깊이 스캔 (마틴 재설계 — 산술 상한 폐기)
+  // 태그를 앞에서부터 순차 스캔. blockquote/li 여는 +1, 닫는 -1로 깊이 카운터.
+  // 앵커 없는 p가 깊이>0이면 합법(내부 p), 깊이=0이면 거부(독립 p 주입 미경유).
+  // 앵커 있는 p는 깊이와 무관하게 합법. 서버가 직접 스캔 — 클라이언트 값 안 믿음.
+  // (패턴 매칭이 아닌 선형 스캔이므로 정규식 중첩 취약점 없음)
+  {
+    // 모든 태그를 순서대로 토큰화: <tag ...> 또는 </tag>
+    const tokenRe = /<(\/?)(blockquote|li|p)(\s[^>]*)?>/gi;
+    let depth = 0;
+    let m;
+    while ((m = tokenRe.exec(html)) !== null) {
+      const isClose = m[1] === '/';
+      const tag = m[2].toLowerCase();
+      const attrs = m[3] || '';
+
+      if (tag === 'blockquote' || tag === 'li') {
+        if (isClose) {
+          depth = Math.max(0, depth - 1);
+        } else {
+          depth += 1;
+        }
+      } else if (tag === 'p' && !isClose) {
+        // 앵커 없는 여는 p
+        const hasAnchor = /\sdata-anchor\s*=/i.test(attrs);
+        if (!hasAnchor && depth === 0) {
+          return {
+            ok: false,
+            reason: 'unanchored-p',
+            detail: '앵커 없는 독립 <p>가 발견됨 (깊이 0, 주입 미경유 의심)',
+          };
+        }
+      }
+    }
   }
 
   // 규칙 3: anchor ID 중복 거부

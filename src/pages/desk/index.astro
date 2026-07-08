@@ -504,11 +504,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       }
 
       // 본문 전처리 (마틴 파이프라인: 빈 블록 제거 → 앵커 주입). 결과를 body로.
-      console.log('=== 전처리 전 body ===\n', article.body);
       const prep = preprocessBody(article.body);
       article.body = prep.html;
-      console.log('=== 전처리 후 body ===\n', article.body);
-      console.log('=== 제거된 빈블록 ===', prep.removed);
+      if (prep.removed > 0) {
+        console.log('빈 블록 ' + prep.removed + '개 제거됨 (저장 전 전처리)');
+      }
       if (prep.removed > 0) {
         console.log('빈 블록 ' + prep.removed + '개 제거됨 (저장 전 전처리)');
       }

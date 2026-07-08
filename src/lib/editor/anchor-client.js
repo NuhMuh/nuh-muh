@@ -79,11 +79,11 @@ export function preprocessBody(html) {
   const root = doc.getElementById('__root__');
   if (!root) return { html: html, removed: 0 };
 
-  // 1) 빈 블록 제거 — 대상 블록 중 순수 빈 것 (단, 내부 p는 부모 처리에 맡기고 여기선 최상위 대상만)
+  // 1) 빈 블록 제거 — 텍스트도 이미지도 없는 순수 빈 블록 (내부 p 포함, 마틴 (가))
   let removed = 0;
-  // li 안의 빈 p 등을 잘못 지우지 않도록, 최상위 대상 블록만 검사
   root.querySelectorAll(ANCHOR_TAGS.join(',')).forEach((el) => {
-    if (isInnerP(el)) return;              // 내부 p는 대상 아님
+    // 빈 블록 제거는 내부 p에도 적용 (마틴 (가): 빈 블록 제거의 일관 확장).
+    // "빈"의 정의는 동일 — 텍스트도 이미지도 없는 것. 내부 p든 독립 p든 빈 것은 제거.
     if (isEmptyBlock(el)) {
       el.remove();
       removed++;
