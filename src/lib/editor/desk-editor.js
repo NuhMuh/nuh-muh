@@ -20,7 +20,7 @@ export function initDeskEditor() {
   editor = new Editor({
     element: el,
     extensions: [
-      StarterKit.configure({ heading: { levels: [2, 3] } }),
+      StarterKit.configure({ heading: { levels: [2, 3] }, link: false }),
       Link.configure({ openOnClick: false }),
       Image,
       AnchorPreserve,
