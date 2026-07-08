@@ -154,6 +154,13 @@ export default async (req) => {
     }
     result = await supabase.from('articles').update(row).eq('id', a.id).select('id, slug').maybeSingle();
   } else {
+    // 신규 글: 요청자의 member_id를 author_id로 연결 (마틴: 빈 값 방지)
+    // 현재 요청자는 항상 운영자. critic별 연결·권한 분화는 3-2 몫.
+    const authorEmail = userData.user.email;
+    const memberLookup = await supabase.from('members').select('id').eq('email', authorEmail).maybeSingle();
+    if (memberLookup.data && memberLookup.data.id) {
+      row.author_id = memberLookup.data.id;
+    }
     result = await supabase.from('articles').insert(row).select('id, slug').maybeSingle();
   }
 
