@@ -183,7 +183,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 <script>
   import { supabase } from '../../lib/supabaseClient.js';
   import { preprocessBody } from '../../lib/editor/anchor-client.js';
-  import { initDeskEditor } from '../../lib/editor/desk-editor.js';
+  import { initDeskEditor, setUploadToken } from '../../lib/editor/desk-editor.js';
 
   // NOTE: works.week = '넘기' 번호 (발행 회차, 1부터 누적, 쉬어가도 연속). 달력 주차·week 표기는 독자에게 노출 금지 — 표기는 'N번째 넘기'.
 
@@ -353,6 +353,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
     // 리치 에디터 초기화 (2층)
     deskEditor = initDeskEditor();
+    setUploadToken(session.access_token);  // 이미지 업로드용 operator 토큰 주입
 
     let isAdmin = false;
     try {

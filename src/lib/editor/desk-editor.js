@@ -54,6 +54,46 @@ export function initDeskEditor() {
   };
 }
 
+// 이미지 업로드 (서명 URL 방식): 파일 선택 → 서버서 서명URL 발급 → 브라우저 직접 업로드 → 공개URL 삽입
+let deskTokenForUpload = null;  // 발행소가 주입 (operator 토큰)
+export function setUploadToken(tok) { deskTokenForUpload = tok; }
+
+function triggerImageUpload() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/jpeg,image/png,image/webp,image/gif';
+  input.onchange = async () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { alert('이미지는 10MB 이하만 가능합니다.'); return; }
+    try {
+      // 1) 서명 URL 요청 (operator 인증)
+      const signRes = await fetch('/.netlify/functions/sign-upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: deskTokenForUpload, contentType: file.type }),
+      });
+      const sign = await signRes.json();
+      if (sign.status !== 'ok') { alert('업로드 준비 실패: ' + (sign.detail || '')); return; }
+
+      // 2) 서명 URL로 브라우저 직접 업로드 (→ Storage)
+      const upRes = await fetch(sign.signedUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
+      if (!upRes.ok) { alert('업로드 실패 (' + upRes.status + ')'); return; }
+
+      // 3) 공개 URL을 에디터에 삽입 (alt는 삽입 후 운영자가 소스뷰 등에서 조정 가능)
+      const alt = window.prompt('이미지 설명(alt, 비워도 됨):', '') || '';
+      editor.chain().focus().setImage({ src: sign.publicUrl, alt: alt }).run();
+    } catch (e) {
+      alert('업로드 오류: ' + e.message);
+    }
+  };
+  input.click();
+}
+
 // 툴바 버튼 동작
 function wireToolbar() {
   const tools = document.getElementById('ed-tools');
@@ -78,10 +118,7 @@ function wireToolbar() {
       c.extendMarkRange('link').setLink({ href: url }).run();
     }
     else if (cmd === 'image') {
-      const url = window.prompt('이미지 주소(URL):', 'https://');
-      if (!url) return;
-      const alt = window.prompt('이미지 설명(alt):', '') || '';
-      c.setImage({ src: url, alt: alt }).run();
+      triggerImageUpload();
     }
   });
 }
