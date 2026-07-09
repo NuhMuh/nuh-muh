@@ -515,9 +515,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       }
 
       // 본문 전처리 (마틴 파이프라인: 빈 블록 제거 → 앵커 주입). 결과를 body로.
-      console.log('=== 전 앵커 ===', JSON.stringify(article.body.match(/data-anchor="[^"]*"/g) || []));
       const prep = preprocessBody(article.body);
-      console.log('=== 후 앵커 ===', JSON.stringify(prep.html.match(/data-anchor="[^"]*"/g) || []));
       article.body = prep.html;
       if (prep.removed > 0) {
         console.log('빈 블록 ' + prep.removed + '개 제거됨 (저장 전 전처리)');

@@ -90,8 +90,19 @@ export function preprocessBody(html) {
     }
   });
 
-  // 2) 앵커 주입 (내부 p 제외, 멱등) — 기존 함수 재사용 위해 여기서 직접 순회
-  const existing = new Set();
+  // 2) 중복 앵커 벗기기 (마틴 원칙: 글 내 충돌 방지)
+  // Tiptap이 블록 복제(엔터로 문단 나누기) 시 data-anchor를 딸려옴 → 같은 ID 중복.
+  // 첫 번째(원본, 담기 참조 보존)만 남기고 나머지는 벗김 → 아래 주입이 새 ID 부여.
+  const seenIds = new Set();
+  root.querySelectorAll('[data-anchor]').forEach((el) => {
+    const v = el.getAttribute('data-anchor');
+    if (!v) return;
+    if (seenIds.has(v)) { el.removeAttribute('data-anchor'); }
+    else { seenIds.add(v); }
+  });
+
+  // 3) 앵커 주입 (내부 p 제외, 멱등) — 없는 블록에만 새 고유 ID
+  const existing = new Set(seenIds);
   root.querySelectorAll('[data-anchor]').forEach((el) => {
     const v = el.getAttribute('data-anchor');
     if (v) existing.add(v);
