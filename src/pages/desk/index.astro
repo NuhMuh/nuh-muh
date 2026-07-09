@@ -168,10 +168,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .ed-editor .ProseMirror blockquote { border-left: 2px solid var(--mark); padding-left: 1rem; color: var(--ink-soft); font-style: italic; }
   .ed-editor .ProseMirror ul, .ed-editor .ProseMirror ol { padding-left: 1.5rem; }
   .ed-editor .ProseMirror img { max-width: 100%; border-radius: 4px; }
-  .ed-editor .ProseMirror img[data-size="sm"] { max-width: 40%; }
-  .ed-editor .ProseMirror img[data-size="md"] { max-width: 70%; }
-  .ed-editor .ProseMirror img[data-size="lg"] { max-width: 100%; }
-  .ed-editor .ProseMirror img.ProseMirror-selectednode { outline: 2px solid var(--mark); outline-offset: 2px; }
+  .ed-editor :global(.ProseMirror img[data-size="sm"]) { max-width: 40%; }
+  .ed-editor :global(.ProseMirror img[data-size="md"]) { max-width: 70%; }
+  .ed-editor :global(.ProseMirror img[data-size="lg"]) { max-width: 100%; }
+  .ed-editor :global(.ProseMirror img.ProseMirror-selectednode) { outline: 2px solid var(--mark); outline-offset: 2px; }
   .ed-imgsize:disabled { opacity: 0.3; cursor: default; }
   .ed-imgsize:disabled:hover { border-color: var(--rule); color: var(--ink); }
   .ed-editor .ProseMirror blockquote p, .ed-editor .ProseMirror li p { margin: 0; }
