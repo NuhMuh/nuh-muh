@@ -1,4 +1,4 @@
-import { l as createRenderInstruction } from './ssr-function_B8RbhC4x.mjs';
+import { l as createRenderInstruction } from './ssr-function_DKBpz3-u.mjs';
 
 async function renderScript(result, id) {
   const inlined = result.inlinedScripts.get(id);

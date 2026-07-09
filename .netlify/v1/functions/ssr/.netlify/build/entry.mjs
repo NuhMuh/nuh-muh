@@ -1,1 +1,1 @@
-export { k as createHandler } from './chunks/ssr-function_B8RbhC4x.mjs';
+export { k as createHandler } from './chunks/ssr-function_DKBpz3-u.mjs';
