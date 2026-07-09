@@ -120,11 +120,18 @@ function wireToolbar() {
     else if (cmd === 'image') {
       triggerImageUpload();
     }
-    else if (cmd === 'img-sm' || cmd === 'img-md' || cmd === 'img-lg') {
-      // 선택된 이미지의 크기 프리셋 변경 (마틴: 프리셋, 정렬 없음)
-      const size = cmd.slice(4); // 'sm' | 'md' | 'lg'
+    else if (cmd.indexOf('size-') === 0) {
+      // 선택된 이미지의 크기 프리셋 변경 (5단: xs/sm/md/lg/full)
+      const size = cmd.slice(5); // 'xs'|'sm'|'md'|'lg'|'full'
       if (editor.isActive('image')) {
         editor.chain().focus().updateAttributes('image', { 'data-size': size }).run();
+      }
+    }
+    else if (cmd.indexOf('align-') === 0) {
+      // 선택된 이미지의 정렬 변경 (left/center/right, float 아님)
+      const align = cmd.slice(6); // 'left'|'center'|'right'
+      if (editor.isActive('image')) {
+        editor.chain().focus().updateAttributes('image', { 'data-align': align }).run();
       }
     }
   });
@@ -148,13 +155,20 @@ function refreshToolbar() {
     if (map[cmd]) btn.classList.toggle('is-active', map[cmd]());
   });
 
-  // 이미지 크기 버튼: 이미지 선택 시에만 활성화 + 현재 크기 강조
+  // 이미지 크기/정렬 버튼: 이미지 선택 시에만 활성화 + 현재 값 강조
   const imgActive = editor.isActive('image');
-  const curSize = imgActive ? (editor.getAttributes('image')['data-size'] || 'md') : null;
+  const imgAttrs = imgActive ? editor.getAttributes('image') : {};
+  const curSize = imgActive ? (imgAttrs['data-size'] || 'md') : null;
+  const curAlign = imgActive ? (imgAttrs['data-align'] || 'center') : null;
   document.querySelectorAll('#ed-tools .ed-imgsize').forEach((btn) => {
-    const size = btn.dataset.cmd.slice(4); // sm/md/lg
-    btn.disabled = !imgActive;             // 이미지 선택 안 됐으면 비활성
+    const size = btn.dataset.cmd.slice(5); // size- 접두어
+    btn.disabled = !imgActive;
     btn.classList.toggle('is-active', imgActive && curSize === size);
+  });
+  document.querySelectorAll('#ed-tools .ed-imgalign').forEach((btn) => {
+    const align = btn.dataset.cmd.slice(6); // align- 접두어
+    btn.disabled = !imgActive;
+    btn.classList.toggle('is-active', imgActive && curAlign === align);
   });
 }
 
