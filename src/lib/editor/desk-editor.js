@@ -1,7 +1,7 @@
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
-import Image from '@tiptap/extension-image';
+import { SizedImage } from './image-extension.js';
 import { AnchorPreserve } from './anchor-extension.js';
 
 // 발행소 리치 에디터 (2층). 위지윅 ↔ 소스뷰 토글.
@@ -22,7 +22,7 @@ export function initDeskEditor() {
     extensions: [
       StarterKit.configure({ heading: { levels: [2, 3] }, link: false }),
       Link.configure({ openOnClick: false }),
-      Image,
+      SizedImage,
       AnchorPreserve,
     ],
     content: '',
@@ -120,6 +120,13 @@ function wireToolbar() {
     else if (cmd === 'image') {
       triggerImageUpload();
     }
+    else if (cmd === 'img-sm' || cmd === 'img-md' || cmd === 'img-lg') {
+      // 선택된 이미지의 크기 프리셋 변경 (마틴: 프리셋, 정렬 없음)
+      const size = cmd.slice(4); // 'sm' | 'md' | 'lg'
+      if (editor.isActive('image')) {
+        editor.chain().focus().updateAttributes('image', { 'data-size': size }).run();
+      }
+    }
   });
 }
 
@@ -139,6 +146,15 @@ function refreshToolbar() {
   document.querySelectorAll('#ed-tools button').forEach((btn) => {
     const cmd = btn.dataset.cmd;
     if (map[cmd]) btn.classList.toggle('is-active', map[cmd]());
+  });
+
+  // 이미지 크기 버튼: 이미지 선택 시에만 활성화 + 현재 크기 강조
+  const imgActive = editor.isActive('image');
+  const curSize = imgActive ? (editor.getAttributes('image')['data-size'] || 'md') : null;
+  document.querySelectorAll('#ed-tools .ed-imgsize').forEach((btn) => {
+    const size = btn.dataset.cmd.slice(4); // sm/md/lg
+    btn.disabled = !imgActive;             // 이미지 선택 안 됐으면 비활성
+    btn.classList.toggle('is-active', imgActive && curSize === size);
   });
 }
 
