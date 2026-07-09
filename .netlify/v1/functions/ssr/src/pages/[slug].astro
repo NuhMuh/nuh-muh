@@ -79,6 +79,17 @@ const dateStr = article.created_at ? new Date(article.created_at).toLocaleDateSt
   .art-body :global(img[data-align="left"]) { margin-right: auto; margin-left: 0; }
   .art-body :global(img[data-align="center"]) { margin-left: auto; margin-right: auto; }
   .art-body :global(img[data-align="right"]) { margin-left: auto; margin-right: 0; }
+  .art-body :global(figure) { margin: 1.6rem 0; }
+  .art-body :global(figure[data-size="xs"]) { max-width: 25%; }
+  .art-body :global(figure[data-size="sm"]) { max-width: 40%; }
+  .art-body :global(figure[data-size="md"]) { max-width: 60%; }
+  .art-body :global(figure[data-size="lg"]) { max-width: 80%; }
+  .art-body :global(figure[data-size="full"]) { max-width: 100%; }
+  .art-body :global(figure[data-align="left"]) { margin-right: auto; margin-left: 0; }
+  .art-body :global(figure[data-align="center"]) { margin-left: auto; margin-right: auto; }
+  .art-body :global(figure[data-align="right"]) { margin-left: auto; margin-right: 0; }
+  .art-body :global(figure img) { display: block; max-width: 100%; height: auto; margin: 0; }
+  .art-body :global(figcaption) { font-size: 0.85rem; color: var(--ink-soft); margin-top: 0.5rem; line-height: 1.6; }
   .art-body :global(a) { color: var(--mark); text-underline-offset: 3px; }
   .art-body :global(blockquote) { border-left: 2px solid var(--mark); padding-left: 1.2rem; margin: 1.6rem 0; color: var(--ink-soft); font-style: italic; }
   .art-tags { margin-top: 3.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }

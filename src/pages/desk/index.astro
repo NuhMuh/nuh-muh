@@ -100,6 +100,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <button type="button" data-cmd="align-left" title="왼쪽" class="ed-imgalign">⬅</button>
           <button type="button" data-cmd="align-center" title="가운데" class="ed-imgalign">■</button>
           <button type="button" data-cmd="align-right" title="오른쪽" class="ed-imgalign">➡</button>
+          <span class="ed-sep"></span>
+          <button type="button" data-cmd="caption" title="캡션(출처·설명)" class="ed-imgcaption">캡션</button>
         </div>
         <button type="button" id="ed-source-toggle" class="ed-source-toggle">&lt;/&gt; 소스보기</button>
       </div>
@@ -184,6 +186,19 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .ed-editor :global(.ProseMirror img[data-align="center"]) { margin-left: auto; margin-right: auto; }
   .ed-editor :global(.ProseMirror img[data-align="right"]) { margin-left: auto; margin-right: 0; }
   .ed-imgalign:disabled { opacity: 0.3; cursor: default; }
+  .ed-imgcaption:disabled { opacity: 0.3; cursor: default; }
+  .ed-imgcaption:disabled:hover { border-color: var(--rule); color: var(--ink); }
+  .ed-editor :global(.ProseMirror figure) { margin: 1rem 0; }
+  .ed-editor :global(.ProseMirror figure[data-size="xs"]) { max-width: 25%; }
+  .ed-editor :global(.ProseMirror figure[data-size="sm"]) { max-width: 40%; }
+  .ed-editor :global(.ProseMirror figure[data-size="md"]) { max-width: 60%; }
+  .ed-editor :global(.ProseMirror figure[data-size="lg"]) { max-width: 80%; }
+  .ed-editor :global(.ProseMirror figure[data-size="full"]) { max-width: 100%; }
+  .ed-editor :global(.ProseMirror figure[data-align="left"]) { margin-right: auto; margin-left: 0; }
+  .ed-editor :global(.ProseMirror figure[data-align="center"]) { margin-left: auto; margin-right: auto; }
+  .ed-editor :global(.ProseMirror figure[data-align="right"]) { margin-left: auto; margin-right: 0; }
+  .ed-editor :global(.ProseMirror figure img) { display: block; max-width: 100%; height: auto; }
+  .ed-editor :global(.ProseMirror figcaption) { font-size: 0.82rem; color: var(--ink-soft); margin-top: 0.4rem; line-height: 1.5; }
   .ed-imgalign:disabled:hover { border-color: var(--rule); color: var(--ink); }
   .ed-editor :global(.ProseMirror img.ProseMirror-selectednode) { outline: 2px solid var(--mark); outline-offset: 2px; }
   .ed-imgsize:disabled { opacity: 0.3; cursor: default; }

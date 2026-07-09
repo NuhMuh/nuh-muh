@@ -134,6 +134,15 @@ function wireToolbar() {
         editor.chain().focus().updateAttributes('image', { 'data-align': align }).run();
       }
     }
+    else if (cmd === 'caption') {
+      // 캡션(출처·설명) 입력 — 짧은 한 줄. 비우면 캡션 제거(figure→img).
+      if (editor.isActive('image')) {
+        const cur = editor.getAttributes('image')['data-caption'] || '';
+        const cap = window.prompt('캡션 (출처·설명, 비우면 제거):', cur);
+        if (cap === null) return; // 취소
+        editor.chain().focus().updateAttributes('image', { 'data-caption': cap.trim() }).run();
+      }
+    }
   });
 }
 
@@ -169,6 +178,12 @@ function refreshToolbar() {
     const align = btn.dataset.cmd.slice(6); // align- 접두어
     btn.disabled = !imgActive;
     btn.classList.toggle('is-active', imgActive && curAlign === align);
+  });
+  // 캡션 버튼: 이미지 선택 시 활성화, 캡션 있으면 강조
+  const hasCaption = imgActive && !!(imgAttrs['data-caption'] || '').trim();
+  document.querySelectorAll('#ed-tools .ed-imgcaption').forEach((btn) => {
+    btn.disabled = !imgActive;
+    btn.classList.toggle('is-active', hasCaption);
   });
 }
 
