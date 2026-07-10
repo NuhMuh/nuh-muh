@@ -199,6 +199,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .ed-editor :global(.ProseMirror figure[data-align="right"]) { margin-left: auto; margin-right: 0; }
   .ed-editor :global(.ProseMirror figure img) { display: block; max-width: 100%; height: auto; }
   .ed-editor :global(.ProseMirror figcaption) { font-size: 0.82rem; color: var(--ink-soft); margin-top: 0.4rem; line-height: 1.5; }
+  .ed-editor :global(.ProseMirror figure[data-align="left"] figcaption) { text-align: left; }
+  .ed-editor :global(.ProseMirror figure[data-align="center"] figcaption) { text-align: center; }
+  .ed-editor :global(.ProseMirror figure[data-align="right"] figcaption) { text-align: right; }
   .ed-imgalign:disabled:hover { border-color: var(--rule); color: var(--ink); }
   .ed-editor :global(.ProseMirror img.ProseMirror-selectednode) { outline: 2px solid var(--mark); outline-offset: 2px; }
   .ed-imgsize:disabled { opacity: 0.3; cursor: default; }

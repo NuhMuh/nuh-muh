@@ -90,6 +90,9 @@ const dateStr = article.created_at ? new Date(article.created_at).toLocaleDateSt
   .art-body :global(figure[data-align="right"]) { margin-left: auto; margin-right: 0; }
   .art-body :global(figure img) { display: block; max-width: 100%; height: auto; margin: 0; }
   .art-body :global(figcaption) { font-size: 0.85rem; color: var(--ink-soft); margin-top: 0.5rem; line-height: 1.6; }
+  .art-body :global(figure[data-align="left"] figcaption) { text-align: left; }
+  .art-body :global(figure[data-align="center"] figcaption) { text-align: center; }
+  .art-body :global(figure[data-align="right"] figcaption) { text-align: right; }
   .art-body :global(a) { color: var(--mark); text-underline-offset: 3px; }
   .art-body :global(blockquote) { border-left: 2px solid var(--mark); padding-left: 1.2rem; margin: 1.6rem 0; color: var(--ink-soft); font-style: italic; }
   .art-tags { margin-top: 3.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }
