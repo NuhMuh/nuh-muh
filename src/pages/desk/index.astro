@@ -214,6 +214,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .ed-editor :global(.ProseMirror div[data-nm-group][data-align="right"]) { margin-left: auto; margin-right: 0; }
   .ed-editor :global(.ProseMirror div[data-nm-group-row]) { display: flex; gap: 0.5rem; }
   .ed-editor :global(.ProseMirror div[data-nm-group-row] img) { width: 50%; height: auto; object-fit: cover; display: block; margin: 0; max-width: none; }
+  .ed-editor :global(.ProseMirror div[data-nm-group] figcaption) { display: flex; gap: 0.5rem; margin-top: 0.4rem; font-size: 0.82rem; color: var(--ink-soft); line-height: 1.5; }
+  .ed-editor :global(.ProseMirror div[data-nm-group] figcaption span) { width: 50%; text-align: center; }
   .ed-editor :global(.ProseMirror div[data-nm-group].ProseMirror-selectednode) { outline: 2px solid var(--mark); outline-offset: 2px; }
   .ed-imgalign:disabled:hover { border-color: var(--rule); color: var(--ink); }
   .ed-editor :global(.ProseMirror img.ProseMirror-selectednode) { outline: 2px solid var(--mark); outline-offset: 2px; }

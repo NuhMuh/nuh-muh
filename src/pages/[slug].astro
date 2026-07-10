@@ -104,7 +104,8 @@ const dateStr = article.created_at ? new Date(article.created_at).toLocaleDateSt
   .art-body :global(div[data-nm-group][data-align="right"]) { margin-left: auto; margin-right: 0; }
   .art-body :global(div[data-nm-group-row]) { display: flex; gap: 0.6rem; }
   .art-body :global(div[data-nm-group-row] img) { width: 50%; height: auto; object-fit: cover; display: block; margin: 0; border-radius: 6px; }
-  .art-body :global(div[data-nm-group] figcaption) { font-size: 0.85rem; color: var(--ink-soft); margin-top: 0.5rem; line-height: 1.6; text-align: center; }
+  .art-body :global(div[data-nm-group] figcaption) { display: flex; gap: 0.6rem; margin-top: 0.5rem; font-size: 0.85rem; color: var(--ink-soft); line-height: 1.6; }
+  .art-body :global(div[data-nm-group] figcaption span) { width: 50%; text-align: center; }
   @media (max-width: 600px) {
     .art-body :global(div[data-nm-group]) { max-width: 100% !important; }
     .art-body :global(div[data-nm-group-row]) { flex-direction: column; }

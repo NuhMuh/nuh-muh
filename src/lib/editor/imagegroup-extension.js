@@ -54,7 +54,17 @@ export const ImageGroup = Node.create({
       ],
     ];
     if (caption && caption.trim()) {
-      inner.push(['figcaption', {}, caption]);
+      // 캡션은 ' | '로 저장되지만, 표시는 각 이미지 아래 가운데로 나눔.
+      // figcaption 안에 span 2개(왼/오), 각 이미지 폭 반반, 각각 가운데 정렬.
+      const parts = caption.split(' | ');
+      const left = (parts[0] || '').trim();
+      const right = (parts[1] || '').trim();
+      inner.push([
+        'figcaption',
+        { 'data-nm-group-cap': '' },
+        ['span', { 'data-nm-cap-left': '' }, left],
+        ['span', { 'data-nm-cap-right': '' }, right],
+      ]);
     }
 
     return [
