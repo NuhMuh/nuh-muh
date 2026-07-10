@@ -140,6 +140,13 @@ function triggerImageUpload() {
   input.click();
 }
 
+// 현재 선택된 노드가 image인지 imageGroup인지 (없으면 null)
+function activeImageType() {
+  if (editor.isActive('image')) return 'image';
+  if (editor.isActive('imageGroup')) return 'imageGroup';
+  return null;
+}
+
 // 툴바 버튼 동작
 function wireToolbar() {
   const tools = document.getElementById('ed-tools');
@@ -170,26 +177,39 @@ function wireToolbar() {
       triggerImageGroupUpload();
     }
     else if (cmd.indexOf('size-') === 0) {
-      // 선택된 이미지의 크기 프리셋 변경 (5단: xs/sm/md/lg/full)
-      const size = cmd.slice(5); // 'xs'|'sm'|'md'|'lg'|'full'
-      if (editor.isActive('image')) {
-        editor.chain().focus().updateAttributes('image', { 'data-size': size }).run();
-      }
+      // 크기 프리셋 변경 (image 또는 imageGroup, 선택된 쪽)
+      const size = cmd.slice(5);
+      const t = activeImageType();
+      if (t) editor.chain().focus().updateAttributes(t, { 'data-size': size }).run();
     }
     else if (cmd.indexOf('align-') === 0) {
-      // 선택된 이미지의 정렬 변경 (left/center/right, float 아님)
-      const align = cmd.slice(6); // 'left'|'center'|'right'
-      if (editor.isActive('image')) {
-        editor.chain().focus().updateAttributes('image', { 'data-align': align }).run();
-      }
+      // 정렬 변경 (float 아님)
+      const align = cmd.slice(6);
+      const t = activeImageType();
+      if (t) editor.chain().focus().updateAttributes(t, { 'data-align': align }).run();
     }
     else if (cmd === 'caption') {
-      // 캡션(출처·설명) 입력 — 짧은 한 줄. 비우면 캡션 제거(figure→img).
-      if (editor.isActive('image')) {
+      const t = activeImageType();
+      if (t === 'image') {
+        // 단일 이미지: 캡션 한 줄
         const cur = editor.getAttributes('image')['data-caption'] || '';
         const cap = window.prompt('캡션 (출처·설명, 비우면 제거):', cur);
-        if (cap === null) return; // 취소
+        if (cap === null) return;
         editor.chain().focus().updateAttributes('image', { 'data-caption': cap.trim() }).run();
+      } else if (t === 'imageGroup') {
+        // 2장 묶음: 팝업 2칸(왼/오) → ' | '로 합쳐 한 캡션으로 저장
+        const cur = editor.getAttributes('imageGroup')['data-caption'] || '';
+        const parts = cur.split(' | ');
+        const left = window.prompt('왼쪽 사진 설명 (비워도 됨):', parts[0] || '');
+        if (left === null) return;
+        const right = window.prompt('오른쪽 사진 설명 (비워도 됨):', parts[1] || '');
+        if (right === null) return;
+        const l = left.trim(), r = right.trim();
+        let merged = '';
+        if (l && r) merged = l + ' | ' + r;
+        else if (l) merged = l;
+        else if (r) merged = r;
+        editor.chain().focus().updateAttributes('imageGroup', { 'data-caption': merged }).run();
       }
     }
   });
@@ -213,9 +233,10 @@ function refreshToolbar() {
     if (map[cmd]) btn.classList.toggle('is-active', map[cmd]());
   });
 
-  // 이미지 크기/정렬 버튼: 이미지 선택 시에만 활성화 + 현재 값 강조
-  const imgActive = editor.isActive('image');
-  const imgAttrs = imgActive ? editor.getAttributes('image') : {};
+  // 이미지 크기/정렬 버튼: image 또는 imageGroup 선택 시 활성화 + 현재 값 강조
+  const imgType = activeImageType();
+  const imgActive = !!imgType;
+  const imgAttrs = imgActive ? editor.getAttributes(imgType) : {};
   const curSize = imgActive ? (imgAttrs['data-size'] || 'md') : null;
   const curAlign = imgActive ? (imgAttrs['data-align'] || 'center') : null;
   document.querySelectorAll('#ed-tools .ed-imgsize').forEach((btn) => {
