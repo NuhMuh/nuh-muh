@@ -11,6 +11,17 @@ export const SizedImage = Image.extend({
   addAttributes() {
     return {
       ...this.parent?.(),  // src, alt 등 유지
+      // figure로 감싸인 경우 자식 img에서 src/alt를 읽어야 함 (유실 방지)
+      src: {
+        default: '',
+        parseHTML: (el) => el.getAttribute('src') || el.querySelector?.('img')?.getAttribute('src') || '',
+        renderHTML: (attrs) => (attrs.src ? { src: attrs.src } : {}),
+      },
+      alt: {
+        default: '',
+        parseHTML: (el) => el.getAttribute('alt') || el.querySelector?.('img')?.getAttribute('alt') || '',
+        renderHTML: (attrs) => (attrs.alt ? { alt: attrs.alt } : {}),
+      },
       'data-size': {
         default: 'md',
         parseHTML: (el) => el.getAttribute('data-size') || el.querySelector?.('img')?.getAttribute('data-size') || 'md',
