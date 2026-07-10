@@ -212,6 +212,20 @@ function wireToolbar() {
         editor.chain().focus().updateAttributes('imageGroup', { 'data-caption': merged }).run();
       }
     }
+    else if (cmd === 'ungroup') {
+      // 2장 묶음 풀기 → 일반 이미지 2개로 분리 (마틴 (가))
+      // 풀고 나면 개별 크기·정렬·캡션·삭제 가능 ("한 장 삭제 = 풀고 지우기")
+      if (editor.isActive('imageGroup')) {
+        const attrs = editor.getAttributes('imageGroup');
+        const s1 = attrs.src1 || '';
+        const s2 = attrs.src2 || '';
+        const nodes = [];
+        if (s1) nodes.push({ type: 'image', attrs: { src: s1, alt: '', 'data-size': 'md', 'data-align': 'center', 'data-caption': '' } });
+        if (s2) nodes.push({ type: 'image', attrs: { src: s2, alt: '', 'data-size': 'md', 'data-align': 'center', 'data-caption': '' } });
+        // 선택된 그룹 노드를 이미지 2개로 교체
+        editor.chain().focus().insertContent(nodes).run();
+      }
+    }
   });
 }
 
@@ -254,6 +268,11 @@ function refreshToolbar() {
   document.querySelectorAll('#ed-tools .ed-imgcaption').forEach((btn) => {
     btn.disabled = !imgActive;
     btn.classList.toggle('is-active', hasCaption);
+  });
+  // 묶음 풀기: imageGroup 선택 시에만 활성화
+  const isGroup = imgType === 'imageGroup';
+  document.querySelectorAll('#ed-tools .ed-imgungroup').forEach((btn) => {
+    btn.disabled = !isGroup;
   });
 }
 
