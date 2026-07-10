@@ -89,7 +89,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <button type="button" data-cmd="quote" title="인용">❝</button>
           <button type="button" data-cmd="bullet" title="글머리 목록">• 목록</button>
           <button type="button" data-cmd="ordered" title="번호 목록">1. 목록</button>
-          <button type="button" data-cmd="image" title="이미지">🖼</button>
+          <button type="button" data-cmd="image" title="사진 넣기">사진</button>
+          <button type="button" data-cmd="imagegroup" title="사진 2장 나란히">2장 묶음</button>
           <span class="ed-sep"></span>
           <button type="button" data-cmd="size-xs" title="아주 작게" class="ed-imgsize">XS</button>
           <button type="button" data-cmd="size-sm" title="작게" class="ed-imgsize">S</button>
@@ -202,6 +203,18 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .ed-editor :global(.ProseMirror figure[data-align="left"] figcaption) { text-align: left; }
   .ed-editor :global(.ProseMirror figure[data-align="center"] figcaption) { text-align: center; }
   .ed-editor :global(.ProseMirror figure[data-align="right"] figcaption) { text-align: right; }
+  .ed-editor :global(.ProseMirror div[data-nm-group]) { margin: 1rem 0; }
+  .ed-editor :global(.ProseMirror div[data-nm-group][data-size="xs"]) { max-width: 40%; }
+  .ed-editor :global(.ProseMirror div[data-nm-group][data-size="sm"]) { max-width: 55%; }
+  .ed-editor :global(.ProseMirror div[data-nm-group][data-size="md"]) { max-width: 70%; }
+  .ed-editor :global(.ProseMirror div[data-nm-group][data-size="lg"]) { max-width: 85%; }
+  .ed-editor :global(.ProseMirror div[data-nm-group][data-size="full"]) { max-width: 100%; }
+  .ed-editor :global(.ProseMirror div[data-nm-group][data-align="left"]) { margin-right: auto; margin-left: 0; }
+  .ed-editor :global(.ProseMirror div[data-nm-group][data-align="center"]) { margin-left: auto; margin-right: auto; }
+  .ed-editor :global(.ProseMirror div[data-nm-group][data-align="right"]) { margin-left: auto; margin-right: 0; }
+  .ed-editor :global(.ProseMirror div[data-nm-group-row]) { display: flex; gap: 0.5rem; }
+  .ed-editor :global(.ProseMirror div[data-nm-group-row] img) { width: 50%; height: auto; object-fit: cover; display: block; margin: 0; max-width: none; }
+  .ed-editor :global(.ProseMirror div[data-nm-group].ProseMirror-selectednode) { outline: 2px solid var(--mark); outline-offset: 2px; }
   .ed-imgalign:disabled:hover { border-color: var(--rule); color: var(--ink); }
   .ed-editor :global(.ProseMirror img.ProseMirror-selectednode) { outline: 2px solid var(--mark); outline-offset: 2px; }
   .ed-imgsize:disabled { opacity: 0.3; cursor: default; }

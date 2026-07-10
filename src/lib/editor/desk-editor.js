@@ -2,6 +2,7 @@ import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import { SizedImage } from './image-extension.js';
+import { ImageGroup } from './imagegroup-extension.js';
 import { AnchorPreserve } from './anchor-extension.js';
 
 // 발행소 리치 에디터 (2층). 위지윅 ↔ 소스뷰 토글.
@@ -23,6 +24,7 @@ export function initDeskEditor() {
       StarterKit.configure({ heading: { levels: [2, 3] }, link: false }),
       Link.configure({ openOnClick: false }),
       SizedImage,
+      ImageGroup,
       AnchorPreserve,
     ],
     content: '',
@@ -57,6 +59,50 @@ export function initDeskEditor() {
 // 이미지 업로드 (서명 URL 방식): 파일 선택 → 서버서 서명URL 발급 → 브라우저 직접 업로드 → 공개URL 삽입
 let deskTokenForUpload = null;  // 발행소가 주입 (operator 토큰)
 export function setUploadToken(tok) { deskTokenForUpload = tok; }
+
+// 서명 URL로 파일 하나 업로드 → 공개 URL 반환 (공통 헬퍼)
+async function uploadOne(file) {
+  const signRes = await fetch('/.netlify/functions/sign-upload', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token: deskTokenForUpload, contentType: file.type }),
+  });
+  const sign = await signRes.json();
+  if (sign.status !== 'ok') throw new Error(sign.detail || '업로드 준비 실패');
+  const upRes = await fetch(sign.signedUrl, {
+    method: 'PUT', headers: { 'Content-Type': file.type }, body: file,
+  });
+  if (!upRes.ok) throw new Error('업로드 실패 (' + upRes.status + ')');
+  return sign.publicUrl;
+}
+
+// 2장 묶음: 파일 2개 선택 → 둘 다 업로드 → imageGroup 노드 삽입
+function triggerImageGroupUpload() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/jpeg,image/png,image/webp,image/gif';
+  input.multiple = true;  // 2장 선택
+  input.onchange = async () => {
+    const files = Array.from(input.files || []);
+    if (files.length < 2) { alert('2장 묶음은 사진을 정확히 2장 선택해야 합니다.'); return; }
+    if (files.length > 2) { alert('2장까지만 됩니다. 앞의 2장만 사용합니다.'); }
+    const two = files.slice(0, 2);
+    for (const f of two) {
+      if (f.size > 10 * 1024 * 1024) { alert('각 이미지는 10MB 이하만 가능합니다.'); return; }
+    }
+    try {
+      const url1 = await uploadOne(two[0]);
+      const url2 = await uploadOne(two[1]);
+      editor.chain().focus().insertContent({
+        type: 'imageGroup',
+        attrs: { src1: url1, src2: url2, 'data-size': 'full', 'data-align': 'center', 'data-caption': '' },
+      }).run();
+    } catch (e) {
+      alert('묶음 업로드 오류: ' + e.message);
+    }
+  };
+  input.click();
+}
 
 function triggerImageUpload() {
   const input = document.createElement('input');
@@ -119,6 +165,9 @@ function wireToolbar() {
     }
     else if (cmd === 'image') {
       triggerImageUpload();
+    }
+    else if (cmd === 'imagegroup') {
+      triggerImageGroupUpload();
     }
     else if (cmd.indexOf('size-') === 0) {
       // 선택된 이미지의 크기 프리셋 변경 (5단: xs/sm/md/lg/full)
