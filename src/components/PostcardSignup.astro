@@ -734,6 +734,7 @@
       postcard.style.left = 'auto';
       postcard.style.top = 'auto';
       carried.appendChild(postcard);
+      console.log('[거미] 엽서 이동 후 부모:', postcard.parentNode.id || postcard.parentNode.className, '| carried 자식수:', carried.children.length);
       spiderRig.classList.remove('grabbing');
       spiderRig.classList.remove('descending');
       spiderRig.classList.add('ascending');
