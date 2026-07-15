@@ -733,6 +733,18 @@
       postcard.style.left = 'auto';
       postcard.style.top = 'auto';
       carried.appendChild(postcard);
+      (function(){
+        var node = postcard, chain = [];
+        while (node && node !== document.body) {
+          var c = getComputedStyle(node);
+          var r = node.getBoundingClientRect();
+          chain.push(node.id||node.className||node.tagName);
+          chain.push('  pos='+c.position+' transform='+(c.transform==='none'?'none':'YES')+' contain='+c.contain+' cType='+c.containerType);
+          chain.push('  rect top='+Math.round(r.top)+' left='+Math.round(r.left));
+          node = node.parentElement;
+        }
+        console.log('[체인]\n'+chain.join('\n'));
+      })();
       spiderRig.classList.remove('grabbing');
       spiderRig.classList.remove('descending');
       spiderRig.classList.add('ascending');
