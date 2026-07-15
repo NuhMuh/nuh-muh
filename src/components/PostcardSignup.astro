@@ -457,7 +457,27 @@
     }
     refreshSignupBox();
 
+    // 거미가 엽서를 carried-postcard로 옮기므로, 원래 자리를 기억해 복구용으로 씀
+    var postcardHome = postcard.parentNode;
+    var postcardNextSibling = postcard.nextSibling;
     async function openPostcard() {
+      // 거미 시퀀스가 엽서를 옮기고 인라인 스타일을 박아둠 → 원래 자리로 복구
+      if (postcard.parentNode !== postcardHome) {
+        if (postcardNextSibling && postcardNextSibling.parentNode === postcardHome) {
+          postcardHome.insertBefore(postcard, postcardNextSibling);
+        } else {
+          postcardHome.appendChild(postcard);
+        }
+      }
+      postcard.style.position = '';
+      postcard.style.transform = '';
+      postcard.style.transition = '';
+      postcard.style.margin = '';
+      postcard.style.left = '';
+      postcard.style.top = '';
+      postcard.style.display = '';
+      postcard.style.visibility = '';
+      postcard.classList.remove('grabbed');
       // 기본: 카드1(첫 방문자). 세션 확인되면 카드3으로 교체.
       postcard.classList.remove('no-input');
       setSentence(textEl, pickSentence('first', SENTENCES_FIRST));
