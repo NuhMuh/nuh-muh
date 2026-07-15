@@ -485,14 +485,20 @@
       var field = document.querySelector('.pc-field');
       if (field) field.classList.remove('filled');
       if (emailInput) emailInput.value = '';
-      // 로그인 세션이면 카드3(keyholder)로 — 입력창 숨김
+      // 우선순위: 로그인 세션 → 카드3 / 가입버튼 이미 뜸(방금 initiate) → 카드2 / 그 외 → 카드1
+      var loggedIn = false;
       try {
         const { data } = await supabase.auth.getSession();
-        if (data && data.session) {
-          postcard.classList.add('no-input');
-          setSentence(textEl, pickSentence('keyholder', SENTENCES_KEYHOLDER));
-        }
+        loggedIn = !!(data && data.session);
       } catch (e) {}
+      if (loggedIn) {
+        postcard.classList.add('no-input');
+        setSentence(textEl, pickSentence('keyholder', SENTENCES_KEYHOLDER));
+      } else if (signupBox && signupBox.classList.contains('visible')) {
+        // 거미를 방금 거쳐 initiate가 된 사람 — 카드1(입력) 대신 카드2
+        postcard.classList.add('no-input');
+        setSentence(textEl, pickSentence('initiate', SENTENCES_INITIATE));
+      }
       postcard.classList.remove('taken', 'splitting', 'show-login');
       postcard.style.display = '';
       postcard.style.visibility = '';
@@ -604,7 +610,9 @@
 
       // initiate → 이미 다녀감 + 가입 버튼
       if (state === 'initiate') {
-        postcard.classList.add('subscribed');
+        // 카드2: 입력창 없는 소개문 엽서 + 낙관 위치 붉은줄. 가입버튼은 그대로 등장.
+        postcard.classList.add('no-input');
+        setSentence(textEl, pickSentence('initiate', SENTENCES_INITIATE));
         if (signupBox) signupBox.classList.add('visible');
         return;
       }
