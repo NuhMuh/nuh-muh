@@ -5,12 +5,28 @@
 
   <div class="postcard" id="postcard">
     <button class="postcard-close" id="postcard-close" aria-label="닫기">×</button>
-    <p class="postcard-text" id="postcard-text"></p>
-    <form class="postcard-form" id="postcard-form">
-      <input type="email" id="postcard-email" placeholder="당신의 주소를 남기시오" required autocomplete="off" />
-      <button type="submit" class="postcard-submit">남긴다</button>
-    </form>
-    <p class="postcard-already" id="postcard-already">이미 한 번 다녀가셨습니다.</p>
+    <svg class="pc-frame" viewBox="0 0 400 260" preserveAspectRatio="none" aria-hidden="true">
+      <rect x="8" y="8" width="384" height="244" fill="none" stroke="#8a4a2a" stroke-width="1.2" vector-effect="non-scaling-stroke"/>
+      <rect x="14" y="14" width="372" height="232" fill="none" stroke="#8a4a2a" stroke-width="0.6" vector-effect="non-scaling-stroke"/>
+      <g fill="#8a4a2a" stroke="none">
+        <path d="M8 8 L30 8 L8 30 Z"/>
+        <path d="M392 8 L392 30 L370 8 Z"/>
+        <path d="M8 252 L8 230 L30 252 Z"/>
+        <path d="M392 252 L370 252 L392 230 Z"/>
+      </g>
+    </svg>
+    <div class="pc-inner">
+      <p class="postcard-text" id="postcard-text"></p>
+      <hr class="pc-rule" id="postcard-rule" />
+      <form class="postcard-form" id="postcard-form">
+        <div class="pc-field">
+          <input type="email" id="postcard-email" required autocomplete="off" />
+          <span class="pc-ph" id="postcard-ph" aria-hidden="true"><em>거미</em>가 찾아갈 <em>이메일</em>을 남기시오</span>
+        </div>
+        <button type="submit" class="postcard-submit" id="postcard-submit">놓는다</button>
+      </form>
+      <p class="postcard-already" id="postcard-already">이미 한 번 다녀가셨습니다.</p>
+    </div>
   </div>
 
   <div class="split-line" id="split-line" aria-hidden="true"></div>
@@ -67,8 +83,8 @@
     transform: translate(-50%, -50%);
     width: calc(100% - 3rem); max-width: 480px;
     background: var(--paper);
-    border: 1px solid var(--rule-strong);
-    padding: 3.5rem 3rem 3rem;
+    border: none;
+    padding: 2.6rem 2.4rem;
     text-align: center;
     box-shadow: 0 30px 70px rgba(28, 35, 64, 0.28);
     transition: transform 1s cubic-bezier(0.5, 0, 0.75, 0), opacity 0.5s ease;
@@ -96,6 +112,40 @@
     transition: color 0.3s, transform 0.3s;
   }
   .postcard-close:hover { color: var(--mark); transform: rotate(90deg); }
+
+  /* ── 빈티지 프레임 (V1: 이중선 + 채운 모서리 삼각형) ── */
+  .pc-frame {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none; z-index: 1;
+  }
+  .pc-inner { position: relative; z-index: 2; }
+
+  /* 소개문 아래 붉은 가로선 — 카드 내 유일한 붉은색 */
+  .pc-rule {
+    border: none; height: 0;
+    border-top: 1.5px solid #96341C;
+    width: 3.2rem; margin: 0 auto 2rem;
+  }
+  /* 카드2/3(입력 없는 카드)에서는 낙관 위치 — 본문 하단 마감 */
+  .postcard.no-input .pc-rule { margin: 2rem auto 0; }
+  .postcard.no-input .postcard-form { display: none; }
+
+  /* ── 겹침 레이어 플레이스홀더 (부분 기울임용) ── */
+  .pc-field { position: relative; display: flex; }
+  .pc-field input { width: 100%; }
+  .pc-ph {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'EB Garamond', serif;
+    font-size: 1rem; letter-spacing: 0.12em;
+    color: var(--ink-faint);
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .pc-ph em { font-style: italic; }
+  .pc-field.filled .pc-ph,
+  .pc-field input:focus + .pc-ph { opacity: 0; }
 
   .postcard-text {
     font-family: 'Noto Serif KR', serif;
@@ -235,8 +285,8 @@
     transform: translate(-50%, -50%);
     width: calc(100% - 3rem); max-width: 480px;
     background: var(--paper);
-    border: 1px solid var(--rule-strong);
-    padding: 3.5rem 3rem 3rem;
+    border: none;
+    padding: 2.6rem 2.4rem;
     text-align: center;
     box-shadow: 0 30px 70px rgba(28, 35, 64, 0.28);
     display: none;
@@ -332,13 +382,45 @@
 
 <script>
   import { supabase } from '../lib/supabaseClient.js';
-  const SENTENCES = [
-    '당신은 벽을 지나쳤습니까, 문을 지나쳤습니까.',
-    '여기까지 온 사람은 그리 많지 않습니다.',
-    '이 엽서는 잠시 후 회수됩니다.',
-    '무엇을 찾는지 알 것도 같습니다.',
-    '읽었다면, 당신은 이미 절반쯤 들어와 있습니다.',
+  // 카드1: 첫 방문자(비로그인+판정 전). / 는 문장 강제 줄바꿈
+  const SENTENCES_FIRST = [
+    '자주 봅세. / 지금 들어온 문이 내일은 안 보일지도 모르니.',
+    '흙탕물, 아수라장, 폭탄주, 엉망진창을 위하여!',
+    '지나가던 길이오? / 다들 처음엔 그렇게 말하지.',
   ];
+  // 카드2: initiate 판정 결과
+  const SENTENCES_INITIATE = [
+    '낯이 익소. / 또 살짝만 들렀다 가시게?',
+    '거미는 잘 도착했소? / 편지 말이오.',
+    '그쪽 자리는 아직 비워두었소.',
+    '오늘도 구경만 하시게? / 뭐, 그것도 손님이지.',
+  ];
+  // 카드3: keyholder(로그인 세션 상태에서 물음표)
+  const SENTENCES_KEYHOLDER = [
+    '벽은 잘 넘나들고 계신가?',
+    '방이 어질러진 건지, 너무 깔끔한 건지, 참 모르겠더군. / 아무튼 그대로 두었으니 걱정 마시오.',
+    '눈치보지 말고, 어서 편하게 어울려 보시게.',
+    '물어볼 게 있다? 방에 쪽지를 남겨두시오. / 내가 대장한테 갖다 드리리다.',
+  ];
+  // 직전 반복 금지: 세트별 마지막 인덱스 기억
+  var _lastIdx = { first: -1, initiate: -1, keyholder: -1 };
+  function pickSentence(setName, arr) {
+    if (arr.length === 1) return arr[0];
+    var i, guard = 0;
+    do { i = Math.floor(Math.random() * arr.length); guard++; }
+    while (i === _lastIdx[setName] && guard < 20);
+    _lastIdx[setName] = i;
+    return arr[i];
+  }
+  // '/'를 줄바꿈으로 — textContent 대신 안전하게 노드로 조립
+  function setSentence(el, raw) {
+    el.textContent = '';
+    var parts = raw.split(' / ');
+    for (var k = 0; k < parts.length; k++) {
+      if (k > 0) el.appendChild(document.createElement('br'));
+      el.appendChild(document.createTextNode(parts[k]));
+    }
+  }
 
   function sleep(ms) {
     return new Promise(function (resolve) { setTimeout(resolve, ms); });
@@ -374,9 +456,22 @@
     }
     refreshSignupBox();
 
-    function openPostcard() {
-      const s = SENTENCES[Math.floor(Math.random() * SENTENCES.length)];
-      textEl.textContent = s;
+    async function openPostcard() {
+      // 기본: 카드1(첫 방문자). 세션 확인되면 카드3으로 교체.
+      postcard.classList.remove('no-input');
+      setSentence(textEl, pickSentence('first', SENTENCES_FIRST));
+      // 플레이스홀더 겹침 레이어 초기화
+      var field = document.querySelector('.pc-field');
+      if (field) field.classList.remove('filled');
+      if (emailInput) emailInput.value = '';
+      // 로그인 세션이면 카드3(keyholder)로 — 입력창 숨김
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data && data.session) {
+          postcard.classList.add('no-input');
+          setSentence(textEl, pickSentence('keyholder', SENTENCES_KEYHOLDER));
+        }
+      } catch (e) {}
       postcard.classList.remove('taken', 'splitting', 'show-login');
       postcard.style.display = '';
       postcard.style.visibility = '';
@@ -397,6 +492,18 @@
       darken.classList.remove('darkened');
     }
 
+    // 겹침 플레이스홀더: 값이 있으면 숨김 (IME 조합 중에도 안전 — value 기준)
+    var pcField = document.querySelector('.pc-field');
+    function syncPh() {
+      if (!pcField) return;
+      if (emailInput.value.length > 0) pcField.classList.add('filled');
+      else pcField.classList.remove('filled');
+    }
+    if (emailInput) {
+      emailInput.addEventListener('input', syncPh);
+      emailInput.addEventListener('compositionupdate', syncPh);
+      emailInput.addEventListener('blur', syncPh);
+    }
     trigger.addEventListener('click', openPostcard);
     closeBtn.addEventListener('click', closePostcard);
     var loginClose = document.getElementById('login-close');
@@ -442,10 +549,10 @@
       const email = emailInput.value;
       if (!email) return;
 
-      // 확인 중 표시
+      // 제출 중: 라벨만 '다가오는 중'으로 교체 (스피너 등 추가 요소 없음)
       const submitBtn = form.querySelector('.postcard-submit');
       const origBtnText = submitBtn ? submitBtn.textContent : '';
-      if (submitBtn) { submitBtn.textContent = '확인하는 중...'; submitBtn.disabled = true; }
+      if (submitBtn) { submitBtn.textContent = '다가오는 중'; submitBtn.disabled = true; }
 
       // 상태 조회
       let state = 'error';
