@@ -105,8 +105,8 @@
   }
   /* 새 문법: 엽서를 제자리에서 위로 등속 상승 (이사 없음 → 프레임 안 깨짐) */
   .postcard.rising {
-    transform: translate(-50%, -50%) translateY(-130vh);
-    transition: transform 1.1s linear;
+    transform: translate(-50%, -50%) translateY(-100vh);
+    transition: transform 1.2s linear;
   }
 
   .postcard-close {
@@ -242,8 +242,8 @@
     transition: transform 0.25s ease;
   }
   .spider-rig.ascending {
-    transform: translateX(-50%) translateY(-110vh);
-    transition: transform 1.1s linear;
+    transform: translateX(-50%) translateY(-139vh) scale(1.02);
+    transition: transform 1.2s linear;
   }
 
   .residue {
@@ -735,9 +735,6 @@
       spiderRig.classList.remove('grabbing');
       spiderRig.classList.remove('descending');
       spiderRig.classList.add('ascending');
-      var spiderTop = document.querySelector('.spider').getBoundingClientRect().top;
-      var cardTop = postcard.getBoundingClientRect().top;
-      console.log('[상승직전] 거미 top:', Math.round(spiderTop), '| 엽서 top:', Math.round(cardTop), '| 화면높이:', window.innerHeight);
       postcard.classList.remove('grabbed');
       postcard.classList.add('rising');
       await sleep(1150);
