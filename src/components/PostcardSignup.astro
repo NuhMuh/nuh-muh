@@ -222,7 +222,7 @@
     margin-top: -40px;
   }
   .spider img {
-    width: 540px; height: auto; display: block;
+    width: 480px; height: auto; display: block;
   }
   .carried-postcard {
     margin-top: -24px;
@@ -735,6 +735,9 @@
       spiderRig.classList.remove('grabbing');
       spiderRig.classList.remove('descending');
       spiderRig.classList.add('ascending');
+      var spiderTop = document.querySelector('.spider').getBoundingClientRect().top;
+      var cardTop = postcard.getBoundingClientRect().top;
+      console.log('[상승직전] 거미 top:', Math.round(spiderTop), '| 엽서 top:', Math.round(cardTop), '| 화면높이:', window.innerHeight);
       postcard.classList.remove('grabbed');
       postcard.classList.add('rising');
       await sleep(1150);
