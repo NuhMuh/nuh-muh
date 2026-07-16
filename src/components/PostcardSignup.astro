@@ -45,7 +45,6 @@
   <div class="spider-rig" id="spider-rig" aria-hidden="true">
     <div class="thread"></div>
     <div class="spider"><img src="/images/spider.png" alt="" /></div>
-    <div class="carried-postcard" id="carried-postcard"></div>
   </div>
 
   <div class="residue" id="residue" aria-hidden="true">
@@ -223,15 +222,6 @@
   }
   .spider img {
     width: 480px; height: auto; display: block;
-  }
-  .carried-postcard {
-    margin-top: -24px;
-    display: flex;
-    justify-content: center;
-  }
-  .carried-postcard .postcard {
-    width: 540px !important;
-    max-width: 80vw;
   }
 
   .spider-rig.descending {
@@ -462,18 +452,8 @@
     }
     refreshSignupBox();
 
-    // 거미가 엽서를 carried-postcard로 옮기므로, 원래 자리를 기억해 복구용으로 씀
-    var postcardHome = postcard.parentNode;
-    var postcardNextSibling = postcard.nextSibling;
     async function openPostcard() {
       // 거미 시퀀스가 엽서를 옮기고 인라인 스타일을 박아둠 → 원래 자리로 복구
-      if (postcard.parentNode !== postcardHome) {
-        if (postcardNextSibling && postcardNextSibling.parentNode === postcardHome) {
-          postcardHome.insertBefore(postcard, postcardNextSibling);
-        } else {
-          postcardHome.appendChild(postcard);
-        }
-      }
       postcard.style.position = '';
       postcard.style.transform = '';
       postcard.style.transition = '';
