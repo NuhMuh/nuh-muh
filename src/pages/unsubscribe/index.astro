@@ -1,0 +1,109 @@
+---
+// 수신거부 확인 페이지. 토큰은 클라이언트에서 읽어 서버 함수(/unsubscribe)와 통신.
+// 2단계: 페이지 로드 시 GET으로 검증(이메일 표시) → 버튼 클릭 시 POST로 처리.
+---
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>너머 — 수신 설정</title>
+  <style>
+    :root {
+      --paper: #ece4cf; --ink: #1c2340; --ink-faint: #8a8368; --mark: #96341C;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh;
+      background: var(--paper); color: var(--ink);
+      font-family: 'Noto Serif KR', 'Nanum Myeongjo', serif;
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px; word-break: keep-all;
+    }
+    .card {
+      max-width: 460px; width: 100%;
+      background: #f4eedd; border: 1px solid #b8ab86;
+      padding: 48px 40px; text-align: center;
+    }
+    .msg { font-size: 1.15rem; line-height: 1.8; margin: 0 0 8px; }
+    .sub { font-size: 0.95rem; color: var(--ink-faint); line-height: 1.7; margin: 12px 0 28px; }
+    .email { font-weight: 600; }
+    .rule { width: 44px; height: 0; border-top: 2px solid var(--mark); margin: 24px auto; }
+    button {
+      font-family: inherit; font-size: 0.95rem;
+      padding: 12px 28px; border: none; cursor: pointer;
+      background: var(--ink); color: var(--paper);
+      transition: background 0.3s;
+    }
+    button:hover { background: var(--mark); }
+    button:disabled { opacity: 0.5; cursor: default; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <!-- 로딩 -->
+    <div id="loading">
+      <p class="msg">잠시만 기다려 주십시오…</p>
+    </div>
+
+    <!-- 확인 (유효 토큰) -->
+    <div id="confirm" class="hidden">
+      <p class="msg">거미를 그만 보내드릴까요?</p>
+      <p class="sub"><span class="email" id="email-show"></span><br>이 주소로 더는 넘기 소식을 보내지 않습니다.<br>당신의 자리는 그대로 남아 있습니다.</p>
+      <div class="rule"></div>
+      <button id="confirm-btn">그만 보내주십시오</button>
+    </div>
+
+    <!-- 완료 -->
+    <div id="done" class="hidden">
+      <p class="msg">거미가 더는 찾아가지 않습니다.</p>
+      <p class="sub">마음이 바뀌시거든, 언제든 다시 문을 두드리십시오.</p>
+      <div class="rule"></div>
+    </div>
+
+    <!-- 무효 토큰 -->
+    <div id="invalid" class="hidden">
+      <p class="msg">잘못된 길입니다.</p>
+      <p class="sub">이 링크는 유효하지 않습니다. 편지에 담긴 링크를 다시 확인해 주십시오.</p>
+    </div>
+  </div>
+
+  <script>
+    function show(id) {
+      ['loading','confirm','done','invalid'].forEach(function(x){
+        document.getElementById(x).classList.toggle('hidden', x !== id);
+      });
+    }
+    async function init() {
+      var token = new URLSearchParams(location.search).get('token');
+      if (!token) { show('invalid'); return; }
+      try {
+        var res = await fetch('/.netlify/functions/unsubscribe?token=' + encodeURIComponent(token));
+        var data = await res.json();
+        if (data.status === 'valid') {
+          document.getElementById('email-show').textContent = data.email;
+          show('confirm');
+          document.getElementById('confirm-btn').addEventListener('click', async function(){
+            this.disabled = true;
+            try {
+              var r2 = await fetch('/.netlify/functions/unsubscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: token }),
+              });
+              var d2 = await r2.json();
+              if (d2.status === 'ok') show('done');
+              else { this.disabled = false; alert('처리 중 문제가 생겼습니다. 잠시 후 다시 시도해 주십시오.'); }
+            } catch (e) { this.disabled = false; }
+          });
+        } else {
+          show('invalid');
+        }
+      } catch (e) {
+        show('invalid');
+      }
+    }
+    init();
+  </script>
+</body>
+</html>

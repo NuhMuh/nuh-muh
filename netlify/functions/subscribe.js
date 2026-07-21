@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
+import { makeUnsubToken } from './_unsub.mjs';
 
 // ── 환영 편지 HTML 조판 (이미지 확정안 기준) ──
 // 메일 호환: 인라인 스타일 + 테이블. 웹폰트 금지(기기 기본 세리프 스택). word-break: keep-all.
@@ -98,7 +99,7 @@ export default async (req) => {
   // 수신거부 링크 URL — 3번(수신거부 서버 함수)에서 토큰 생성 로직 완성 후 실제 값 채움.
   // 현재는 자리만. 환영 편지는 트랜잭션성(가입 직접 응답)이라 opt_out 무시하고 항상 발송하지만,
   // 편지 하단 수신거부 링크는 이후 넘기 알림 거부용으로 동일하게 제공한다.
-  const unsubUrl = 'https://nuh-muh.com/unsubscribe'; // TODO(3번): ?token=... 붙이기
+  const unsubUrl = 'https://nuh-muh.com/unsubscribe?token=' + encodeURIComponent(makeUnsubToken(email));
 
   const welcomeHtml = buildWelcomeHtml(unsubUrl);
   const welcomeText = [
@@ -123,15 +124,24 @@ export default async (req) => {
   ].join('\n');
 
   try {
-    await resend.emails.send({
+    const { error: mailErr } = await resend.emails.send({
       from: 'Nuh-Muh <desk@nuh-muh.com>',
       to: email,
       subject: '너머에서, 당신께.',
       html: welcomeHtml,
       text: welcomeText,
     });
+    if (mailErr) throw new Error(mailErr.message || 'send error');
   } catch (err) {
-    console.log('email error:', err.message);
+    // 실패를 조용히 흘리지 않음 — mail_failures에 기록(운영자 인지용). 가입 자체는 성공 유지.
+    console.log('welcome mail error:', err.message);
+    try {
+      await supabase.from('mail_failures').insert({
+        email: email, kind: 'welcome', error: err.message,
+      });
+    } catch (logErr) {
+      console.log('mail_failures insert error:', logErr.message);
+    }
   }
 
   return new Response(JSON.stringify({ status: 'ok' }), {
