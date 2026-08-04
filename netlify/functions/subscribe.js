@@ -6,8 +6,12 @@ import { makeUnsubToken } from './_unsub.mjs';
 // 메일 호환: 인라인 스타일 + 테이블. 웹폰트 금지(기기 기본 세리프 스택). word-break: keep-all.
 // 엠블럼: 붉은 줄표 아래 여백만 둠(placeholder 박스 없음). 이미지 도착 시 <img> 한 줄 끼울 자리에 주석 표시.
 function buildWelcomeHtml(unsubUrl) {
+  // ★브랜드 색의 원본은 src/styles/global.css이며, 아래 값들은 그 복제본이다.
+  //   메일 HTML은 CSS 변수를 쓸 수 없어(클라이언트 미지원) 인라인 값이 불가피하다.
+  //   global.css의 색이 바뀌면 여기도 함께 고칠 것. (붉은색 원칙: #8b3a2e 하나뿐)
   const serif = "'Apple SD Gothic Neo', 'Noto Serif KR', 'Nanum Myeongjo', 'Batang', serif";
-  const ink = '#1c2340';
+  const ink = '#1c2340';        // = --ink
+  const mark = '#8b3a2e';       // = --mark (붉은색)
   const inkFaint = '#8a8368';
   const paper = '#f4eedd';
   const beige = '#ece4cf';
@@ -30,8 +34,8 @@ function buildWelcomeHtml(unsubUrl) {
     '<p style="margin:0 0 22px;font-family:' + serif + ';font-size:16px;line-height:1.85;color:' + ink + ';word-break:keep-all;">주소는 언제나 편지에 남겨놓겠습니다. <a href="https://nuh-muh.com" style="color:' + ink + ';text-decoration:underline;">nuh-muh.com</a></p>',
     // 추신 — 살짝 흐린 색
     '<p style="margin:0 0 8px;font-family:' + serif + ';font-size:15px;line-height:1.8;color:' + inkFaint + ';word-break:keep-all;">추신. 거미 배달부가 있는 그곳을 자세히 둘러보다 보면, 단골들이 어디를 넘나드는지 알 수 있을 겁니다.</p>',
-    // 붉은 줄표 (#96341C — 메일 내 유일한 붉은색). 왼쪽 정렬 짧은 선.
-    '<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 0;"><tr><td style="width:44px;border-top:2px solid #96341C;font-size:0;line-height:0;">&nbsp;</td></tr></table>',
+    // 붉은 줄표 — 왼쪽 정렬 짧은 선. (값은 --mark 복제본, 아래 상단 주석 참조)
+    '<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 0;"><tr><td style="width:44px;border-top:2px solid ' + mark + ';font-size:0;line-height:0;">&nbsp;</td></tr></table>',
     // 엠블럼 자리 — 여백만(placeholder 박스 없음). 이미지 도착 시 아래 주석 자리에 <img ... alt="너머"> 삽입.
     '<div style="height:64px;">&nbsp;</div>',
     // <!-- EMBLEM: <img src="https://nuh-muh.com/images/emblem.png" width="56" alt="너머" style="display:block;"> -->

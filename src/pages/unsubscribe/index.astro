@@ -1,16 +1,19 @@
 ---
-// 수신거부 확인 페이지. 토큰은 클라이언트에서 읽어 서버 함수(/unsubscribe)와 통신.
-// 2단계: 페이지 로드 시 GET으로 검증(이메일 표시) → 버튼 클릭 시 POST로 처리.
+// 수신거부 확인 페이지 (A-0 앨리 확정안 시공).
+// 성격: 문이 닫히는 화면이 아니다. 명부는 유지되고 언제든 돌아올 수 있으므로
+//       실제 일어나는 일은 "떠남"이 아니라 조용해짐이다.
+// 2단계: GET으로 토큰 검증 → 확정 버튼(POST)에서만 실제 처리.
+// ★BaseLayout을 쓰지 않는 독립 착지 페이지(메일에서 진입)이므로
+//   global.css를 직접 import해 브랜드 토큰을 정상 경로로 받는다.
+import '../../styles/global.css';
 ---
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>너머 — 수신 설정</title>
+  <meta name="robots" content="noindex" />
+  <title>너머</title>
   <style>
-    :root {
-      --paper: #ece4cf; --ink: #1c2340; --ink-faint: #8a8368; --mark: #96341C;
-    }
     * { box-sizing: border-box; }
     body {
       margin: 0; min-height: 100vh;
@@ -19,91 +22,186 @@
       display: flex; align-items: center; justify-content: center;
       padding: 24px; word-break: keep-all;
     }
+    /* 모달이 아니라 페이지 — 카드를 가운데 두고 주변을 비운다 */
     .card {
-      max-width: 460px; width: 100%;
-      background: #f4eedd; border: 1px solid #b8ab86;
-      padding: 48px 40px; text-align: center;
+      position: relative;
+      max-width: 480px; width: 100%;
+      background: var(--paper-letter);
+      padding: 3.4rem 3rem 3rem;
+      text-align: center;
+      /* 직각 유지 — border-radius 금지 */
     }
-    .msg { font-size: 1.15rem; line-height: 1.8; margin: 0 0 8px; }
-    .sub { font-size: 0.95rem; color: var(--ink-faint); line-height: 1.7; margin: 12px 0 28px; }
-    .email { font-weight: 600; }
-    .rule { width: 44px; height: 0; border-top: 2px solid var(--mark); margin: 24px auto; }
-    button {
-      font-family: inherit; font-size: 0.95rem;
-      padding: 12px 28px; border: none; cursor: pointer;
+    /* 엽서 3종과 같은 프레임 문법: 이중 인장선 + 모서리 삼각형 */
+    .pc-frame { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    .inner { position: relative; z-index: 2; }
+
+    .msg {
+      font-size: 1.2rem; line-height: 1.8; margin: 0;
+      font-weight: 300;
+    }
+    /* 붉은 줄표 하나 — 문장 아래 낙관 위치 */
+    .rule {
+      border: none; height: 0;
+      border-top: 1.5px solid var(--mark);
+      width: 3.2rem; margin: 2rem auto 0;
+    }
+    .acts { margin-top: 2.2rem; display: flex; flex-direction: column; gap: 1rem; align-items: center; }
+    .primary {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem; letter-spacing: 0.25em; text-transform: uppercase;
+      padding: 0.85rem 2.4rem; width: 100%;
       background: var(--ink); color: var(--paper);
-      transition: background 0.3s;
+      border: none; cursor: pointer; transition: background 0.3s;
     }
-    button:hover { background: var(--mark); }
-    button:disabled { opacity: 0.5; cursor: default; }
+    .primary:hover { background: var(--mark); }
+    .primary:disabled { opacity: 0.55; cursor: default; }
+    /* 보조 — 밑줄 텍스트 수준. 무게를 확실히 기울인다 */
+    .secondary {
+      background: none; border: none; cursor: pointer;
+      font-family: inherit; font-size: 0.9rem;
+      color: var(--ink-faint); text-decoration: underline;
+      padding: 0.2rem;
+    }
+    .secondary:hover { color: var(--ink); }
+    /* 오류 — 본문과 같은 결, 한 급 작게. ★붉은색 금지(잉크색 그대로) */
+    .err { font-size: 1rem; line-height: 1.75; margin: 0; color: var(--ink); }
+    .retry {
+      margin-top: 1.6rem;
+      background: none; border: 1px solid var(--rule-strong); cursor: pointer;
+      font-family: inherit; font-size: 0.85rem; color: var(--ink);
+      padding: 0.5rem 1.6rem; transition: border-color 0.3s;
+    }
+    .retry:hover { border-color: var(--ink); }
     .hidden { display: none; }
   </style>
 </head>
 <body>
   <div class="card">
-    <!-- 로딩 -->
-    <div id="loading">
-      <p class="msg">잠시만 기다려 주십시오…</p>
-    </div>
+    <svg class="pc-frame" viewBox="0 0 400 260" preserveAspectRatio="none" aria-hidden="true">
+      <rect x="8" y="8" width="384" height="244" fill="none" stroke="var(--mark)" stroke-width="1.2" vector-effect="non-scaling-stroke"/>
+      <rect x="14" y="14" width="372" height="232" fill="none" stroke="var(--mark)" stroke-width="0.6" vector-effect="non-scaling-stroke"/>
+      <g fill="var(--mark)" stroke="none">
+        <path d="M8 8 L30 8 L8 30 Z"/>
+        <path d="M392 8 L392 30 L370 8 Z"/>
+        <path d="M8 252 L8 230 L30 252 Z"/>
+        <path d="M392 252 L370 252 L392 230 Z"/>
+      </g>
+    </svg>
 
-    <!-- 확인 (유효 토큰) -->
-    <div id="confirm" class="hidden">
-      <p class="msg">거미를 그만 보내드릴까요?</p>
-      <p class="sub"><span class="email" id="email-show"></span><br>이 주소로 더는 넘기 소식을 보내지 않습니다.<br>당신의 자리는 그대로 남아 있습니다.</p>
-      <div class="rule"></div>
-      <button id="confirm-btn">그만 보내주십시오</button>
-    </div>
+    <div class="inner">
+      <div id="loading">
+        <p class="msg">잠시.</p>
+      </div>
 
-    <!-- 완료 -->
-    <div id="done" class="hidden">
-      <p class="msg">거미가 더는 찾아가지 않습니다.</p>
-      <p class="sub">마음이 바뀌시거든, 언제든 다시 문을 두드리십시오.</p>
-      <div class="rule"></div>
-    </div>
+      <div id="confirm" class="hidden">
+        <p class="msg">거미를 멈추시려고?<br />흠, 멈추어도 자리는 그대로 둘 테니, 언제든 다시 부르시오.</p>
+        <hr class="rule" />
+        <div class="acts">
+          <button type="button" class="primary" id="stop-btn">멈춘다</button>
+          <button type="button" class="secondary" id="keep-btn">그냥 둔다</button>
+        </div>
+      </div>
 
-    <!-- 무효 토큰 -->
-    <div id="invalid" class="hidden">
-      <p class="msg">잘못된 길입니다.</p>
-      <p class="sub">이 링크는 유효하지 않습니다. 편지에 담긴 링크를 다시 확인해 주십시오.</p>
+      <div id="done" class="hidden">
+        <p class="msg">알겠소. 거미는 이제 그쪽으로 가지 않소.</p>
+        <hr class="rule" />
+      </div>
+
+      <div id="kept" class="hidden">
+        <p class="msg">그럼 그대로 두겠소.</p>
+        <hr class="rule" />
+      </div>
+
+      <div id="already" class="hidden">
+        <p class="msg">거미는 진작 멈추었소.<br />더 할 일이 없구려.</p>
+        <hr class="rule" />
+      </div>
+
+      <div id="invalid" class="hidden">
+        <p class="msg">이 쪽지는 오래되고 찢어졌군.<br />편지에 있는 걸 다시 눌러보시오.</p>
+        <hr class="rule" />
+      </div>
+
+      <div id="failure" class="hidden">
+        <p class="err" id="err-msg"></p>
+        <button type="button" class="retry" id="retry-btn">다시</button>
+      </div>
     </div>
   </div>
 
   <script>
+    // 공통 오류 문구 세트 (화면 무관, 돌려 씀)
+    var ERR = {
+      offline: '거미가 길을 잃었군.',   // 연결이 끊긴 경우
+      server:  '안쪽이 조용하구려.',     // 서버가 답이 없는 경우
+      unknown: '무언가 어긋났소.',       // 원인을 모르는 경우
+    };
+    var PANELS = ['loading','confirm','done','kept','already','invalid','failure'];
     function show(id) {
-      ['loading','confirm','done','invalid'].forEach(function(x){
+      PANELS.forEach(function (x) {
         document.getElementById(x).classList.toggle('hidden', x !== id);
       });
     }
-    async function init() {
-      var token = new URLSearchParams(location.search).get('token');
-      if (!token) { show('invalid'); return; }
-      try {
-        var res = await fetch('/.netlify/functions/unsubscribe?token=' + encodeURIComponent(token));
-        var data = await res.json();
-        if (data.status === 'valid') {
-          document.getElementById('email-show').textContent = data.email;
-          show('confirm');
-          document.getElementById('confirm-btn').addEventListener('click', async function(){
-            this.disabled = true;
-            try {
-              var r2 = await fetch('/.netlify/functions/unsubscribe', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token: token }),
-              });
-              var d2 = await r2.json();
-              if (d2.status === 'ok') show('done');
-              else { this.disabled = false; alert('처리 중 문제가 생겼습니다. 잠시 후 다시 시도해 주십시오.'); }
-            } catch (e) { this.disabled = false; }
-          });
-        } else {
-          show('invalid');
-        }
-      } catch (e) {
-        show('invalid');
-      }
+    function fail(kind) {
+      document.getElementById('err-msg').textContent = ERR[kind] || ERR.unknown;
+      show('failure');
     }
-    init();
+
+    var token = new URLSearchParams(location.search).get('token');
+
+    async function verify() {
+      if (!token) { show('invalid'); return; }
+      show('loading');
+      if (navigator.onLine === false) { fail('offline'); return; }
+      var res;
+      try {
+        res = await fetch('/.netlify/functions/unsubscribe?token=' + encodeURIComponent(token));
+      } catch (e) {
+        fail('offline'); return;
+      }
+      if (!res.ok) { fail('server'); return; }
+      var data;
+      try { data = await res.json(); } catch (e) { fail('unknown'); return; }
+
+      if (data.status === 'valid') show('confirm');
+      else if (data.status === 'already') show('already');
+      else if (data.status === 'invalid') show('invalid');
+      else fail('unknown');
+    }
+
+    async function stop() {
+      var btn = document.getElementById('stop-btn');
+      var orig = btn.textContent;
+      btn.textContent = '멈추는 중';   // 조판 유지, 라벨만 교체
+      btn.disabled = true;
+      if (navigator.onLine === false) { btn.textContent = orig; btn.disabled = false; fail('offline'); return; }
+      var res;
+      try {
+        res = await fetch('/.netlify/functions/unsubscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: token }),
+        });
+      } catch (e) {
+        btn.textContent = orig; btn.disabled = false; fail('offline'); return;
+      }
+      if (!res.ok) { btn.textContent = orig; btn.disabled = false; fail('server'); return; }
+      var data;
+      try { data = await res.json(); } catch (e) { btn.textContent = orig; btn.disabled = false; fail('unknown'); return; }
+
+      if (data.status === 'ok') show('done');
+      else if (data.status === 'invalid') show('invalid');
+      else { btn.textContent = orig; btn.disabled = false; fail('unknown'); }
+    }
+
+    function init() {
+      document.getElementById('stop-btn').addEventListener('click', stop);
+      document.getElementById('keep-btn').addEventListener('click', function () { show('kept'); });
+      document.getElementById('retry-btn').addEventListener('click', verify);
+      verify();
+    }
+    if (document.readyState !== 'loading') init();
+    else document.addEventListener('DOMContentLoaded', init);
   </script>
 </body>
 </html>

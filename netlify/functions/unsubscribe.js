@@ -45,7 +45,16 @@ export default async (req) => {
   }
 
   // GET = 검증만 (확인 페이지가 이메일 보여주고 버튼 누르면 POST로 실제 처리)
+  // 이미 멈춘 상태면 already로 알려 확인 화면 대신 "진작 멈추었소" 화면을 띄우게 한다.
   if (req.method === 'GET') {
+    const { data: row } = await supabase
+      .from('members')
+      .select('mail_opt_out')
+      .eq('email', email)
+      .maybeSingle();
+    if (row && row.mail_opt_out === true) {
+      return json({ status: 'already', email });
+    }
     return json({ status: 'valid', email });
   }
 

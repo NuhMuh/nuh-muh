@@ -6,9 +6,9 @@
   <div class="postcard" id="postcard">
     <button class="postcard-close" id="postcard-close" aria-label="닫기">×</button>
     <svg class="pc-frame" viewBox="0 0 400 260" preserveAspectRatio="none" aria-hidden="true">
-      <rect x="8" y="8" width="384" height="244" fill="none" stroke="#8a4a2a" stroke-width="1.2" vector-effect="non-scaling-stroke"/>
-      <rect x="14" y="14" width="372" height="232" fill="none" stroke="#8a4a2a" stroke-width="0.6" vector-effect="non-scaling-stroke"/>
-      <g fill="#8a4a2a" stroke="none">
+      <rect x="8" y="8" width="384" height="244" fill="none" stroke="var(--mark)" stroke-width="1.2" vector-effect="non-scaling-stroke"/>
+      <rect x="14" y="14" width="372" height="232" fill="none" stroke="var(--mark)" stroke-width="0.6" vector-effect="non-scaling-stroke"/>
+      <g fill="var(--mark)" stroke="none">
         <path d="M8 8 L30 8 L8 30 Z"/>
         <path d="M392 8 L392 30 L370 8 Z"/>
         <path d="M8 252 L8 230 L30 252 Z"/>
@@ -128,7 +128,7 @@
   /* 소개문 아래 붉은 가로선 — 카드 내 유일한 붉은색 */
   .pc-rule {
     border: none; height: 0;
-    border-top: 1.5px solid #96341C;
+    border-top: 1.5px solid var(--mark);
     width: 3.2rem; margin: 0 auto 2rem;
   }
   /* 카드2/3(입력 없는 카드)에서는 낙관 위치 — 본문 하단 마감 */
