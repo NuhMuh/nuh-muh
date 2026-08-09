@@ -126,6 +126,18 @@ export default async (req) => {
     options: { emailRedirectTo: 'https://nuh-muh.com/welcome' },
   });
   if (mailError) {
+    // 실패를 조용히 흘리지 않는다 — mail_failures에 기록(운영자 인지용).
+    // ★원칙: 사용자에게 나가는 모든 발송의 실패는 mail_failures에 남는다.
+    //   새 발송 유형이 생기면 kind를 추가하고 실패 기록을 붙이는 것이 기본값이며,
+    //   안 붙이는 경우에만 이유를 남긴다. (마틴 판결)
+    // 이 실패는 사용자가 keyholder가 되지 못한 채 멈추는 가장 치명적인 경우다.
+    try {
+      await supabase.from('mail_failures').insert({
+        email: email, kind: 'confirm', error: mailError.message,
+      });
+    } catch (logErr) {
+      console.log('mail_failures insert error:', logErr.message);
+    }
     return new Response(JSON.stringify({ status: 'ok_no_mail', detail: mailError.message }), {
       status: 200, headers: { 'Content-Type': 'application/json' },
     });
