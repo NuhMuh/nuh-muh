@@ -173,18 +173,22 @@
         if (result === 'ok') {
           msg.textContent = '봉인되었습니다. 확인의 편지를 보냈으니, 메일함과 스팸함을 살펴 문을 여십시오.';
           form.style.display = 'none';
-          // 폴링: 다른 화면/기기에서 확인이 끝나면 이 화면이 감지해 스스로 반영
+          // ── 확인 감지 (마틴 안 C: 폴링 5분 + 탭 복귀 재확인) ──
+          // 폴링은 짧은 지연을 즉시 잡고, 복귀 감지는 긴 지연(메일이 몇십 분 늦게 와도)을 잡는다.
+          // ★창을 늘리는 대신 사용자의 실제 행동(탭으로 돌아옴)을 포착하는 설계 —
+          //   "얼마면 충분한가"라는 답 없는 질문을 피한다.
           var pollEmail = emailEl.value;
           var pollPassword = passEl.value;
           var pollCount = 0;
-          var pollMax = 75; // 4초 * 75 = 약 5분
-          var pollTimer = setInterval(async function () {
-            pollCount++;
-            if (pollCount > pollMax) {
-              clearInterval(pollTimer);
-              msg.textContent = '확인을 기다리다 멈추었습니다. 편지의 링크를 누른 뒤, 너머를 새로고침하여 문을 여십시오.';
-              return;
-            }
+          var pollMax = 75; // 4초 * 75 = 약 5분 (B가 뒤를 받치므로 늘리지 않는다)
+          var pollTimer = null;
+          var settled = false;   // 성공 후 재호출 차단 — 탭을 여러 번 오가도 호출 0
+          var checking = false;  // 진행 중 중복 요청 차단 — 빠른 탭 전환에도 동시 요청 없음
+
+          // 인터벌과 복귀 감지가 같은 함수를 공유한다(두 경로가 갈라져 어긋나는 것 방지)
+          async function checkConfirmed() {
+            if (settled || checking) return;
+            checking = true;
             try {
               const res = await fetch('/.netlify/functions/confirm', {
                 method: 'POST',
@@ -193,7 +197,9 @@
               });
               const data = await res.json();
               if (data.status === 'ok') {
-                clearInterval(pollTimer);
+                settled = true;
+                if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+                document.removeEventListener('visibilitychange', onVisible);
                 msg.textContent = '문이 열립니다…';
                 // 확인 완료 → 이 화면이 갖고 있던 비번으로 로그인 → 세션 생성
                 try {
@@ -207,6 +213,28 @@
                 }, 1200);
               }
             } catch (e) {}
+            checking = false;
+          }
+
+          // (B) 탭 복귀 재확인 — 사용자가 다른 기기에서 링크를 누르고 이 탭으로 돌아온 순간을 포착.
+          //     지연이 몇 시간이어도 작동한다. 숨겨질 때는 돌지 않는다.
+          function onVisible() {
+            if (document.visibilityState === 'visible') checkConfirmed();
+          }
+          document.addEventListener('visibilitychange', onVisible);
+
+          // (A) 폴링 — 같은 기기에서 곧바로 확인한 경우를 즉시 처리하는 보조.
+          pollTimer = setInterval(function () {
+            pollCount++;
+            if (pollCount > pollMax) {
+              clearInterval(pollTimer); pollTimer = null;
+              // ★안 C 채택으로 이 문구의 성격이 바뀐다 — "실패 안내"가 아니라 "기다림의 표시".
+              //   돌아오기만 하면 복귀 감지가 자동으로 연다(수동 새로고침 불필요).
+              //   문구는 앨리 A-2 확정 대기 — 아래는 임시.
+              msg.textContent = '아직 문이 확인되지 않았습니다. 편지의 링크를 누르신 뒤 이 창으로 돌아오시면, 문이 스스로 열립니다.';
+              return;
+            }
+            checkConfirmed();
           }, 4000);
         } else if (result === 'ok_no_mail') {
           msg.textContent = '봉인은 되었으나 편지를 보내지 못했습니다. 잠시 후 다시 시도하거나 재발송을 기다려 주십시오.';
