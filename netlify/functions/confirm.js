@@ -46,10 +46,15 @@ export default async (req) => {
   }
 
   // 확인됨 → members를 keyholder로 승격
-  const { error: updateErr } = await supabase
+  // 닉네임도 함께 받는다 — /welcome 성공 화면의 호명에 쓴다.
+  // 원천은 DB(세션 metadata가 아니라). update().select()로 갱신 후 값을 그대로 받아
+  // 추가 조회를 만들지 않는다.
+  const { data: updated, error: updateErr } = await supabase
     .from('members')
     .update({ status: 'keyholder' })
-    .eq('email', email);
+    .eq('email', email)
+    .select('nickname')
+    .maybeSingle();
 
   if (updateErr) {
     return new Response(JSON.stringify({ status: 'error', detail: updateErr.message }), {
@@ -57,7 +62,10 @@ export default async (req) => {
     });
   }
 
-  return new Response(JSON.stringify({ status: 'ok' }), {
+  return new Response(JSON.stringify({
+    status: 'ok',
+    nickname: updated && updated.nickname ? updated.nickname : null,
+  }), {
     status: 200, headers: { 'Content-Type': 'application/json' },
   });
 };

@@ -617,12 +617,22 @@
           textEl.textContent = '편지를 다시 보내지 못했습니다. 잠시 후 다시 시도해 주십시오.';
         }
         // 폴링: 다른 곳에서 확인이 끝나면 이 화면이 감지해 새로고침
+        // ── 확인 감지 (마틴 안 C: 폴링 5분 + 탭 복귀 재확인) ──
+        // ★JoinScroll.astro와 동일한 구조를 유지할 것 — 두 곳의 구현이 갈라지면
+        //   다음에 한쪽만 고치는 사고가 난다(마틴).
+        // 이 경로는 join보다 오히려 취약하다: pending으로 판정돼 재발송을 받는 사람은
+        // 이미 한 번 메일을 놓친 사람이고, 재발송마저 5분 안에 안 오면 또 놓친다.
         var pPollEmail = email;
         var pPollCount = 0;
-        var pPollMax = 75; // 4초 * 75 = 약 5분
-        var pPollTimer = setInterval(async function () {
-          pPollCount++;
-          if (pPollCount > pPollMax) { clearInterval(pPollTimer); return; }
+        var pPollMax = 75; // 4초 * 75 = 약 5분 (복귀 감지가 뒤를 받치므로 늘리지 않는다)
+        var pPollTimer = null;
+        var pSettled = false;   // 성공 후 재호출 차단
+        var pChecking = false;  // 진행 중 중복 요청 차단
+
+        // 인터벌과 복귀 감지가 같은 함수를 공유한다
+        async function pCheckConfirmed() {
+          if (pSettled || pChecking) return;
+          pChecking = true;
           try {
             const res = await fetch('/.netlify/functions/confirm', {
               method: 'POST',
@@ -631,7 +641,9 @@
             });
             const data = await res.json();
             if (data.status === 'ok') {
-              clearInterval(pPollTimer);
+              pSettled = true;
+              if (pPollTimer) { clearInterval(pPollTimer); pPollTimer = null; }
+              document.removeEventListener('visibilitychange', pOnVisible);
               textEl.textContent = '문이 열립니다…';
               setTimeout(function () {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -639,6 +651,20 @@
               }, 1200);
             }
           } catch (e2) {}
+          pChecking = false;
+        }
+
+        // (B) 탭 복귀 재확인 — 다른 기기에서 링크를 누르고 이 탭으로 돌아온 순간을 포착.
+        function pOnVisible() {
+          if (document.visibilityState === 'visible') pCheckConfirmed();
+        }
+        document.addEventListener('visibilitychange', pOnVisible);
+
+        // (A) 폴링 — 같은 기기에서 곧바로 확인한 경우를 즉시 처리하는 보조.
+        pPollTimer = setInterval(function () {
+          pPollCount++;
+          if (pPollCount > pPollMax) { clearInterval(pPollTimer); pPollTimer = null; return; }
+          pCheckConfirmed();
         }, 4000);
         return;
       }

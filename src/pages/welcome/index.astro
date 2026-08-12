@@ -1,76 +1,196 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
-import Masthead from '../../components/Masthead.astro';
+// /welcome — 메일 확인 도착지 (A-2 앨리 확정안 시공).
+// ★이 화면에 도착한 시점에 세션이 이미 서 있다(Supabase detectSessionInUrl).
+//   즉 사용자는 이미 안에 들어와 있으므로, 문구는 "들어오시오" 계열이고 문(버튼)이 필요하다.
+// 세 상태: 로딩(최대 2초) / 성공 / 실패. 만료·재사용은 구분하지 않는다(마틴 — 입구가 판정하는 기계).
+// ★BaseLayout을 쓰지 않는 독립 착지 페이지(메일에서 진입)이므로 global.css를 직접 import.
+import '../../styles/global.css';
 ---
-<BaseLayout title="환영 — Nuh-Muh">
-  <div class="container">
-    <Masthead />
-    <div class="welcome-wrap" id="welcome-wrap">
-      <p class="welcome-state" id="welcome-state">문을 확인하는 중입니다…</p>
-      <div class="welcome-body" id="welcome-body" style="display:none;">
-        <h1 class="welcome-title">확인되었습니다 <span>Confirmed</span></h1>
-        <p class="welcome-msg" id="welcome-msg">당신의 주소가 확인되었습니다.<br>너머를 열어 두었던 창으로 돌아가십시오.</p>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>너머</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh;
+      background: var(--paper); color: var(--ink);
+      font-family: 'Noto Serif KR', 'Nanum Myeongjo', serif;
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px; word-break: keep-all;
+    }
+    .card {
+      position: relative;
+      max-width: 480px; width: 100%;
+      background: var(--paper-letter);
+      padding: 3.4rem 3rem 3rem;
+      text-align: center;
+      /* 직각 유지 — border-radius 금지 */
+    }
+    .pc-frame { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    .inner { position: relative; z-index: 2; }
+
+    .msg { font-size: 1.2rem; line-height: 1.8; margin: 0; font-weight: 300; }
+    .sub { font-size: 1rem; line-height: 1.8; margin: 1.4rem 0 0; font-weight: 300; color: var(--ink); }
+    .rule {
+      border: none; height: 0;
+      border-top: 1.5px solid var(--mark);
+      width: 3.2rem; margin: 2rem auto 0;
+    }
+    .acts { margin-top: 2.2rem; display: flex; flex-direction: column; gap: 1rem; align-items: center; }
+    .primary {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem; letter-spacing: 0.25em; text-transform: uppercase;
+      padding: 0.85rem 2.4rem; width: 100%;
+      background: var(--ink); color: var(--paper);
+      border: none; cursor: pointer; text-decoration: none; display: block;
+      transition: background 0.3s;
+    }
+    .primary:hover { background: var(--mark); }
+    /* 보조 — 밑줄 텍스트 수준 */
+    .secondary {
+      background: none; border: none; cursor: pointer;
+      font-family: inherit; font-size: 0.9rem;
+      color: var(--ink-faint); text-decoration: underline;
+      padding: 0.2rem;
+    }
+    .secondary:hover { color: var(--ink); }
+    /* 오류 — 본문과 같은 결, 한 급 작게. ★붉은색 금지(잉크색 그대로) */
+    .err { font-size: 1rem; line-height: 1.75; margin: 0; color: var(--ink); }
+    .retry {
+      margin-top: 1.6rem;
+      background: none; border: 1px solid var(--rule-strong); cursor: pointer;
+      font-family: inherit; font-size: 0.85rem; color: var(--ink);
+      padding: 0.5rem 1.6rem; transition: border-color 0.3s;
+    }
+    .retry:hover { border-color: var(--ink); }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <svg class="pc-frame" viewBox="0 0 400 260" preserveAspectRatio="none" aria-hidden="true">
+      <rect x="8" y="8" width="384" height="244" fill="none" stroke="var(--mark)" stroke-width="1.2" vector-effect="non-scaling-stroke"/>
+      <rect x="14" y="14" width="372" height="232" fill="none" stroke="var(--mark)" stroke-width="0.6" vector-effect="non-scaling-stroke"/>
+      <g fill="var(--mark)" stroke="none">
+        <path d="M8 8 L30 8 L8 30 Z"/>
+        <path d="M392 8 L392 30 L370 8 Z"/>
+        <path d="M8 252 L8 230 L30 252 Z"/>
+        <path d="M392 252 L370 252 L392 230 Z"/>
+      </g>
+    </svg>
+
+    <div class="inner">
+      <div id="loading">
+        <p class="msg">열쇠를 맞춰보는 중이오.</p>
       </div>
-      <div class="welcome-fail" id="welcome-fail" style="display:none;">
-        <p class="welcome-msg">확인을 마치지 못했습니다. 편지의 링크가 만료되었거나 이미 사용되었을 수 있습니다.</p>
-        <a href="/" class="welcome-enter">너머로 돌아가기 →</a>
+
+      <div id="success" class="hidden">
+        <!-- ★이름 호명 폴백: 문자열 치환으로 이름만 비우지 않고 문장 단위로 갈아끼운다.
+             (빈 값이 들어가면 "， 문이 열렸소"가 되어 화면이 깨지므로) -->
+        <p class="msg" id="hail">문이 열렸소.</p>
+        <p class="sub">이제 안으로 들어왔으니, 당신만의 자리를 마음껏 봐 보시길.</p>
+        <div class="acts">
+          <a href="/room" class="primary">둘러본다</a>
+        </div>
+        <p class="sub">또는 먼저 너머 곳곳을 돌아다니는 것도 좋겠지.</p>
+        <div class="acts">
+          <a href="/" class="secondary">돌아다닌다</a>
+        </div>
+        <hr class="rule" />
+      </div>
+
+      <div id="fail" class="hidden">
+        <p class="msg">이 열쇠는 안 맞는군. 낡았거나, 이미 쓴 것이지.<br />걱정 마시오. 입구에서 다시 시작하면 되니까.</p>
+        <hr class="rule" />
+        <div class="acts">
+          <a href="/" class="primary">입구로</a>
+        </div>
+      </div>
+
+      <div id="failure" class="hidden">
+        <p class="err" id="err-msg"></p>
+        <button type="button" class="retry" id="retry-btn">다시</button>
       </div>
     </div>
   </div>
-</BaseLayout>
 
-<style>
-  .welcome-wrap { max-width: 640px; margin: 0 auto; padding: 4rem 0 6rem; text-align: center; }
-  .welcome-state { font-family: 'EB Garamond', serif; font-style: italic; font-size: 1.1rem; color: var(--ink-soft); }
-  .welcome-title { font-family: 'Noto Serif KR', serif; font-weight: 500; font-size: 2.6rem; margin-bottom: 1.2rem; }
-  .welcome-title span { font-family: 'Cormorant Unicase', serif; color: var(--mark); font-size: 1.6rem; margin-left: 0.5rem; }
-  .welcome-msg { font-family: 'Noto Serif KR', serif; font-weight: 300; font-size: 1.15rem; line-height: 1.7; color: var(--ink); margin-bottom: 2.5rem; }
-  .welcome-enter { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--rule-strong); padding-bottom: 0.3rem; transition: color 0.3s, border-color 0.3s; }
-  .welcome-enter:hover { color: var(--mark); border-color: var(--mark); }
-</style>
+  <script>
+    import { supabase } from '../../lib/supabaseClient.js';
 
-<script>
-  import { supabase } from '../../lib/supabaseClient.js';
-
-  async function initWelcome() {
-    const stateEl = document.getElementById('welcome-state');
-    const bodyEl = document.getElementById('welcome-body');
-    const failEl = document.getElementById('welcome-fail');
-
-    // Supabase가 메일 링크의 토큰으로 세션을 만들었는지 확인
-    // (확인 성공 시 이 페이지 도착 시점에 세션이 생겨 있음)
-    let session = null;
-    for (let i = 0; i < 5; i++) {
-      try {
-        const { data } = await supabase.auth.getSession();
-        session = data ? data.session : null;
-      } catch (e) {}
-      if (session) break;
-      await new Promise(r => setTimeout(r, 400)); // 토큰 처리에 시간이 걸릴 수 있어 잠깐 대기 후 재확인
-    }
-
-    if (!session) {
-      // 확인 실패 (만료/재사용 등)
-      if (stateEl) stateEl.style.display = 'none';
-      if (failEl) failEl.style.display = 'block';
-      return;
-    }
-
-    // 확인됨 → 서버 함수로 members를 keyholder로 승격 (RLS 때문에 서버에서)
-    const email = session.user ? session.user.email : '';
-    try {
-      await fetch('/.netlify/functions/confirm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email }),
+    // 공통 오류 문구 세트 (화면 무관, 돌려 씀 — 붉은색 쓰지 않음)
+    var ERR = {
+      offline: '거미가 길을 잃었군.',
+      server:  '안쪽이 조용하구려.',
+      unknown: '무언가 어긋났소.',
+    };
+    var PANELS = ['loading', 'success', 'fail', 'failure'];
+    function show(id) {
+      PANELS.forEach(function (x) {
+        document.getElementById(x).classList.toggle('hidden', x !== id);
       });
-    } catch (e) {}
+    }
+    function fail(kind) {
+      document.getElementById('err-msg').textContent = ERR[kind] || ERR.unknown;
+      show('failure');
+    }
 
-    if (stateEl) stateEl.style.display = 'none';
-    if (bodyEl) bodyEl.style.display = 'block';
-  }
+    async function initWelcome() {
+      show('loading');
 
-  if (document.readyState !== 'loading') initWelcome();
-  else document.addEventListener('DOMContentLoaded', initWelcome);
-  document.addEventListener('astro:page-load', initWelcome);
-</script>
+      // 메일 링크의 토큰으로 Supabase가 세션을 만들었는지 확인.
+      // 토큰 처리에 시간이 걸릴 수 있어 0.4초 간격 최대 5회(약 2초) 재시도.
+      var session = null;
+      for (var i = 0; i < 5; i++) {
+        try {
+          var got = await supabase.auth.getSession();
+          session = got && got.data ? got.data.session : null;
+        } catch (e) {}
+        if (session) break;
+        await new Promise(function (r) { setTimeout(r, 400); });
+      }
+
+      // 세션 없음 = 확인 실패(만료·재사용 등). 구분하지 않고 입구로 돌려보낸다.
+      if (!session) { show('fail'); return; }
+
+      // 확인됨 → 서버 함수로 members를 keyholder 승격 (RLS 때문에 서버에서) + 닉네임 수령
+      var email = session.user ? session.user.email : '';
+      if (navigator.onLine === false) { fail('offline'); return; }
+      var res;
+      try {
+        res = await fetch('/.netlify/functions/confirm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email }),
+        });
+      } catch (e) { fail('offline'); return; }
+      if (!res.ok) { fail('server'); return; }
+
+      var data;
+      try { data = await res.json(); } catch (e) { fail('unknown'); return; }
+
+      if (data.status !== 'ok') {
+        // not_confirmed 등 — 확인이 실제로 끝나지 않은 경우
+        show('fail'); return;
+      }
+
+      // ★이름 호명 — 폴백은 문장 단위 교체(이름만 비우지 않는다)
+      var hail = document.getElementById('hail');
+      if (data.nickname) {
+        hail.textContent = data.nickname + ', 문이 열렸소.';
+      } else {
+        hail.textContent = '문이 열렸소.';
+        // 폴백 발동은 조회 경로 문제의 신호 — 운영자 보고용으로 남긴다.
+        console.warn('[welcome] 닉네임 조회 실패 — 폴백 문안 사용');
+      }
+      show('success');
+    }
+
+    document.getElementById('retry-btn').addEventListener('click', initWelcome);
+    if (document.readyState !== 'loading') initWelcome();
+    else document.addEventListener('DOMContentLoaded', initWelcome);
+  </script>
+</body>
+</html>
