@@ -645,11 +645,17 @@
               if (pPollTimer) { clearInterval(pPollTimer); pPollTimer = null; }
               document.removeEventListener('visibilitychange', pOnVisible);
               window.removeEventListener('focus', pCheckConfirmed);
-              textEl.textContent = '문이 열립니다…';
+              // ★가입 폼(JoinScroll)과 문구가 다르다 — 의도된 차이다.
+              //   이 경로는 이메일만 받으므로 비밀번호가 없어 자동 로그인이 구조적으로 불가능하다.
+              //   새로고침 후 물음표를 다시 누르면 keyholder 분기(로그인 박스)로 갈린다.
+              //   그 다음 행동을 문구가 가리킨다. (운영자 확정 문구)
+              textEl.textContent = '아, 당신이군! 이제 열쇠가 맞으니, 다시 해보겠소?';
+              // 문장이 길어 읽을 시간을 준다(1.2초 → 2.5초). 새로고침 자체는 필수 —
+              // keyholder로 바뀐 상태를 화면에 반영해야 물음표가 로그인 박스로 갈린다.
               setTimeout(function () {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 setTimeout(function () { location.reload(); }, 900);
-              }, 1200);
+              }, 2500);
             }
           } catch (e2) {}
           pChecking = false;
