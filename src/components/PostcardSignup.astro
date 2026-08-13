@@ -644,6 +644,7 @@
               pSettled = true;
               if (pPollTimer) { clearInterval(pPollTimer); pPollTimer = null; }
               document.removeEventListener('visibilitychange', pOnVisible);
+              window.removeEventListener('focus', pCheckConfirmed);
               textEl.textContent = '문이 열립니다…';
               setTimeout(function () {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -659,6 +660,9 @@
           if (document.visibilityState === 'visible') pCheckConfirmed();
         }
         document.addEventListener('visibilitychange', pOnVisible);
+        // 창을 나란히 띄워 둘 다 계속 '보이는' 상태면 visibilitychange가 발동하지 않는다.
+        // → focus로 그 구멍을 메운다. 중복 호출은 pChecking/pSettled가 막는다.
+        window.addEventListener('focus', pCheckConfirmed);
 
         // (A) 폴링 — 같은 기기에서 곧바로 확인한 경우를 즉시 처리하는 보조.
         pPollTimer = setInterval(function () {

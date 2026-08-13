@@ -200,6 +200,7 @@
                 settled = true;
                 if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
                 document.removeEventListener('visibilitychange', onVisible);
+                window.removeEventListener('focus', checkConfirmed);
                 msg.textContent = '문이 열립니다…';
                 // 확인 완료 → 이 화면이 갖고 있던 비번으로 로그인 → 세션 생성
                 try {
@@ -222,6 +223,10 @@
             if (document.visibilityState === 'visible') checkConfirmed();
           }
           document.addEventListener('visibilitychange', onVisible);
+          // 창을 나란히 띄워 둘 다 계속 '보이는' 상태면 visibilitychange가 발동하지 않는다.
+          // (클릭은 포커스만 바꿀 뿐 보임/안보임을 바꾸지 않음) → focus로 그 구멍을 메운다.
+          // 중복 호출은 checking/settled가 막으므로 안전하다.
+          window.addEventListener('focus', checkConfirmed);
 
           // (A) 폴링 — 같은 기기에서 곧바로 확인한 경우를 즉시 처리하는 보조.
           pollTimer = setInterval(function () {
