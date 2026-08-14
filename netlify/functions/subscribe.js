@@ -36,9 +36,13 @@ function buildWelcomeHtml(unsubUrl) {
     '<p style="margin:0 0 8px;font-family:' + serif + ';font-size:15px;line-height:1.8;color:' + inkFaint + ';word-break:keep-all;">추신. 거미 배달부가 있는 그곳을 자세히 둘러보다 보면, 단골들이 어디를 넘나드는지 알 수 있을 겁니다.</p>',
     // 붉은 줄표 — 왼쪽 정렬 짧은 선. (값은 --mark 복제본, 아래 상단 주석 참조)
     '<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 0;"><tr><td style="width:44px;border-top:2px solid ' + mark + ';font-size:0;line-height:0;">&nbsp;</td></tr></table>',
-    // 엠블럼 자리 — 여백만(placeholder 박스 없음). 이미지 도착 시 아래 주석 자리에 <img ... alt="너머"> 삽입.
-    '<div style="height:64px;">&nbsp;</div>',
-    // <!-- EMBLEM: <img src="https://nuh-muh.com/images/emblem.png" width="56" alt="너머" style="display:block;"> -->
+    // 엠블럼 — 낙관처럼 얹히는 요소이지 편지의 뼈대가 아니다(본문은 위에서 이미 완결).
+    // ★alt "너머 드림."은 대체 설명이 아니라 이미지 차단 환경에서 실제 출력되는 문자열이다.
+    //   상당수 메일함이 이미지를 기본 차단하므로, 차단되면 낙관 자리에 이 맺음말이 남는다.
+    // width는 픽셀로 명시(CSS만으로는 아웃룩이 무시), 높이 미지정으로 비율 유지.
+    '<div style="height:28px;">&nbsp;</div>',
+    '<img src="https://nuh-muh.com/images/emblem.png" width="56" alt="너머 드림." style="display:block;border:0;">',
+    '<div style="height:24px;">&nbsp;</div>',
     // 최하단 수평선 + 수신거부 문구 ('여기에 말해두십시오'가 링크)
     '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:8px;"><tr><td style="border-top:1px solid #d8ceb2;font-size:0;line-height:0;">&nbsp;</td></tr></table>',
     '<p style="margin:16px 0 0;font-family:' + serif + ';font-size:13px;line-height:1.7;color:' + inkFaint + ';word-break:keep-all;">거미를 그만 보내달라 하시려면, <a href="' + unsubUrl + '" style="color:' + inkFaint + ';text-decoration:underline;">여기에 말해두십시오.</a></p>',
