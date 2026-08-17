@@ -30,7 +30,7 @@ export default async (req) => {
       status: 200, headers: { 'Content-Type': 'application/json' },
     });
   }
-  if (!password || password.length < 6) {
+  if (!password || password.length < 8) {   // /room 비밀번호 변경(8자)과 통일
     return new Response(JSON.stringify({ status: 'weak_password' }), {
       status: 200, headers: { 'Content-Type': 'application/json' },
     });
@@ -87,7 +87,29 @@ export default async (req) => {
     });
   }
 
-  // 2. Auth 계정 생성 (서버에선 admin.createUser, email_confirm:true로 확인 처리)
+  // ★★⑦과 ⑧은 서로 다른 데이터를 본다 — 절대 다시 합치지 말 것.
+  //   ⑦(위) = members.status 를 본다 → 진짜 정식 회원(already_keyholder)
+  //   ⑧(아래) = Auth 계정 존재를 본다 → members는 pending인데 Auth에만 계정이 있는 상태
+  //   즉 "이 주소로 이미 누군가 봉인을 정했다"이며, 그 사람은 keyholder가 아니다.
+  //   과거 이 둘이 한 코드(already_keyholder)로 수렴해 "이미 열쇠를 가지셨습니다"라는
+  //   사실과 다른 안내가 나갔다. 그것이 이 분리의 이유다.
+  //
+  // 판정은 createUser 호출 '전에' Auth를 조회해서 한다(사전 조회).
+  // 실패 메시지 문자열 매칭은 Supabase가 문구를 바꾸면 에러 없이 조용히 다른 분기로
+  // 빠지므로 쓰지 않는다. confirm.js가 이미 listUsers를 쓰는 선례가 있다.
+  try {
+    const { data: authList } = await supabase.auth.admin.listUsers();
+    const exists = authList && authList.users
+      ? authList.users.find(u => u.email === email)
+      : null;
+    if (exists) {
+      return new Response(JSON.stringify({ status: 'account_exists' }), {
+        status: 200, headers: { 'Content-Type': 'application/json' },
+      });
+    }
+  } catch (e) { /* 조회 실패는 아래 생성 단계의 이중 방어에 맡긴다 */ }
+
+  // 2. Auth 계정 생성 (email_confirm:false 필수 — 안 적으면 자동 확인 처리됨)
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
     email: email,
     password: password,
@@ -96,9 +118,10 @@ export default async (req) => {
   });
 
   if (authError) {
-    // 이미 auth에 있는 이메일이면
+    // 이중 방어: 사전 조회와 생성 사이의 경합(그 찰나에 계정이 생긴 경우).
+    // 여기서도 같은 코드로 수렴시킨다.
     if (authError.message && authError.message.toLowerCase().includes('already')) {
-      return new Response(JSON.stringify({ status: 'already_keyholder' }), {
+      return new Response(JSON.stringify({ status: 'account_exists' }), {
         status: 200, headers: { 'Content-Type': 'application/json' },
       });
     }

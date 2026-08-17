@@ -46,6 +46,12 @@ function buildWelcomeHtml(unsubUrl) {
     // 최하단 수평선 + 수신거부 문구 ('여기에 말해두십시오'가 링크)
     '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:8px;"><tr><td style="border-top:1px solid #d8ceb2;font-size:0;line-height:0;">&nbsp;</td></tr></table>',
     '<p style="margin:16px 0 0;font-family:' + serif + ';font-size:13px;line-height:1.7;color:' + inkFaint + ';word-break:keep-all;">거미를 그만 보내달라 하시려면, <a href="' + unsubUrl + '" style="color:' + inkFaint + ';text-decoration:underline;">여기에 말해두십시오.</a></p>',
+    // ★신고 창구 — 본문이 아니라 하단(편지 밖 난외주 자리)에 둔다.
+    //   본문에 넣으면 첫인상이 환대에서 경고로 기운다. 수신자의 압도적 다수는 정상적으로
+    //   주소를 남긴 사람이며, 도용당한 사람이 실제로 찾아가는 곳이 바로 이 하단이다.
+    //   '도용'·'누군가'를 쓰지 않은 것도 의도 — 조건절이 해당자에게만 걸리게 한다.
+    //   이 편지는 합쇼체이므로 어투도 그에 맞춘다(화면의 하오체와 다르다).
+    '<p style="margin:6px 0 0;font-family:' + serif + ';font-size:13px;line-height:1.7;color:' + inkFaint + ';word-break:keep-all;">이 주소를 남긴 적이 없으시다면, <a href="mailto:desk@nuh-muh.com?subject=%EC%9E%98%EB%AA%BB%EB%90%9C%20%ED%8E%B8%EC%A7%80" style="color:' + inkFaint + ';text-decoration:underline;">desk@nuh-muh.com</a>으로 알려주십시오.</p>',
     '</td></tr></table>',
     '</td></tr></table>',
     '</body></html>',
