@@ -21,7 +21,7 @@
   .wm {
     position: relative;
     display: inline-block;
-    width: clamp(15rem, 34vw, 26rem);
+    width: clamp(10.5rem, 24vw, 18rem);   /* 운영자 조정: 기존 대비 -30% */
     line-height: 0;
   }
   /* 글자 레이어가 높이를 만들고, 막대 레이어는 그 위에 겹친다 */
@@ -38,7 +38,7 @@
   }
   /* 이동 폭 -2.5% — 막대가 글자 가로폭을 벗어나지 않는 선(상한보다 여유 있게).
      과하면 장난스러워진다. */
-  .masthead-link:hover .wm-bar { transform: translateX(-2.5%); }
+  .masthead-link:hover .wm-bar { transform: translateX(-10%); }   /* 운영자 조정: 2.5% → 10% */
 
   /* 터치 기기: 별도 처리 없이 정지 상태. 장식적 반응이므로 없어도 손해가 없고,
      억지로 터치에 반응시키면 오히려 이상해진다. */
