@@ -1,28 +1,50 @@
 ---
 ---
 <header class="masthead">
-  <a href="/" class="masthead-link"><h1 class="reveal reveal-1">Nuh<span class="dash">—</span>Muh</h1></a>
+  <!-- 워드마크 — 두 레이어를 정확히 포개어 완성본이 된다.
+       두 PNG는 같은 캔버스 기준으로 잘렸으므로 같은 크기·같은 자리면 자동으로 맞는다(정합 검증 완료).
+       ★이미지 교체만으로 갱신되는 구조 — 좌표·크기가 코드 곳곳에 흩어지지 않게
+         .wm 하나가 크기를 정하고 두 레이어는 그것을 100%로 따라간다. -->
+  <a href="/" class="masthead-link" aria-label="Nuh-Muh 홈으로">
+    <span class="wm reveal reveal-1">
+      <img class="wm-text" src="/images/wordmark-text.png" alt="Nuh-Muh" />
+      <img class="wm-bar" src="/images/wordmark-bar.png" alt="" aria-hidden="true" />
+    </span>
+  </a>
 </header>
 
 <style>
   .masthead { padding: 5.5rem 0 3.5rem; text-align: center; }
-  .masthead-link { text-decoration: none; color: inherit; display: inline-block; }
-  .masthead h1 {
-    font-family: 'Cormorant Unicase', serif;
-    font-weight: 600;
-    font-size: clamp(4.5rem, 13vw, 10rem);
-    line-height: 0.92;
-    letter-spacing: -0.015em;
-    color: var(--ink);
+  .masthead-link { text-decoration: none; display: inline-block; }
+
+  /* 크기는 여기 한 곳에서만 정한다. 기존 텍스트 워드마크의 반응형 폭과 동등하게. */
+  .wm {
+    position: relative;
     display: inline-block;
-    cursor: default;
+    width: clamp(15rem, 34vw, 26rem);
+    line-height: 0;
   }
-  .masthead h1 .dash {
-    color: var(--mark);
-    font-weight: 500;
-    display: inline-block;
+  /* 글자 레이어가 높이를 만들고, 막대 레이어는 그 위에 겹친다 */
+  .wm-text {
+    display: block;
+    width: 100%; height: auto;
+  }
+  .wm-bar {
+    position: absolute; inset: 0;
+    width: 100%; height: auto;
+    /* 호버 시 막대만 왼쪽으로. 글자는 움직이지 않는다. */
     transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
   }
-  .masthead h1:hover .dash { transform: translateX(0.1em) rotate(-3deg); }
+  /* 이동 폭 -2.5% — 막대가 글자 가로폭을 벗어나지 않는 선(상한보다 여유 있게).
+     과하면 장난스러워진다. */
+  .masthead-link:hover .wm-bar { transform: translateX(-2.5%); }
+
+  /* 터치 기기: 별도 처리 없이 정지 상태. 장식적 반응이므로 없어도 손해가 없고,
+     억지로 터치에 반응시키면 오히려 이상해진다. */
+  @media (hover: none) {
+    .masthead-link:hover .wm-bar { transform: none; }
+  }
+
   @media (max-width: 900px) { .masthead { padding: 3.5rem 0 2rem; } }
 </style>
