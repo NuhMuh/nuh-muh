@@ -299,7 +299,94 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   // ===== 기존 글 수정 =====
   let editingId = null;  // 수정 중인 글 id (null이면 신규)
-  let deskToken = null;  // 서버 함수 호출용 access_token
+  // ── 토큰은 한 곳에서만 얻는다 (마틴: 단일 지점) ──
+  // ★과거 결함: 페이지 로드 시점의 session 객체를 클로저에 가둬 두고 몇 시간 뒤 저장에 썼다.
+  //   supabase-js는 autoRefreshToken(기본 true)으로 저장소의 세션을 갱신하고 있었으나,
+  //   발행소가 들고 있던 것은 그 갱신을 못 받은 옛 사본이라 저장 순간 'invalid session'이 났다.
+  //   → 모든 서버 호출은 반드시 이 함수를 거쳐 '지금'의 토큰을 받아 쓸 것.
+  // ── 원고 임시 보관 (B1) ──
+  // ★★저장소 사용 경계 (마틴 확정): 이 저장소는 '작성 중 원고 보관' 전용이다.
+  //   회원 상태·인증·판정에 관한 어떤 것도 여기 두지 않는다.
+  //   (엽서 카드 분기에서 localStorage를 배제한 결정은 '회원 상태 판정'에 대한 것이었고,
+  //    그 목적은 단일 입구가 서버 판정으로만 작동하게 하는 것이었다. 원고 보관은 성격이 다르다 —
+  //    상태를 판정하지 않고, 서버 판정과 충돌하지 않으며, 그 브라우저 안에서 작업물만 지킨다.)
+  //   ※ "저장소를 쓰기로 했으니 이것도 넣자"로 확대하지 말 것.
+  const DRAFT_KEY = 'nuhmuh_desk_draft';
+  const DRAFT_TTL_DAYS = 7;   // 이보다 오래된 임시본은 제안하지 않는다(이미 다른 데 있거나 버린 것)
+
+  function stashDraft(article) {
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        savedAt: Date.now(),
+        editingId: editingId || null,
+        article: article,
+      }));
+    } catch (e) { /* 용량 초과·차단 등 — 보관 실패가 저장 흐름을 막지는 않는다 */ }
+  }
+
+  function clearDraft() {
+    try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+  }
+
+  function readDraft() {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return null;
+      const d = JSON.parse(raw);
+      if (!d || !d.article || !d.savedAt) return null;
+      const ageDays = (Date.now() - d.savedAt) / 86400000;
+      if (ageDays > DRAFT_TTL_DAYS) { clearDraft(); return null; }
+      return d;
+    } catch (e) { return null; }
+  }
+
+  // 발행소 진입 시 1회 — 보관된 원고가 있으면 되살릴지 묻는다.
+  // ※ 문구는 임시. 발행소는 운영자·critic만 보는 화면이나, 세계관 문구 대상인지는 앨리 판단 대기.
+  // ※ B2(주기적 자동 임시 저장)로 확장할 때는 stashDraft 호출 시점만 늘리면 된다 —
+  //    저장·복구 로직이 이 자리에 모여 있으므로 다른 곳을 건드릴 필요가 없다.
+  function offerDraftRestore() {
+    const d = readDraft();
+    if (!d) return;
+    const when = new Date(d.savedAt).toLocaleString('ko-KR');
+    const title = (d.article.title || '(제목 없음)');
+    const ok = confirm(
+      '저장하지 못한 원고가 있습니다.\n\n' +
+      '제목: ' + title + '\n' +
+      '보관 시각: ' + when + '\n\n' +
+      '되살리시겠습니까? (아니오를 누르면 보관본은 지워집니다)'
+    );
+    if (!ok) { clearDraft(); return; }
+
+    const a = d.article;
+    const set = (id, v) => { const el = document.getElementById(id); if (el && v != null) el.value = v; };
+    set('f-title', a.title); set('f-subtitle', a.subtitle); set('f-slug', a.slug);
+    set('f-cover', a.cover_image); set('f-coveralt', a.cover_alt);
+    set('f-metadesc', a.meta_desc); set('f-ogimage', a.og_image);
+    set('f-status', a.status);
+    set('f-tags', Array.isArray(a.tags) ? a.tags.join(', ') : '');
+    const pin = document.getElementById('f-pinned');
+    if (pin) pin.checked = !!a.pinned;
+    if (deskEditor && a.body) deskEditor.setBody(a.body);
+    else set('f-body', a.body);
+    if (d.editingId) editingId = d.editingId;
+  }
+
+  async function getFreshToken() {
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (data && data.session && data.session.access_token) {
+        return data.session.access_token;
+      }
+    } catch (e) {}
+    // (A2) 경계 보정 — 백그라운드 탭에서 갱신 타이머가 늦어진 경우 등. 한 번 조용히 갱신 시도.
+    try {
+      const { data: r } = await supabase.auth.refreshSession();
+      if (r && r.session && r.session.access_token) {
+        return r.session.access_token;
+      }
+    } catch (e) {}
+    return null;   // 여기까지 오면 진짜 로그아웃 상태다
+  }
 
   // 발행된(그리고 초안 포함) 글 목록을 select에 채움
   async function loadArticleList() {
@@ -309,7 +396,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       const res = await fetch('/.netlify/functions/list-articles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: deskToken, action: 'list' }),
+        body: JSON.stringify({ token: await getFreshToken(), action: 'list' }),
       });
       const data = await res.json();
       if (data.status !== 'ok') {
@@ -351,7 +438,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       const res = await fetch('/.netlify/functions/list-articles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: deskToken, action: 'get', id: id }),
+        body: JSON.stringify({ token: await getFreshToken(), action: 'get', id: id }),
       });
       const data = await res.json();
       if (data.status !== 'ok' || !data.article) { alert('글을 불러오지 못했습니다.'); return; }
@@ -438,7 +525,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     loadWorks();
 
     // 기존 글 수정 동선
-    deskToken = session.access_token;
     loadArticleList();
     const pickEl = document.getElementById('f-editpick');
     if (pickEl) pickEl.addEventListener('change', () => pickArticle(pickEl.value));
@@ -467,8 +553,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       });
     }
 
-    deskToken = session.access_token;
-    setupSave(session);
+    setupSave();
+    // 보관된 원고가 있으면 되살릴지 묻는다. 에디터 준비가 끝난 뒤라야 setBody가 먹는다.
+    offerDraftRestore();
   }
 
   // 본문 HTML 구조 건전성 검증 (마틴: 클라이언트 DOMParser, 2단 방어의 앞단)
@@ -495,7 +582,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     return { ok: false, reason: '구조 불일치', original: a, corrected: b };
   }
 
-  function setupSave(session) {
+  function setupSave() {
     const btn = document.getElementById('f-save');
     const result = document.getElementById('f-result');
     if (!btn) return;
@@ -578,12 +665,22 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       if (result) { result.style.color = 'var(--ink-soft)'; result.textContent = '저장하는 중...'; }
 
       try {
+        // (A1) 저장 직전에 '지금'의 토큰을 얻는다 — 클로저에 갇힌 사본을 쓰지 않는다.
+        const token = await getFreshToken();
+        if (!token) {
+          stashDraft(article);   // (B1) 로그인이 끊겼어도 원고는 지킨다
+          showErr('세션이 끊겼습니다. 다시 로그인하면 방금 쓴 내용을 되살릴 수 있습니다.');
+          btn.disabled = false;
+          return;
+        }
+
         const res = await fetch('/.netlify/functions/save-article', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: session.access_token, article })
+          body: JSON.stringify({ token, article })
         });
         const data = await res.json();
+
         if (data.status === 'ok') {
           const wasEdit = !!editingId;
           if (result) {
@@ -591,15 +688,18 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             result.textContent = (wasEdit ? '수정되었습니다' : '저장되었습니다') + '. (주소: /' + data.slug + ')';
           }
           if (data.id) editingId = data.id;
+          clearDraft();          // (B1) 정상 저장됐으니 임시본은 지운다
           loadWorks();
           loadArticleList();
         } else if (data.status === 'forbidden') {
           showErr('권한이 없습니다.');
         } else {
-          showErr('오류: ' + (data.detail || '알 수 없음'));
+          stashDraft(article);   // (B1) 서버가 거부해도 원고는 지킨다
+          showErr('오류: ' + (data.detail || '알 수 없음') + ' — 방금 쓴 내용은 보관했습니다.');
         }
       } catch (e) {
-        showErr('저장 실패: ' + e.message);
+        stashDraft(article);     // (B1) 네트워크 단절 등
+        showErr('저장 실패: ' + e.message + ' — 방금 쓴 내용은 보관했습니다.');
       }
       btn.disabled = false;
     });
