@@ -5,6 +5,9 @@ import { SizedImage } from './image-extension.js';
 import { ImageGroup } from './imagegroup-extension.js';
 import { AnchorPreserve } from './anchor-extension.js';
 
+// 본문 변경 시 발행소가 등록한 콜백(임시 보관 트리거). 없으면 아무 일도 안 한다.
+let onBodyChange = null;
+
 // 발행소 리치 에디터 (2층). 위지윅 ↔ 소스뷰 토글.
 // 앵커는 여기서 만들지 않는다 — 저장 직전 preprocessBody(anchor-client)의 몫.
 // AnchorPreserve는 "기존 앵커를 보존"만 한다.
@@ -28,7 +31,12 @@ export function initDeskEditor() {
       AnchorPreserve,
     ],
     content: '',
-    onUpdate: () => { refreshToolbar(); },
+    onUpdate: () => {
+      refreshToolbar();
+      // 본문이 바뀌었음을 발행소에 알린다(임시 보관용).
+      // 에디터는 '바뀌었다'만 알리고 무엇을 할지는 발행소가 정한다 — 결합을 낮춘다.
+      if (typeof onBodyChange === 'function') { try { onBodyChange(); } catch (e) {} }
+    },
     onSelectionUpdate: () => { refreshToolbar(); },
   });
 
@@ -36,6 +44,8 @@ export function initDeskEditor() {
   wireSourceToggle();
 
   return {
+    // 본문 변경 알림 구독 (임시 보관용). 발행소가 콜백을 넘긴다.
+    onChange(fn) { onBodyChange = fn; },
     // 발행소가 저장 시 본문을 가져가는 통로
     getBody() {
       if (sourceMode) {

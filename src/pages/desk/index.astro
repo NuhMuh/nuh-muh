@@ -317,6 +317,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   function stashDraft(article) {
     try {
       localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        v: DRAFT_VERSION,
         savedAt: Date.now(),
         editingId: editingId || null,
         article: article,
@@ -340,10 +341,80 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     } catch (e) { return null; }
   }
 
+  // ── 자동 임시 보관 (B2) ──
+  // ★B1은 "저장 버튼을 눌렀는데 실패한 경우"만 덮는다. 저장을 누르지 않고 창을 닫으면
+  //   아무것도 남지 않는다. B1은 우리를 위한 것이고 B2는 critic을 위한 것이다(마틴).
+  // 디바운스 방식 — 고정 간격보다 저장 횟수가 적고 사용자 행동에 붙는다.
+  // 타이핑 중에는 아무 일도 하지 않으므로 입력 반응에 영향이 없다.
+  const AUTOSAVE_DELAY = 3000;   // 입력이 멈춘 뒤 3초
+  let autosaveTimer = null;
+  // 지금 폼에 있는 것을 그대로 모은다(저장 핸들러가 만드는 article과 같은 모양).
+  // ★저장 핸들러가 읽는 칸은 전부 여기서도 모아야 한다 — 하나라도 빠지면
+  //   복구 후 저장할 때 그 값이 조용히 비어서 나간다(넘기 연결 끊김 사고의 원인이었다).
+  const DRAFT_VERSION = 2;   // 2: 넘기·카테고리·주제모드 편입. 구 보관본(태그 없음)도 버리지 않고 연다.
+  function collectDraft() {
+    const get = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+    const tagsRaw = get('f-tags');
+    const modeEl = document.querySelector('input[name="topic-mode"]:checked');
+    return {
+      title: get('f-title'),
+      subtitle: get('f-subtitle'),
+      slug: get('f-slug'),
+      tags: tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [],
+      cover_image: get('f-cover'),
+      cover_alt: get('f-coveralt'),
+      body: deskEditor ? deskEditor.getBody() : get('f-body'),
+      meta_desc: get('f-metadesc'),
+      og_image: get('f-ogimage'),
+      status: get('f-status'),
+      pinned: (document.getElementById('f-pinned') || {}).checked || false,
+      // ── 넘기·주제카드 (v2에서 편입) ──
+      category: get('f-category'),
+      topic_mode: modeEl ? modeEl.value : 'solo',
+      work_id: get('f-workid'),
+      nw_week: get('f-nw-week'),
+      nw_category: get('f-nw-category'),
+      nw_title: get('f-nw-title'),
+      nw_slug: get('f-nw-slug'),
+    };
+  }
+  function scheduleAutosave() {
+    if (autosaveTimer) clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(() => {
+      const d = collectDraft();
+      // 아무것도 안 쓴 빈 폼은 보관하지 않는다 — 빈 원고로 복구 제안이 뜨는 것을 막는다.
+      const hasContent = (d.title || '').length > 0 ||
+        ((d.body || '').replace(/<[^>]*>/g, '').trim().length > 0);
+      if (hasContent) stashDraft(d);
+    }, AUTOSAVE_DELAY);
+  }
+  // 감지 지점 둘: 본문(에디터)과 폼 입력칸. 같은 디바운스 타이머를 공유한다.
+  function wireAutosave() {
+    if (deskEditor && deskEditor.onChange) deskEditor.onChange(scheduleAutosave);
+    ['f-title','f-subtitle','f-slug','f-tags','f-cover','f-coveralt',
+     'f-metadesc','f-ogimage','f-body','f-category','f-workid',
+     'f-nw-week','f-nw-title','f-nw-slug'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', scheduleAutosave);
+    });
+    // select·radio는 input이 아니라 change로 온다.
+    ['f-status','f-category','f-workid','f-nw-category'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('change', scheduleAutosave);
+    });
+    document.querySelectorAll('input[name="topic-mode"]').forEach((el) => {
+      el.addEventListener('change', scheduleAutosave);
+    });
+    const pin = document.getElementById('f-pinned');
+    if (pin) pin.addEventListener('change', scheduleAutosave);
+  }
   // 발행소 진입 시 1회 — 보관된 원고가 있으면 되살릴지 묻는다.
   // ※ 문구는 임시. 발행소는 운영자·critic만 보는 화면이나, 세계관 문구 대상인지는 앨리 판단 대기.
-  // ※ B2(주기적 자동 임시 저장)로 확장할 때는 stashDraft 호출 시점만 늘리면 된다 —
-  //    저장·복구 로직이 이 자리에 모여 있으므로 다른 곳을 건드릴 필요가 없다.
+  // ★★복원은 resetToNew()를 먼저 거친다 (마틴 확정, 안 1).
+  //   과거 결함: 이 함수가 폼 입력칸만 되살리고 화면 상태(수정모드 표시·글 선택 드롭다운·
+  //   주제카드 라디오)를 그대로 두어, 내부는 '42번 수정 중'인데 화면은 '새 글'로 보였다.
+  //   그 상태로 저장하면 운영자가 모르는 채 다른 글이 덮어써지고, 넘기 연결이 끊긴 채 발행됐다.
+  //   → 화면을 새 글 상태로 한 번 초기화한 뒤 값을 얹는다. 복원 지점이 여럿이면 반드시 갈라진다.
   function offerDraftRestore() {
     const d = readDraft();
     if (!d) return;
@@ -356,8 +427,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       '되살리시겠습니까? (아니오를 누르면 보관본은 지워집니다)'
     );
     if (!ok) { clearDraft(); return; }
-
     const a = d.article;
+    // 1) 화면 전체를 새 글 상태로 초기화 — 기준선에 맞춘다.
+    resetToNew();
+    // 2) 그 위에 보관된 값을 얹는다. 구 구조(v1) 보관본은 없는 필드가 그냥 비어 있게 된다(마틴 확정).
     const set = (id, v) => { const el = document.getElementById(id); if (el && v != null) el.value = v; };
     set('f-title', a.title); set('f-subtitle', a.subtitle); set('f-slug', a.slug);
     set('f-cover', a.cover_image); set('f-coveralt', a.cover_alt);
@@ -368,7 +441,27 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     if (pin) pin.checked = !!a.pinned;
     if (deskEditor && a.body) deskEditor.setBody(a.body);
     else set('f-body', a.body);
-    if (d.editingId) editingId = d.editingId;
+    // 3) 넘기·주제카드 복원 (pickArticle과 같은 방식)
+    if (a.topic_mode) {
+      const modeEl = document.querySelector('input[name="topic-mode"][value="' + a.topic_mode + '"]');
+      if (modeEl) { modeEl.checked = true; updateTopicUI(); }
+    }
+    set('f-category', a.category);
+    set('f-workid', a.work_id);
+    set('f-nw-week', a.nw_week);
+    set('f-nw-category', a.nw_category);
+    set('f-nw-title', a.nw_title);
+    set('f-nw-slug', a.nw_slug);
+    // 4) 수정 모드 복원 — 내부 상태와 화면 표시를 함께 맞춘다.
+    if (d.editingId) {
+      editingId = d.editingId;
+      const pickEl = document.getElementById('f-editpick');
+      if (pickEl) pickEl.value = String(d.editingId);
+      const mode = document.getElementById('f-editmode');
+      if (mode) mode.textContent = '수정 중: ' + title + (a.slug ? ' (/' + a.slug + ')' : '');
+      const warn = document.getElementById('f-bodywarn');
+      if (warn) warn.style.display = 'block';
+    }
   }
 
   async function getFreshToken() {
@@ -556,6 +649,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     setupSave();
     // 보관된 원고가 있으면 되살릴지 묻는다. 에디터 준비가 끝난 뒤라야 setBody가 먹는다.
     offerDraftRestore();
+    // 자동 보관 배선은 복구 제안 뒤에 — 복구를 거절해 지운 직후 다시 보관되는 것을 막는다.
+    wireAutosave();
   }
 
   // 본문 HTML 구조 건전성 검증 (마틴: 클라이언트 DOMParser, 2단 방어의 앞단)
