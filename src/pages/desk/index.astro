@@ -172,7 +172,19 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .ed-editor { border: 1px solid var(--rule); border-radius: 4px; background: rgba(255,255,255,0.5); padding: 0.9rem 1rem; min-height: 300px; }
   .ed-editor:focus-within { border-color: var(--mark); }
   .ed-editor .ProseMirror { outline: none; font-family: 'Noto Serif KR', serif; font-size: 1rem; line-height: 1.8; color: var(--ink); }
-  .ed-editor .ProseMirror > * { margin: 0 0 1rem; }
+  /* ★★문단 여백 0 — 엔터 한 번은 줄만 바뀌고, 간격은 빈 문단이 만든다 (2026-08-23 마틴 판정)
+     엔터 1회 = 문단 하나 더  → 줄 간격 그대로 (여백 0이므로 벌어지지 않음)
+     엔터 2회 = 빈 문단 하나  → 빈 줄 하나
+     엔터 3회 = 빈 문단 둘    → 빈 줄 둘
+     두 조건(한 번은 안 벌어지고, 두 번은 빈 줄)을 동시에 만족시키는 유일한 구조다.
+     ★렌더([slug].astro의 .art-body :global(p))와 반드시 같은 값이어야 한다 — 짝으로 움직인다.
+     ★:global() 필수 — Tiptap 런타임 생성 노드는 Astro scoped CSS가 못 닿는다.
+       (이 규칙에 :global()이 없어 편집창 여백이 0으로 죽어 있던 것이 이번 조사에서 드러났다) */
+  .ed-editor :global(.ProseMirror > *) { margin: 0; }
+  .ed-editor :global(.ProseMirror p) { margin: 0; }
+  /* 빈 문단이 실제로 한 줄 높이를 갖게 한다. Tiptap은 빈 문단을 <p><br></p>로 두므로
+     대개 높이가 생기지만, br이 없는 빈 p(외부 붙여넣기 등)도 무너지지 않게 받쳐둔다. */
+  .ed-editor :global(.ProseMirror p:empty) { min-height: 1.8em; }
   .ed-editor .ProseMirror h2 { font-size: 1.4rem; font-weight: 600; margin: 1.4rem 0 0.7rem; }
   .ed-editor .ProseMirror h3 { font-size: 1.2rem; font-weight: 600; margin: 1.2rem 0 0.6rem; }
   .ed-editor .ProseMirror blockquote { border-left: 2px solid var(--mark); padding-left: 1rem; color: var(--ink-soft); font-style: italic; }

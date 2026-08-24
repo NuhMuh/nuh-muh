@@ -66,7 +66,13 @@ const dateStr = article.created_at ? new Date(article.created_at).toLocaleDateSt
   .art-dot { margin: 0 0.5rem; }
   .art-cover { width: 100%; border-radius: 6px; margin-bottom: 2.6rem; }
   .art-body { font-family: 'Noto Serif KR', serif; font-weight: 400; font-size: 1.08rem; line-height: 1.95; color: var(--ink); }
-  .art-body :global(p) { margin-bottom: 1.5rem; }
+  /* ★★문단 여백 0 — 간격은 빈 문단이 만든다 (2026-08-23 마틴 판정)
+     기존 1.5rem은 엔터 한 번에도 붙어 "한 번 쳤는데 너무 벌어진다"의 원인이었다.
+     line-height(1.95)는 만족 상태이므로 건드리지 않는다 — 벌어짐의 원인은 이 여백이었다.
+     ★편집창(desk/index.astro의 .ed-editor :global(.ProseMirror p))과 짝이다. 한쪽만 고치지 말 것. */
+  .art-body :global(p) { margin: 0; }
+  /* 빈 문단이 한 줄 높이를 갖게 받침 */
+  .art-body :global(p:empty) { min-height: 1.95em; }
   .art-body :global(h2) { font-size: 1.5rem; font-weight: 600; margin: 2.6rem 0 1rem; }
   .art-body :global(h3) { font-size: 1.25rem; font-weight: 600; margin: 2rem 0 0.8rem; }
   .art-body :global(img) { max-width: 100%; border-radius: 6px; margin: 1.6rem 0; }
