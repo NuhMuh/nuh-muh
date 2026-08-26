@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { makeUnsubToken } from './_unsub.mjs';
+import { getRolesByToken, hasRole } from './_roles.mjs';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -32,14 +33,38 @@ export default async (req) => {
     });
   }
 
-  let mode, subject, html;
+  let mode, subject, html, token;
   try {
     const body = await req.json();
     mode = body.mode;
     subject = body.subject;
     html = body.html;
+    token = body.token;
   } catch (e) {
     return new Response(JSON.stringify({ status: 'error', detail: 'bad body' }), {
+      status: 200, headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  // ── operator 인증 (2026-08-26 누락 보수) ──
+  // ★이 함수는 인증 없이 노출돼 있었다. 경로만 알면 누구든 desk@nuh-muh.com 발신으로
+  //   명부 전원에게 임의 HTML을 보낼 수 있었다. 직접 피해보다 도메인 평판 훼손이
+  //   실질 위험이다 — 스팸으로 찍히면 이후 모든 편지가 영향을 받고 회복이 어렵다.
+  //   호출부가 0건이라 경로가 노출되지 않았을 뿐이며, 발행소에 버튼이 붙는 순간
+  //   그 조건이 사라진다. 그래서 버튼보다 인증이 먼저다.
+  // ※ 방식은 sign-upload.js와 동일하다(getRolesByToken + hasRole('operator')).
+  //   save-article.js의 ADMIN_EMAIL 문자열 비교가 아니라 이쪽을 따른 이유:
+  //   ①3-2에서 role 기반으로 통일하기로 돼 있어 ADMIN_EMAIL은 정리 대상이고,
+  //   ②broadcast는 sign-upload와 성격이 같다 — 글 소유권이 아니라 실행 권한 관문이다.
+  //   인증 지점이 여럿으로 갈리면 다음에 한쪽만 고치는 사고가 난다.
+  const roleInfo = await getRolesByToken(supabase, token);
+  if (!roleInfo.ok) {
+    return new Response(JSON.stringify({ status: 'error', detail: roleInfo.reason || 'auth failed' }), {
+      status: 200, headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  if (!hasRole(roleInfo.roles, 'operator')) {
+    return new Response(JSON.stringify({ status: 'forbidden', detail: 'operator role required' }), {
       status: 200, headers: { 'Content-Type': 'application/json' },
     });
   }
