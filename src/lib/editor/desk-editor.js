@@ -43,6 +43,11 @@ export function initDeskEditor() {
   wireToolbar();
   wireSourceToggle();
 
+  // ※진단용 임시 노출 (2026-08-26) — alt 입력 시 이미지가 대체되는 문제의 원인 조사.
+  //   콘솔에서 선택 상태(selection)를 직접 보기 위한 것이며 조사 완료 후 제거한다.
+  //   발행소는 operator만 접근하는 화면이라 노출 위험은 없으나, 남겨둘 이유도 없다.
+  if (typeof window !== 'undefined') window.__ed = editor;
+
   return {
     // 본문 변경 알림 구독 (임시 보관용). 발행소가 콜백을 넘긴다.
     onChange(fn) { onBodyChange = fn; },
