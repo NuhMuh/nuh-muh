@@ -103,10 +103,13 @@ function triggerImageGroupUpload() {
     try {
       const url1 = await uploadOne(two[0]);
       const url2 = await uploadOne(two[1]);
+      // ★삽입 직후 선택 해제 — 단일 이미지와 같은 이유(위 주석 참조).
+      //   imageGroup은 atom 노드라 통짜 선택되므로 뒤이은 입력이 그룹 전체를 대체한다.
+      //   prompt를 거치지 않을 뿐 취약점의 구조는 같아, 세 삽입 지점을 같은 방식으로 맞춘다.
       editor.chain().focus().insertContent({
         type: 'imageGroup',
         attrs: { src1: url1, src2: url2, 'data-size': 'full', 'data-align': 'center', 'data-caption': '' },
-      }).run();
+      }).createParagraphNear().run();
     } catch (e) {
       alert('묶음 업로드 오류: ' + e.message);
     }
@@ -142,7 +145,16 @@ function triggerImageUpload() {
 
       // 3) 공개 URL을 에디터에 삽입 (alt는 삽입 후 운영자가 소스뷰 등에서 조정 가능)
       const alt = window.prompt('이미지 설명(alt, 비워도 됨):', '') || '';
-      editor.chain().focus().setImage({ src: sign.publicUrl, alt: alt }).run();
+      // ★삽입 직후 선택 해제 — 이미지 뒤에 빈 문단을 만들고 커서를 그리로 보낸다.
+      // 근거: 이미지 노드가 선택된 채로 남으면 그 뒤에 들어오는 입력이 노드를 '대체'한다.
+      //   실제로 alt 입력(prompt) 후 한글 조합 잔여 입력이 이미지를 글자 하나로 바꿔버린
+      //   사고가 있었다(<p>이</p>, img 0개). 재현 조건은 특정하지 못했다.
+      // 이것은 근본 해결이 아니라 피해의 종류를 낮추는 조치다(마틴 안 2) —
+      //   잔여 글자가 본문에 들어가는 것은 보이고 지울 수 있지만,
+      //   이미지가 사라지는 것은 업로드부터 다시 해야 하는 작업 무산이다.
+      // 근본 해결(prompt를 자체 입력창으로 교체, IME 보호)은 유지보수 트랙 항목.
+      editor.chain().focus().setImage({ src: sign.publicUrl, alt: alt })
+        .createParagraphNear().run();
     } catch (e) {
       alert('업로드 오류: ' + e.message);
     }
@@ -233,7 +245,8 @@ function wireToolbar() {
         if (s1) nodes.push({ type: 'image', attrs: { src: s1, alt: '', 'data-size': 'md', 'data-align': 'center', 'data-caption': '' } });
         if (s2) nodes.push({ type: 'image', attrs: { src: s2, alt: '', 'data-size': 'md', 'data-align': 'center', 'data-caption': '' } });
         // 선택된 그룹 노드를 이미지 2개로 교체
-        editor.chain().focus().insertContent(nodes).run();
+        // ★삽입 직후 선택 해제 — 마지막 이미지 노드가 선택된 채 남으므로 같은 처리.
+        editor.chain().focus().insertContent(nodes).createParagraphNear().run();
       }
     }
   });
