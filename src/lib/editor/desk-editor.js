@@ -43,11 +43,6 @@ export function initDeskEditor() {
   wireToolbar();
   wireSourceToggle();
 
-  // ※진단용 임시 노출 (2026-08-26) — alt 입력 시 이미지가 대체되는 문제의 원인 조사.
-  //   콘솔에서 선택 상태(selection)를 직접 보기 위한 것이며 조사 완료 후 제거한다.
-  //   발행소는 operator만 접근하는 화면이라 노출 위험은 없으나, 남겨둘 이유도 없다.
-  if (typeof window !== 'undefined') window.__ed = editor;
-
   return {
     // 본문 변경 알림 구독 (임시 보관용). 발행소가 콜백을 넘긴다.
     onChange(fn) { onBodyChange = fn; },
@@ -210,20 +205,7 @@ function insertThenDeselect(content) {
   // 삽입 직후 문서 끝(= 방금 만든 빈 문단 안)으로 커서를 옮겨 선택을 푼다.
   const end = editor.state.selection.to;
   editor.chain().setTextSelection(end).run();
-  // ※진단용 임시 (2026-08-26) — 선택 이동이 유지되는지 시점별로 확인. 조사 후 제거.
-  try {
-    const s0 = editor.state.selection;
-    console.log('[헬퍼직후]', s0.constructor.name, s0.node?.type?.name || '-', 'to=' + s0.to);
-    setTimeout(() => {
-      const s1 = editor.state.selection;
-      console.log('[0ms 뒤]', s1.constructor.name, s1.node?.type?.name || '-', 'to=' + s1.to);
-    }, 0);
-    setTimeout(() => {
-      const s2 = editor.state.selection;
-      console.log('[100ms 뒤]', s2.constructor.name, s2.node?.type?.name || '-', 'to=' + s2.to);
-      console.log('[100ms HTML]', editor.getHTML().slice(0, 100));
-    }, 100);
-  } catch (e) { console.log('[진단 오류]', e.message); }
+
 }
 
 function activeImageType() {
