@@ -111,10 +111,10 @@ function triggerImageGroupUpload() {
       // ★삽입 직후 선택 해제 — 단일 이미지와 같은 이유(위 주석 참조).
       //   imageGroup은 atom 노드라 통짜 선택되므로 뒤이은 입력이 그룹 전체를 대체한다.
       //   prompt를 거치지 않을 뿐 취약점의 구조는 같아, 세 삽입 지점을 같은 방식으로 맞춘다.
-      editor.chain().focus().insertContent({
+      insertThenDeselect({
         type: 'imageGroup',
         attrs: { src1: url1, src2: url2, 'data-size': 'full', 'data-align': 'center', 'data-caption': '' },
-      }).createParagraphNear().run();
+      });
     } catch (e) {
       alert('묶음 업로드 오류: ' + e.message);
     }
@@ -158,8 +158,10 @@ function triggerImageUpload() {
       //   잔여 글자가 본문에 들어가는 것은 보이고 지울 수 있지만,
       //   이미지가 사라지는 것은 업로드부터 다시 해야 하는 작업 무산이다.
       // 근본 해결(prompt를 자체 입력창으로 교체, IME 보호)은 유지보수 트랙 항목.
-      editor.chain().focus().setImage({ src: sign.publicUrl, alt: alt })
-        .createParagraphNear().run();
+      insertThenDeselect({
+        type: 'image',
+        attrs: { src: sign.publicUrl, alt: alt, 'data-size': 'md', 'data-align': 'center', 'data-caption': '' },
+      });
     } catch (e) {
       alert('업로드 오류: ' + e.message);
     }
@@ -168,6 +170,32 @@ function triggerImageUpload() {
 }
 
 // 현재 선택된 노드가 image인지 imageGroup인지 (없으면 null)
+// SS삽입 직후 선택 해제 (마틴 안 2-1) — 세 삽입 지점이 공용으로 쓴다.
+//
+// [문제] 이미지·그룹을 삽입하면 그 노드가 NodeSelection(통짜 선택) 상태로 남는다.
+//   그 뒤에 입력이 들어오면 선택된 노드가 대체된다. 실제로 alt 입력(prompt) 후
+//   잔여 입력이 이미지를 글자 하나로 바꿔버린 사고가 있었다(p 안에 글자 하나, img 0개).
+//
+// [무효였던 시도] 이전에 쓴 명령은 막지 못했다. 선택 상태를 직접 로깅해 확인한 결과,
+//   명령은 실행되지만 (1)문단을 이미지 앞에 만들고 (2)선택을 옮기지 않았다.
+//   삽입 후에도 NodeSelection(image)이 그대로였다.
+//   "타입 정의에 있고 실행도 된다"가 "목적을 달성한다"를 뜻하지 않는 사례다.
+//
+// [현재 방식] 삽입 내용에 빈 문단을 함께 넣고, setTextSelection으로 그 문단 안으로
+//   커서를 명시적으로 옮긴다. 위치를 숫자로 지정하므로 모호함이 없다.
+//   빈 문단은 저장 후에도 남는다(빈 문단 보존 정책 — 운영자 허용). 이미지를 넣고
+//   이어서 글을 쓰는 실제 흐름과 맞고, 이미지가 마지막 노드일 때의 경계 처리도 불필요.
+//
+// ※근본 해결(prompt를 자체 입력창으로 교체, IME 보호)은 유지보수 트랙 항목이다.
+function insertThenDeselect(content) {
+  const nodes = Array.isArray(content) ? content.slice() : [content];
+  nodes.push({ type: 'paragraph' });   // 이미지 뒤 빈 문단 — 커서가 갈 자리
+  editor.chain().focus().insertContent(nodes).run();
+  // 삽입 직후 문서 끝(= 방금 만든 빈 문단 안)으로 커서를 옮겨 선택을 푼다.
+  const end = editor.state.selection.to;
+  editor.chain().setTextSelection(end).run();
+}
+
 function activeImageType() {
   if (editor.isActive('image')) return 'image';
   if (editor.isActive('imageGroup')) return 'imageGroup';
@@ -251,7 +279,7 @@ function wireToolbar() {
         if (s2) nodes.push({ type: 'image', attrs: { src: s2, alt: '', 'data-size': 'md', 'data-align': 'center', 'data-caption': '' } });
         // 선택된 그룹 노드를 이미지 2개로 교체
         // ★삽입 직후 선택 해제 — 마지막 이미지 노드가 선택된 채 남으므로 같은 처리.
-        editor.chain().focus().insertContent(nodes).createParagraphNear().run();
+        insertThenDeselect(nodes);
       }
     }
   });
