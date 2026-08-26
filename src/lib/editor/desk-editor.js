@@ -149,7 +149,23 @@ function triggerImageUpload() {
       if (!upRes.ok) { alert('업로드 실패 (' + upRes.status + ')'); return; }
 
       // 3) 공개 URL을 에디터에 삽입 (alt는 삽입 후 운영자가 소스뷰 등에서 조정 가능)
-      const alt = window.prompt('이미지 설명(alt, 비워도 됨):', '') || '';
+      // 방향 A (마틴 판정) — 삽입 전 alt 입력 단계를 없앤다.
+      //
+      // [왜] alt 입력 창이 삽입 흐름 안에 있으면 그 뒤에 무엇을 해도 이미지 소실을
+      //   막을 수 없다는 것이 실측으로 확인됐다. 선택 해제 계열을 두 번 시도해
+      //   두 번 다 실패했고, 시점별 로깅 결과 우리 코드가 도는 시점에 이미
+      //   이미지가 문서에 없었다. 즉 잔여 입력이 삽입보다 먼저 도착한다.
+      //
+      // [무엇을 했나] 이미지는 alt 빈 값으로 즉시 삽입하고, alt는 툴바 버튼으로
+      //   나중에 붙인다. 그 시점에는 이미지가 이미 안착해 있어 소실이 불가능하다.
+      //
+      // ★원인 미확정이다. 이것이 원인 제거인지 우회인지 알 수 없다.
+      //   브라우저 기본 입력 창이 IME 상태를 다룰 수단을 주지 않는다는 정황은
+      //   있으나 확정되지 않았다. 이 건을 "해결"로 기록하지 말 것 —
+      //   이미지 관련 이상이 나중에 나타나면 이 자리를 후보에서 빼지 않기 위해서다.
+      //
+      // 근본 해결(자체 입력창 + IME 보호)은 유지보수 트랙 항목이며,
+      //   prompt를 쓰는 다른 자리(링크·캡션)를 정리할 때 함께 한다.
       // ★삽입 직후 선택 해제 — 이미지 뒤에 빈 문단을 만들고 커서를 그리로 보낸다.
       // 근거: 이미지 노드가 선택된 채로 남으면 그 뒤에 들어오는 입력이 노드를 '대체'한다.
       //   실제로 alt 입력(prompt) 후 한글 조합 잔여 입력이 이미지를 글자 하나로 바꿔버린
@@ -160,7 +176,7 @@ function triggerImageUpload() {
       // 근본 해결(prompt를 자체 입력창으로 교체, IME 보호)은 유지보수 트랙 항목.
       insertThenDeselect({
         type: 'image',
-        attrs: { src: sign.publicUrl, alt: alt, 'data-size': 'md', 'data-align': 'center', 'data-caption': '' },
+        attrs: { src: sign.publicUrl, alt: '', 'data-size': 'md', 'data-align': 'center', 'data-caption': '' },
       });
     } catch (e) {
       alert('업로드 오류: ' + e.message);
@@ -257,6 +273,17 @@ function wireToolbar() {
       const t = activeImageType();
       if (t) editor.chain().focus().updateAttributes(t, { 'data-align': align }).run();
     }
+    else if (cmd === 'alt') {
+      // 이미지 설명(alt) — 삽입과 분리된 별도 단계. 캡션과 같은 층위의 버튼이다.
+      // 여기서는 이미지가 이미 문서에 안착해 있으므로 잔여 입력이 와도 소실되지 않는다.
+      // ※alt와 캡션은 다른 것이다 — alt는 이미지가 안 보일 때 대신 읽히는 설명,
+      //   캡션은 이미지 아래 눈에 보이는 문구. 두 버튼의 문구 구분은 앨리 항목.
+      if (activeImageType() !== 'image') return;
+      const cur = editor.getAttributes('image').alt || '';
+      const val = window.prompt('이미지 설명 (alt — 이미지가 안 보일 때 대신 읽히는 글):', cur);
+      if (val === null) return;
+      editor.chain().focus().updateAttributes('image', { alt: val.trim() }).run();
+    }
     else if (cmd === 'caption') {
       const t = activeImageType();
       if (t === 'image') {
@@ -339,6 +366,16 @@ function refreshToolbar() {
     btn.disabled = !imgActive;
     btn.classList.toggle('is-active', hasCaption);
   });
+  // alt 버튼: 단일 이미지 선택 시에만 활성화, alt 있으면 강조.
+  // ※alt 없는 이미지를 알리는 표시는 여기에 붙일 수 있다(imgAttrs.alt를 이미 읽고 있다).
+  //   모양·문구가 앨리 영역이라 이번 범위에서는 하지 않았다.
+  const isSingle = imgType === 'image';
+  const hasAlt = isSingle && !!(imgAttrs.alt || '').trim();
+  document.querySelectorAll('#ed-tools .ed-imgalt').forEach((btn) => {
+    btn.disabled = !isSingle;
+    btn.classList.toggle('is-active', hasAlt);
+  });
+
   // 묶음 풀기: imageGroup 선택 시에만 활성화
   const isGroup = imgType === 'imageGroup';
   document.querySelectorAll('#ed-tools .ed-imgungroup').forEach((btn) => {
