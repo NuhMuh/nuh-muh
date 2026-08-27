@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { makeUnsubToken } from './_unsub.mjs';
+import { NICK_SLOT, nickBlock } from './_letter.mjs';
 import { getRolesByToken, hasRole } from './_roles.mjs';
 
 const supabase = createClient(
@@ -14,13 +15,16 @@ const FROM = 'Nuh-Muh <desk@nuh-muh.com>';
 // Resend 초당 2요청 제한 → 호출 사이 간격
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-// 수신거부 푸터 — 수신자별 우리 토큰 링크. (임시 문구, 앨리 확정안으로 후속 교체)
+// 수신거부 푸터 — 수신자별 우리 토큰 링크. 문면은 앨리 확정안(2026-08-26).
+// ★이 푸터는 브로드캐스트 공통이며 알림 편지 전용이 아니다. 다른 종류의 단체 메일이
+//   생기면 "이 편지는 새 글이 나올 때 갑니다"가 맞지 않게 된다 — 그때 분기할 것.
+// ※신고 창구는 넣지 않는다 — 이 편지를 받는 사람은 이미 환영 편지를 받았다.
 // ※ 단일 원천 원칙: 수신거부 링크는 우리 /unsubscribe(토큰) — Resend 내장 변수 폐기.
 function footer(unsubUrl) {
   return `
 <hr style="margin-top:40px;border:none;border-top:1px solid #d8ceb2;">
 <p style="font-size:12px;color:#8a8368;text-align:center;margin-top:16px;font-family:serif;word-break:keep-all;">
-너머가 보낸 편지입니다.<br>
+이 편지는 새 글이 나올 때 갑니다.<br>
 거미를 그만 보내달라 하시려면, <a href="${unsubUrl}" style="color:#8a8368;">여기에 말해두십시오.</a>
 </p>
 `;
@@ -92,11 +96,15 @@ export default async (req) => {
         status: 200, headers: { 'Content-Type': 'application/json' },
       });
     }
-    recipients = [t];
+    // 시험 발송도 실제 편지를 그대로 미리 보는 것이므로 닉네임을 조회해 호명을 살린다.
+    // 없으면 호명 줄이 빠진다 — 시험 전용 문구를 만들지 않는다.
+    const { data: tm } = await supabase
+      .from('members').select('nickname').eq('email', t).maybeSingle();
+    recipients = [{ email: t, nickname: (tm && tm.nickname) || null }];
   } else {
     const { data: members, error: memErr } = await supabase
       .from('members')
-      .select('email')
+      .select('email, nickname')
       .in('status', ['keyholder', 'initiate'])
       .eq('mail_opt_out', false);
     if (memErr) {
@@ -104,7 +112,7 @@ export default async (req) => {
         status: 200, headers: { 'Content-Type': 'application/json' },
       });
     }
-    recipients = members.map(m => m.email);
+    recipients = members.map(m => ({ email: m.email, nickname: m.nickname || null }));
   }
 
   // ── Resend Audience/Contacts 동기화 (존치, 마틴 지시) ──
@@ -113,7 +121,8 @@ export default async (req) => {
     const { data: audData } = await resend.audiences.list();
     if (audData && audData.data && audData.data.length > 0) {
       const audienceId = audData.data[0].id;
-      for (const email of recipients) {
+      for (const r of recipients) {
+        const email = r.email;
         try {
           await resend.contacts.create({ audienceId, email, unsubscribed: false });
         } catch (e) { /* 이미 존재 등 무시 */ }
@@ -127,9 +136,13 @@ export default async (req) => {
   // ★한 명 실패가 전체를 멈추지 않음 — 실패는 기록하고 다음으로 (발송 실패 인지 원칙).
   let sent = 0;
   const failed = [];
-  for (const email of recipients) {
+  for (const r of recipients) {
+    const email = r.email;
     const unsubUrl = 'https://nuh-muh.com/unsubscribe?token=' + encodeURIComponent(makeUnsubToken(email));
-    const fullHtml = html + footer(unsubUrl);
+    // ★호명은 수신자별로 갈린다 — 줄 전체를 넣거나 뺀다(이름 자리만 비우면 잔재가 남는다).
+    //   판단 기준은 신분이 아니라 닉네임 유무다. 가입하면 다음 편지부터 자동으로 붙는다.
+    //   호출하는 쪽이 자리표시자를 남기지 않았다면 치환은 아무 일도 하지 않는다(무해).
+    const fullHtml = html.split(NICK_SLOT).join(nickBlock(r.nickname)) + footer(unsubUrl);
     try {
       const { error: sendErr } = await resend.emails.send({
         from: FROM,

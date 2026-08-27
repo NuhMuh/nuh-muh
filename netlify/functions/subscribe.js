@@ -9,7 +9,13 @@ function buildWelcomeHtml(unsubUrl) {
   // ★브랜드 색의 원본은 src/styles/global.css이며, 아래 값들은 그 복제본이다.
   //   메일 HTML은 CSS 변수를 쓸 수 없어(클라이언트 미지원) 인라인 값이 불가피하다.
   //   global.css의 색이 바뀌면 여기도 함께 고칠 것. (붉은색 원칙: #8b3a2e 하나뿐)
-  const serif = "'Apple SD Gothic Neo', 'Noto Serif KR', 'Nanum Myeongjo', 'Batang', serif";
+  // ★서체 스택 (2026-08-26 교체) — 세 편지가 같은 스택을 쓴다.
+  //   이전 스택은 첫 순위가 애플 고딕이라 애플 기기에서만 고딕으로 렌더됐다.
+  //   ※iOS에서는 이 교체로도 여전히 고딕이다 — 실측 확인 사실이며 추정이 아니다.
+  //     A/B 비교 발송에서 두 스택이 아이폰 메일 앱에서 동일하게 보였다.
+  //     웹폰트 임베드가 배제된 방식이므로 현재 구조에서 해결 불가.
+  //   macOS·안드로이드·윈도우에서는 명조가 잡힌다.
+  const serif = "'Noto Serif KR', 'Nanum Myeongjo', 'AppleMyungjo', 'Batang', serif";
   const ink = '#1c2340';        // = --ink
   const mark = '#8b3a2e';       // = --mark (붉은색)
   const inkFaint = '#8a8368';
