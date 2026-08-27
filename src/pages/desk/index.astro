@@ -138,10 +138,34 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
       <button type="button" id="f-save" class="f-save">저장</button>
       <p class="f-result" id="f-result"></p>
+
+      <!-- ★발행 ≠ 알림 (도메인 원칙). 저장과 발송은 다른 행위이므로 화면에서도 분리한다.
+           같은 행에 놓으면 한 동작으로 읽히고, 위쪽 폼에 끼우면 저장 대상 필드와 섞인다.
+           ※시각 세부(간격·구분선·라벨 문구)는 앨리 영역 — 확정안이 오면 교체한다. -->
+      <div class="f-letter" id="f-letter">
+        <div class="f-letter-head">넘기 알림</div>
+        <label class="f-label">한마디 <span class="f-hint">(비우면 "여기 두었습니다."가 대신 들어갑니다)</span></label>
+        <textarea id="f-letterbody" class="f-input f-textarea" rows="2" placeholder="짧게 한마디"></textarea>
+        <div class="f-letter-btns">
+          <button type="button" id="f-sendtest" class="f-sendbtn">시험 발송</button>
+          <button type="button" id="f-sendlive" class="f-sendbtn f-sendbtn-main">발송</button>
+        </div>
+        <p class="f-result" id="f-sendresult"></p>
+      </div>
     </div>
   </div>
 
 <style>
+  /* 넘기 알림 블록 — 저장 버튼 아래, 구분선으로 끊어 별도 행위임을 드러낸다 */
+  .f-letter { margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--rule); }
+  .f-letter-head { font-family: 'Noto Serif KR', serif; font-size: 0.95rem; font-weight: 600; color: var(--ink); margin-bottom: 1rem; }
+  .f-hint { font-size: 0.78rem; color: var(--ink-faint); font-weight: 400; }
+  .f-textarea { resize: vertical; min-height: 3.2rem; font-family: 'Noto Serif KR', serif; line-height: 1.7; }
+  .f-letter-btns { display: flex; gap: 0.6rem; margin-top: 0.9rem; }
+  .f-sendbtn { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; letter-spacing: 0.12em; padding: 0.7rem 1.4rem; background: none; border: 1px solid var(--rule-strong); color: var(--ink); cursor: pointer; }
+  .f-sendbtn:hover { border-color: var(--ink); }
+  .f-sendbtn-main { background: var(--ink); color: var(--paper-letter); border-color: var(--ink); }
+  .f-sendbtn:disabled { opacity: 0.4; cursor: default; }
   .desk-wrap { max-width: 760px; margin: 0 auto; padding: 2rem 1.2rem 6rem; transition: opacity 0.4s ease; }
   .desk-back { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.15em; color: var(--ink-soft); text-decoration: none; display: inline-block; margin-bottom: 2rem; }
   .desk-back:hover { color: var(--mark); }
@@ -378,6 +402,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       tags: tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [],
       cover_image: get('f-cover'),
       cover_alt: get('f-coveralt'),
+      letter_body: get('f-letterbody'),
       body: deskEditor ? deskEditor.getBody() : get('f-body'),
       meta_desc: get('f-metadesc'),
       og_image: get('f-ogimage'),
@@ -408,7 +433,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     if (deskEditor && deskEditor.onChange) deskEditor.onChange(scheduleAutosave);
     ['f-title','f-subtitle','f-slug','f-tags','f-cover','f-coveralt',
      'f-metadesc','f-ogimage','f-body','f-category','f-workid',
-     'f-nw-week','f-nw-title','f-nw-slug'].forEach((id) => {
+     'f-nw-week','f-nw-title','f-nw-slug','f-letterbody'].forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.addEventListener('input', scheduleAutosave);
     });
@@ -450,6 +475,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     set('f-title', a.title); set('f-subtitle', a.subtitle); set('f-slug', a.slug);
     set('f-cover', a.cover_image); set('f-coveralt', a.cover_alt);
     set('f-metadesc', a.meta_desc); set('f-ogimage', a.og_image);
+    set('f-letterbody', a.letter_body);
     set('f-status', a.status);
     set('f-tags', Array.isArray(a.tags) ? a.tags.join(', ') : '');
     const pin = document.getElementById('f-pinned');
@@ -526,7 +552,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   // 폼 전체를 비우고 신규 모드로
   function resetToNew() {
     editingId = null;
-    const ids = ['f-title','f-subtitle','f-slug','f-tags','f-cover','f-coveralt','f-body','f-metadesc','f-ogimage','f-nw-title','f-nw-slug','f-nw-week'];
+    const ids = ['f-title','f-subtitle','f-slug','f-tags','f-cover','f-coveralt','f-body','f-metadesc','f-ogimage','f-nw-title','f-nw-slug','f-nw-week','f-letterbody'];
     ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     const status = document.getElementById('f-status'); if (status) status.value = 'draft';
     const pinned = document.getElementById('f-pinned'); if (pinned) pinned.checked = false;
@@ -563,6 +589,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       if (deskEditor) deskEditor.setBody(art.body);   // ★ 앵커 붙은 원본 그대로 (에디터로)
       set('f-metadesc', art.meta_desc);
       set('f-ogimage', art.og_image);
+      set('f-letterbody', art.letter_body);
       const status = document.getElementById('f-status'); if (status) status.value = art.status || 'draft';
       const pinned = document.getElementById('f-pinned'); if (pinned) pinned.checked = !!art.pinned;
 
@@ -662,6 +689,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     }
 
     setupSave();
+    setupSendLetter();
     // 보관된 원고가 있으면 되살릴지 묻는다. 에디터 준비가 끝난 뒤라야 setBody가 먹는다.
     offerDraftRestore();
     // 자동 보관 배선은 복구 제안 뒤에 — 복구를 거절해 지운 직후 다시 보관되는 것을 막는다.
@@ -692,6 +720,64 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     return { ok: false, reason: '구조 불일치', original: a, corrected: b };
   }
 
+  // ── 넘기 알림 발송 ──
+  // ★발행 ≠ 알림. 저장과는 별개 행위이며 버튼도 분리돼 있다.
+  //   서버(send-letter)가 글을 조회해 편지를 만들고 broadcast로 보낸다 —
+  //   조판이 브라우저로 흩어지지 않게 하기 위해서다.
+  // ※중복 판단은 서버가 한다. 화면은 묻기만 한다 — 브라우저가 판단하면 우회할 수 있다.
+  function setupSendLetter() {
+    const btnTest = document.getElementById('f-sendtest');
+    const btnLive = document.getElementById('f-sendlive');
+    const out = document.getElementById('f-sendresult');
+    if (!btnTest || !btnLive) return;
+
+    async function send(mode, force) {
+      if (!editingId) {
+        if (out) out.textContent = '먼저 글을 저장하거나 불러오십시오. 발송은 저장된 글을 대상으로 합니다.';
+        return;
+      }
+      const btn = (mode === 'test') ? btnTest : btnLive;
+      const label = btn.textContent;
+      btn.disabled = true; btnTest.disabled = true; btnLive.disabled = true;
+      btn.textContent = '보내는 중';
+      if (out) out.textContent = '';
+      try {
+        const res = await fetch('/.netlify/functions/send-letter', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: await getFreshToken(), id: editingId, mode: mode, force: !!force }),
+        });
+        const data = await res.json();
+
+        // 서버가 중복을 알렸다 — 확인받고 force로 다시 부른다.
+        if (data.status === 'already_sent') {
+          const ok = confirm('이미 발송한 글입니다.\n\n' + (data.title || '') + '\n\n정말 다시 보내겠습니까?');
+          btn.textContent = label;
+          btn.disabled = false; btnTest.disabled = false; btnLive.disabled = false;
+          if (ok) send(mode, true);
+          return;
+        }
+
+        if (data.status !== 'ok') {
+          if (out) out.textContent = '발송 실패: ' + (data.detail || '알 수 없는 오류');
+        } else {
+          let msg = (mode === 'test' ? '시험 발송 완료' : '발송 완료')
+            + ' — ' + data.sent + '/' + data.total + '통';
+          if (data.failedCount) msg += ', 실패 ' + data.failedCount + '건';
+          if (data.warn) msg += ' / ' + data.warn;
+          if (out) out.textContent = msg;
+        }
+      } catch (e) {
+        if (out) out.textContent = '발송 실패: ' + e.message;
+      }
+      btn.textContent = label;
+      btn.disabled = false; btnTest.disabled = false; btnLive.disabled = false;
+    }
+
+    btnTest.addEventListener('click', () => send('test', false));
+    btnLive.addEventListener('click', () => send('live', false));
+  }
+
   function setupSave() {
     const btn = document.getElementById('f-save');
     const result = document.getElementById('f-result');
@@ -712,6 +798,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         tags: tags,
         cover_image: get('f-cover'),
         cover_alt: get('f-coveralt'),
+        // 넘기 알림 한마디. 비우면 null로 저장되고 편지에서 폴백 문구가 대신 들어간다.
+        letter_body: get('f-letterbody') || null,
         body: deskEditor ? deskEditor.getBody() : get('f-body'),
         meta_desc: get('f-metadesc'),
         og_image: get('f-ogimage'),
