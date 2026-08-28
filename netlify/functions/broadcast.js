@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { makeUnsubToken } from './_unsub.mjs';
-import { NICK_SLOT, nickBlock } from './_letter.mjs';
+import { NICK_SLOT, FOOTER_SLOT, nickBlock } from './_letter.mjs';
 import { getRolesByToken, hasRole } from './_roles.mjs';
 
 const supabase = createClient(
@@ -142,7 +142,13 @@ export default async (req) => {
     // ★호명은 수신자별로 갈린다 — 줄 전체를 넣거나 뺀다(이름 자리만 비우면 잔재가 남는다).
     //   판단 기준은 신분이 아니라 닉네임 유무다. 가입하면 다음 편지부터 자동으로 붙는다.
     //   호출하는 쪽이 자리표시자를 남기지 않았다면 치환은 아무 일도 하지 않는다(무해).
-    const fullHtml = html.split(NICK_SLOT).join(nickBlock(r.nickname)) + footer(unsubUrl);
+    // ★푸터 위치 — 자리표시자가 있으면 그 자리(편지 카드 안)에 끼우고,
+    //   없으면 기존대로 완성본 뒤에 붙인다. 후자가 기본 동작이므로 다른 브로드캐스트는
+    //   이 변경에 영향받지 않는다. 발송 로직이 편지 종류를 알게 되지 않는 것이 요점이다.
+    const withNick = html.split(NICK_SLOT).join(nickBlock(r.nickname));
+    const fullHtml = withNick.includes(FOOTER_SLOT)
+      ? withNick.split(FOOTER_SLOT).join(footer(unsubUrl))
+      : withNick + footer(unsubUrl);
     try {
       const { error: sendErr } = await resend.emails.send({
         from: FROM,

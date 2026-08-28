@@ -45,6 +45,13 @@ const edge = '#b8ab86';       // = --edge
 //   비우면 "에게," 같은 잔재가 남는다(/welcome 이름 호명 폴백과 같은 원칙, 통합본 §5-20).
 export const NICK_SLOT = '{{NICKNAME_BLOCK}}';
 
+// 푸터가 들어갈 자리. broadcast.js가 여기에 수신자별 푸터를 끼운다.
+// ★카드 '안'에 두는 것이 요점이다. 자리표시자가 없으면 broadcast가 완성본 뒤에 붙이는데,
+//   그러면 종이 카드 바깥에 푸터가 놓여 편지와 분리돼 보인다(운영자가 결함으로 읽었다).
+//   환영 편지는 푸터가 카드 안에 있으므로, 세 편지가 같은 집에서 온 것으로 보이려면 이쪽이 맞다.
+// ※자리표시자가 없는 호출은 기존대로 동작한다 — 앞으로 생길 다른 브로드캐스트는 영향받지 않는다.
+export const FOOTER_SLOT = '{{FOOTER_BLOCK}}';
+
 // 인사 — 3문장 무작위 순환. [운영자 확정] 문장을 변경하지 말 것.
 // ※엽서 카드의 pickSentence(PostcardSignup.astro)와 달리 '직전 인덱스 기억'과 guard가 없다.
 //   서버 함수는 호출마다 메모리가 초기화되므로 직전을 기억할 수 없기 때문이다.
@@ -167,7 +174,9 @@ export function buildLetter(a) {
     '<img src="https://nuh-muh.com/images/emblem.png" width="56" alt="너머 드림." style="display:block;border:0;">',
     '<div style="height:24px;">&nbsp;</div>',
 
-    // ★여기서 끝. 수평선을 넣지 않는다 — footer가 자체 수평선을 갖는다.
+    // ★수평선을 넣지 않는다 — footer가 자체 수평선을 긋는다. 여기서 또 넣으면 두 줄이 된다.
+    //   본문은 엠블럼과 위 여백으로 끝나고, 그 아래를 푸터가 받는다.
+    FOOTER_SLOT,
     '</td></tr></table>',
     '</td></tr></table>',
     '</body></html>',
