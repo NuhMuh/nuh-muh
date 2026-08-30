@@ -232,6 +232,16 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .ed-editor :global(.ProseMirror img[data-align="center"]) { margin-left: auto; margin-right: auto; }
   .ed-editor :global(.ProseMirror img[data-align="right"]) { margin-left: auto; margin-right: 0; }
   .ed-imgalign:disabled { opacity: 0.3; cursor: default; }
+  /* ★alt 비었음 표시 — 라벨 오른쪽 위 속이 빈 작은 원.
+     [근사치] 지름 5px, 색 #1c2340 40%. 실물 보고 조정 가능.
+     [확정치] #1c2340 (=--ink). ★붉은색 금지 — 오류가 아니라 아직 안 한 일이다. */
+  .ed-imgalt { position: relative; }
+  .ed-imgalt.needs-alt::after {
+    content: ''; position: absolute; top: 3px; right: 3px;
+    width: 5px; height: 5px; border-radius: 50%;
+    border: 1px solid rgba(28, 35, 64, 0.4);
+    background: transparent;   /* 속이 비어야 '채워질 자리'로 읽힌다 */
+  }
   .ed-imgalt:disabled { opacity: 0.3; cursor: default; }
   .ed-imgcaption:disabled { opacity: 0.3; cursor: default; }
   .ed-imgungroup:disabled { opacity: 0.3; cursor: default; }

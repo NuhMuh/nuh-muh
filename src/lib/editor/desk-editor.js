@@ -262,7 +262,14 @@ function wireToolbar() {
       //   캡션은 이미지 아래 눈에 보이는 문구. 두 버튼의 문구 구분은 앨리 항목.
       if (activeImageType() !== 'image') return;
       const cur = editor.getAttributes('image').alt || '';
-      const val = window.prompt('이미지 설명 (alt — 이미지가 안 보일 때 대신 읽히는 글):', cur);
+      // ★두 번째 줄이 이번 사고의 직접적 예방책이다(앨리).
+      //   "출처: 구글 플레이"를 쓰려던 사람이 이 문장을 만나면 그 자리에서 돌아설 수 있다.
+      //   틀렸다고만 하면 사용자는 갈 곳을 모른다 — 어디로 가야 하는지까지 알려주는 것이 핵심이다.
+      // ※브라우저 기본 창의 모양은 못 바꾸지만 메시지 문자열은 우리가 정할 수 있다.
+      //   자체 입력창 교체는 유지보수 트랙의 별도 공사이며 그때 문구를 다시 받는다.
+      const val = window.prompt(
+        '이미지가 안 보이는 자리에서 대신 읽힐 글을 적으시오.\n' +
+        "사진 아래에 보이는 글은 '밑에 붙는 말'로 넣으시오.", cur);
       if (val === null) return;
       editor.chain().focus().updateAttributes('image', { alt: val.trim() }).run();
     }
@@ -353,9 +360,28 @@ function refreshToolbar() {
   //   모양·문구가 앨리 영역이라 이번 범위에서는 하지 않았다.
   const isSingle = imgType === 'image';
   const hasAlt = isSingle && !!(imgAttrs.alt || '').trim();
+  const isGroupSel = imgType === 'imageGroup';
   document.querySelectorAll('#ed-tools .ed-imgalt').forEach((btn) => {
     btn.disabled = !isSingle;
     btn.classList.toggle('is-active', hasAlt);
+    // ★alt가 비었음을 알리는 표시 — 속이 빈 작은 원(CSS ::after).
+    //   붉은색을 쓰지 않는다: "alt가 없다"는 오류가 아니라 아직 안 한 일이다.
+    //   채워진 점은 알림 배지의 문법이라 "잘못됐다"로 읽히지만,
+    //   빈 원은 채워질 자리로 읽힌다 — 채우면 사라지는 동작이 그 뜻을 완성한다.
+    btn.classList.toggle('needs-alt', isSingle && !hasAlt);
+
+    // 툴팁은 상태에 따라 갈린다.
+    // ※비활성 버튼은 이유를 말해야 한다 — 눌리지 않는 버튼이 이유 없이 꺼져 있으면
+    //   결함으로 보인다. 두 번째 줄(나가는 길)이 반드시 있어야 막다른 골목이 아니다.
+    //   "몇 달 뒤에는 운영자도 모른다"(앨리).
+    if (isGroupSel) {
+      btn.title = '묶인 이미지에는 붙일 수 없습니다.\n묶음을 풀면 한 장씩 붙일 수 있습니다.';
+    } else if (isSingle && !hasAlt) {
+      // "아직"이 핵심이다 — 없다고 하면 결핍이지만 아직이라고 하면 예정된 일이 된다.
+      btn.title = '아직 비어 있습니다.\n이미지가 안 보이는 자리에서 이 글이 대신 읽힙니다.';
+    } else {
+      btn.title = '이미지가 안 보이는 자리에서 이 글이 대신 읽힙니다.';
+    }
   });
 
   // 묶음 풀기: imageGroup 선택 시에만 활성화
