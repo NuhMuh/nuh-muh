@@ -102,8 +102,15 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <button type="button" data-cmd="align-center" title="가운데" class="ed-imgalign">■</button>
           <button type="button" data-cmd="align-right" title="오른쪽" class="ed-imgalign">➡</button>
           <span class="ed-sep"></span>
-          <button type="button" data-cmd="alt" title="이미지 설명(alt) — 이미지가 안 보일 때 대신 읽히는 글" class="ed-imgalt">설명</button>
-          <button type="button" data-cmd="caption" title="캡션(출처·설명)" class="ed-imgcaption">캡션</button>
+          <!-- ★두 버튼의 이름은 '설명이냐 아니냐'가 아니라 '대신하느냐 붙느냐'로 가른다(앨리).
+               기존 라벨("설명"/"캡션")은 둘 다 설명 계열이라 구분이 안 됐고, 그래서
+               운영자가 alt 칸에 "출처: 구글 플레이"를 넣었다 — 캡션은 화면에 보이므로
+               "설명"이라는 이름에서 그쪽을 떠올리는 것이 자연스러운 오해였다.
+               툴팁에서 괄호와 영문 약어(alt)를 뺐다 — 아는 사람만 알아듣는 문장에서
+               아무나 알아듣는 문장으로. "안 보이는 자리"는 의도적 표현이다:
+               차단된 메일함·화면 낭독기·검색 엔진은 전부 자리의 문제이지 시간의 문제가 아니다. -->
+          <button type="button" data-cmd="alt" title="이미지가 안 보이는 자리에서 이 글이 대신 읽힙니다." class="ed-imgalt">대신할 말</button>
+          <button type="button" data-cmd="caption" title="사진 아래에 늘 함께 보이는 글입니다." class="ed-imgcaption">밑에 붙는 말</button>
           <button type="button" data-cmd="ungroup" title="2장 묶음 풀기" class="ed-imgungroup">묶음 풀기</button>
         </div>
         <button type="button" id="ed-source-toggle" class="ed-source-toggle">&lt;/&gt; 소스보기</button>
