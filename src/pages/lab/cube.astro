@@ -119,20 +119,32 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   /* 상태 2 — 물러서기 */
   .cube.away   { transform: scale(0.62) rotateX(-24deg) rotateY(calc(var(--ry, 0deg) + 34deg)); }
 
-  /* ★상태 3 — 펼치기: 위에서 내려다본 십자 전개도.
-     가운데가 아랫면(짐 가방)이고 사방으로 벽 넷이 눕는다.
-     각 벽은 아랫면과 맞닿은 모서리를 축(transform-origin)으로 젖혀 눕힌다.
-     접힌 상태의 translateZ 계산을 쓰지 않고 위치를 직접 지정한다. */
-  .cube.open { transform: rotateX(-90deg) scale(0.5); }
-  .cube.open .face {
-    transition: transform 0.85s cubic-bezier(0.16,1,0.3,1);
-    backface-visibility: visible;
+  /* ★상태 3 — 펼치기: 2D 십자 배치로 시험한다 (2차 시도).
+     1차는 컨테이너를 rotateX(-90deg)로 눕히고 그 안에서 각 면을 또 젖히는
+     이중 3D 회전이었다. 모양도 어긋났고 무엇보다 **펼친 상태에서 클릭·드래그가
+     전혀 닿지 않았다** — corner·away에서는 되는데 open에서만 안 됐다.
+     중첩 3D 변형에서 브라우저가 히트 판정 영역을 제대로 계산하지 못하는 것으로 보인다(추정).
+     그래서 이번에는 3D 회전을 걷어내고 평면에 직접 배치한다.
+     ※이것은 엄밀히 "육면체를 펼친 것"이 아니라 "펼친 모양으로 보이게 배치한 것"이다.
+       무엇을 잃고 무엇을 얻는지가 이 시험의 요점이다. */
+  .cube.open {
+    transform: none;
+    transform-style: flat;
+    width: 100%; height: 560px;
   }
-  .cube.open .bottom { transform-origin: 50% 50%;  transform: rotateX(-90deg) translateZ(170px); }
-  .cube.open .front  { transform-origin: 50% 100%; transform: rotateX(-90deg) translateY(-340px); }
-  .cube.open .back   { transform-origin: 50% 0%;   transform: rotateX(-90deg) translateY(340px) rotate(180deg); }
-  .cube.open .left   { transform-origin: 100% 50%; transform: rotateX(-90deg) translateX(-340px) rotate(-90deg); }
-  .cube.open .right  { transform-origin: 0% 50%;   transform: rotateX(-90deg) translateX(340px) rotate(90deg); }
+  .cube.open .face {
+    transition: none;
+    backface-visibility: visible;
+    width: 170px; height: 170px;
+    font-size: 0.7rem;
+  }
+  .cube.open .face h3 { font-size: 0.78rem; }
+  /* 십자 — 가운데가 아랫면(짐 가방), 사방으로 벽 넷 */
+  .cube.open .bottom { transform: none; left: 50%; top: 190px;  margin-left: -85px; }
+  .cube.open .front  { transform: none; left: 50%; top: 370px;  margin-left: -85px; }
+  .cube.open .back   { transform: none; left: 50%; top: 10px;   margin-left: -85px; }
+  .cube.open .left   { transform: none; left: 50%; top: 190px;  margin-left: -265px; }
+  .cube.open .right  { transform: none; left: 50%; top: 190px;  margin-left: 95px; }
 
   .log { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--ink-soft); background: rgba(255,255,255,0.4); border: 1px solid var(--rule); padding: 0.7rem; margin-top: 1.5rem; white-space: pre-wrap; line-height: 1.6; }
 </style>
