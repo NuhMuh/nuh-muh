@@ -1,0 +1,195 @@
+---
+// ※조사용 임시 페이지 (2026-08-29) — 내 방 육면체 실현 가능성 확인.
+//   시공물이 아니다. 조사 완료 후 삭제한다.
+//   확인 대상: ①세 상태가 되는가 ②그 상태에서 안의 내용이 살아 있는가
+//   ③실제 DOM을 돌리는 방식의 한계 ④모바일에서 무엇을 잃는가
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout title="lab — cube">
+<div class="lab">
+  <p class="lab-note">조사용 임시 페이지. 육면체 실현 가능성 확인용이며 시공물이 아니다.</p>
+
+  <div class="ctrl">
+    <button data-face="front">① 내가 거는 벽</button>
+    <button data-face="right">② 전시하는 벽</button>
+    <button data-face="back">③ 문이 둘인 벽</button>
+    <button data-face="left">④ 만드는 벽</button>
+    <button data-face="bottom">⑤ 짐 가방(아랫면)</button>
+    <span class="sep"></span>
+    <button id="b-corner" class="on">모서리 보이기</button>
+    <button id="b-back">물러서기</button>
+    <button id="b-open">펼치기</button>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="cube" id="cube">
+      <div class="face front">
+        <h3>① 내가 거는 벽</h3>
+        <p class="hint">아래 물건을 끌어 옮겨보시오 — 펼친 상태에서도 되는지가 관건이다.</p>
+        <div class="shelf" data-shelf>
+          <div class="item" draggable="true">문패</div>
+          <div class="item" draggable="true">액자 1</div>
+          <div class="item" draggable="true">액자 2</div>
+        </div>
+        <label class="probe">입력 시험 <input type="text" placeholder="글자를 쳐보시오" /></label>
+      </div>
+      <div class="face right">
+        <h3>② 전시하는 벽</h3>
+        <div class="shelf" data-shelf>
+          <div class="item" draggable="true">자격</div>
+          <div class="item" draggable="true">받은 눈길</div>
+        </div>
+        <p class="hint">스크롤 시험 ↓</p>
+        <div class="scroller"><p>가</p><p>나</p><p>다</p><p>라</p><p>마</p><p>바</p></div>
+      </div>
+      <div class="face back">
+        <h3>③ 문이 둘인 벽</h3>
+        <div class="shelf" data-shelf>
+          <div class="item" draggable="true">술집 문</div>
+          <div class="item" draggable="true">남의 방 문</div>
+        </div>
+      </div>
+      <div class="face left">
+        <h3>④ 만드는 벽</h3>
+        <div class="shelf" data-shelf>
+          <div class="item" draggable="true">책상</div>
+          <div class="item" draggable="true">낙서</div>
+        </div>
+      </div>
+      <div class="face bottom">
+        <h3>⑤ 짐 가방</h3>
+        <p class="hint">여기 있으면 남에게 안 보인다(설계).</p>
+        <div class="shelf" data-shelf>
+          <div class="item" draggable="true">숨긴 것</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <pre class="log" id="log">여기에 관찰 결과가 찍힌다.</pre>
+</div>
+</BaseLayout>
+
+<style>
+  .lab { max-width: 1000px; margin: 0 auto; padding: 1.5rem 1rem 5rem; }
+  .lab-note { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--mark); margin-bottom: 1.2rem; }
+  .ctrl { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; margin-bottom: 1.2rem; }
+  .ctrl button { font-family: 'Noto Serif KR', serif; font-size: 0.82rem; padding: 0.4rem 0.7rem; background: transparent; border: 1px solid var(--rule); border-radius: 3px; cursor: pointer; color: var(--ink); }
+  .ctrl button:hover, .ctrl button.on { border-color: var(--mark); color: var(--mark); }
+  .sep { width: 1px; height: 1.4rem; background: var(--rule); margin: 0 0.4rem; }
+
+  /* 무대 — 원근이 여기 걸린다 */
+  .stage { perspective: 1400px; perspective-origin: 50% 40%; height: 460px; display: flex; align-items: center; justify-content: center; }
+
+  .cube {
+    position: relative; width: 340px; height: 340px;
+    transform-style: preserve-3d;
+    transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .face {
+    position: absolute; inset: 0;
+    background: var(--paper-letter); border: 1px solid var(--edge);
+    padding: 1.1rem; overflow: auto;
+    backface-visibility: hidden;
+  }
+  .face h3 { font-family: 'Noto Serif KR', serif; font-size: 1rem; margin-bottom: 0.5rem; color: var(--ink); }
+  .hint { font-size: 0.72rem; color: var(--ink-faint); margin-bottom: 0.5rem; line-height: 1.5; }
+  .shelf { display: flex; flex-wrap: wrap; gap: 0.35rem; min-height: 2.6rem; padding: 0.4rem; border: 1px dashed var(--rule); margin-bottom: 0.6rem; }
+  .item { font-size: 0.78rem; padding: 0.3rem 0.55rem; background: var(--paper-deep); border: 1px solid var(--rule); cursor: grab; user-select: none; }
+  .item.dragging { opacity: 0.4; }
+  .probe { display: block; font-size: 0.72rem; color: var(--ink-soft); }
+  .probe input { width: 100%; margin-top: 0.2rem; padding: 0.3rem; border: 1px solid var(--rule); font-size: 0.8rem; }
+  .scroller { height: 70px; overflow-y: auto; border: 1px solid var(--rule); padding: 0.3rem; font-size: 0.78rem; }
+
+  /* 면 배치 — 벽 넷 + 아랫면 */
+  .front  { transform: translateZ(170px); }
+  .right  { transform: rotateY( 90deg) translateZ(170px); }
+  .back   { transform: rotateY(180deg) translateZ(170px); }
+  .left   { transform: rotateY(-90deg) translateZ(170px); }
+  .bottom { transform: rotateX(-90deg) translateZ(170px); }
+
+  /* 상태 1 — 모서리 보이기: 살짝 틀어 좌우 끝자락이 비스듬히 */
+  .cube.corner { transform: rotateX(-8deg) rotateY(var(--ry, 0deg)); }
+  /* 상태 2 — 물러서기: 작아지며 여러 면이 동시에 */
+  .cube.away   { transform: scale(0.62) rotateX(-22deg) rotateY(calc(var(--ry, 0deg) + 32deg)); }
+  /* 상태 3 — 펼치기: 위에서 내려다보며 사방으로 편다 */
+  .cube.open   { transform: rotateX(-90deg) scale(0.42); }
+  .cube.open .face { transition: transform 0.85s cubic-bezier(0.16,1,0.3,1); backface-visibility: visible; }
+  .cube.open .front  { transform: rotateX(90deg)  translateZ(170px) translateY(-170px); }
+  .cube.open .back   { transform: rotateX(90deg)  translateZ(170px) translateY(170px)  rotate(180deg); }
+  .cube.open .right  { transform: rotateX(90deg)  translateZ(170px) translateX(170px)  rotate(90deg); }
+  .cube.open .left   { transform: rotateX(90deg)  translateZ(170px) translateX(-170px) rotate(-90deg); }
+  .cube.open .bottom { transform: rotateX(-90deg) translateZ(170px); }
+
+  .log { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--ink-soft); background: rgba(255,255,255,0.4); border: 1px solid var(--rule); padding: 0.7rem; margin-top: 1.5rem; white-space: pre-wrap; line-height: 1.6; }
+</style>
+
+<script>
+  function initLab() {
+    const cube = document.getElementById('cube');
+    const log = document.getElementById('log');
+    if (!cube) return;
+    const say = (m) => { log.textContent = m + '\n' + log.textContent; };
+
+    const FACE_RY = { front: 0, right: -90, back: -180, left: 90, bottom: 0 };
+    let ry = 0, mode = 'corner';
+
+    function apply() {
+      cube.className = 'cube ' + mode;
+      cube.style.setProperty('--ry', ry + 'deg');
+    }
+    apply();
+
+    document.querySelectorAll('[data-face]').forEach((b) => {
+      b.addEventListener('click', () => {
+        const f = b.dataset.face;
+        if (f === 'bottom') { mode = 'open'; say('아랫면 → 펼치기 상태로'); }
+        else { ry = FACE_RY[f]; }
+        apply();
+        say('면 이동: ' + f + ' (rotateY ' + ry + 'deg)');
+      });
+    });
+
+    const modes = { 'b-corner': 'corner', 'b-back': 'away', 'b-open': 'open' };
+    Object.keys(modes).forEach((id) => {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      btn.addEventListener('click', () => {
+        mode = modes[id];
+        document.querySelectorAll('.ctrl button').forEach(x => x.classList.remove('on'));
+        btn.classList.add('on');
+        apply();
+        say('상태: ' + mode);
+      });
+    });
+
+    // ★F-2 핵심 — 펼친 상태에서 물건을 옮길 수 있는가
+    let dragged = null;
+    document.querySelectorAll('.item').forEach((el) => {
+      el.addEventListener('dragstart', () => { dragged = el; el.classList.add('dragging'); say('끌기 시작: ' + el.textContent + ' [' + mode + ']'); });
+      el.addEventListener('dragend', () => { el.classList.remove('dragging'); });
+    });
+    document.querySelectorAll('[data-shelf]').forEach((sh) => {
+      sh.addEventListener('dragover', (e) => e.preventDefault());
+      sh.addEventListener('drop', (e) => {
+        e.preventDefault();
+        if (dragged) { sh.appendChild(dragged); say('★옮기기 성공 [' + mode + '] — ' + dragged.textContent); dragged = null; }
+      });
+    });
+
+    // 클릭·입력이 살아 있는지
+    document.querySelectorAll('.face').forEach((f) => {
+      f.addEventListener('click', (e) => {
+        if (e.target.closest('.item')) say('클릭 닿음 [' + mode + ']: ' + e.target.textContent);
+      });
+    });
+    document.querySelectorAll('.probe input').forEach((i) => {
+      i.addEventListener('input', () => say('입력 됨 [' + mode + ']: ' + i.value));
+    });
+
+    say('준비됨. 상태를 바꿔가며 ①물건 끌어 옮기기 ②입력 ③스크롤을 시험하시오.');
+  }
+  if (document.readyState !== 'loading') initLab();
+  else document.addEventListener('DOMContentLoaded', initLab);
+  document.addEventListener('astro:page-load', initLab);
+</script>
