@@ -79,7 +79,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .sep { width: 1px; height: 1.4rem; background: var(--rule); margin: 0 0.4rem; }
 
   /* 무대 — 원근이 여기 걸린다 */
-  .stage { perspective: 1400px; perspective-origin: 50% 40%; height: 460px; display: flex; align-items: center; justify-content: center; }
+  .stage { perspective: 1400px; perspective-origin: 50% 50%; height: 620px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
 
   .cube {
     position: relative; width: 340px; height: 340px;
@@ -101,25 +101,38 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .probe input { width: 100%; margin-top: 0.2rem; padding: 0.3rem; border: 1px solid var(--rule); font-size: 0.8rem; }
   .scroller { height: 70px; overflow-y: auto; border: 1px solid var(--rule); padding: 0.3rem; font-size: 0.78rem; }
 
-  /* 면 배치 — 벽 넷 + 아랫면 */
+  /* ★면 배치 — 접힌 상태와 펼친 상태를 각각 독립으로 정의한다.
+     앞선 시도는 translateZ로 세운 육면체를 펼칠 때 뒤집는 방식이었는데,
+     두 상태의 계산이 얽혀 면들이 겹치고 어긋났다.
+     그리고 transform-origin을 안 옮겨 면이 제자리에서 회전만 했다 —
+     종이 상자를 펴려면 바닥과 맞닿은 모서리를 축으로 젖혀져야 한다. */
+  .face { transform-origin: 50% 50%; }
   .front  { transform: translateZ(170px); }
   .right  { transform: rotateY( 90deg) translateZ(170px); }
   .back   { transform: rotateY(180deg) translateZ(170px); }
   .left   { transform: rotateY(-90deg) translateZ(170px); }
   .bottom { transform: rotateX(-90deg) translateZ(170px); }
 
-  /* 상태 1 — 모서리 보이기: 살짝 틀어 좌우 끝자락이 비스듬히 */
-  .cube.corner { transform: rotateX(-8deg) rotateY(var(--ry, 0deg)); }
-  /* 상태 2 — 물러서기: 작아지며 여러 면이 동시에 */
-  .cube.away   { transform: scale(0.62) rotateX(-22deg) rotateY(calc(var(--ry, 0deg) + 32deg)); }
-  /* 상태 3 — 펼치기: 위에서 내려다보며 사방으로 편다 */
-  .cube.open   { transform: rotateX(-90deg) scale(0.42); }
-  .cube.open .face { transition: transform 0.85s cubic-bezier(0.16,1,0.3,1); backface-visibility: visible; }
-  .cube.open .front  { transform: rotateX(90deg)  translateZ(170px) translateY(-170px); }
-  .cube.open .back   { transform: rotateX(90deg)  translateZ(170px) translateY(170px)  rotate(180deg); }
-  .cube.open .right  { transform: rotateX(90deg)  translateZ(170px) translateX(170px)  rotate(90deg); }
-  .cube.open .left   { transform: rotateX(90deg)  translateZ(170px) translateX(-170px) rotate(-90deg); }
-  .cube.open .bottom { transform: rotateX(-90deg) translateZ(170px); }
+  /* 상태 1 — 모서리 보이기: 좌우 끝자락이 비스듬히 보이도록 각을 키웠다(8→18도) */
+  .cube.corner { transform: rotateX(-10deg) rotateY(calc(var(--ry, 0deg) + 18deg)); }
+
+  /* 상태 2 — 물러서기 */
+  .cube.away   { transform: scale(0.62) rotateX(-24deg) rotateY(calc(var(--ry, 0deg) + 34deg)); }
+
+  /* ★상태 3 — 펼치기: 위에서 내려다본 십자 전개도.
+     가운데가 아랫면(짐 가방)이고 사방으로 벽 넷이 눕는다.
+     각 벽은 아랫면과 맞닿은 모서리를 축(transform-origin)으로 젖혀 눕힌다.
+     접힌 상태의 translateZ 계산을 쓰지 않고 위치를 직접 지정한다. */
+  .cube.open { transform: rotateX(-90deg) scale(0.5); }
+  .cube.open .face {
+    transition: transform 0.85s cubic-bezier(0.16,1,0.3,1);
+    backface-visibility: visible;
+  }
+  .cube.open .bottom { transform-origin: 50% 50%;  transform: rotateX(-90deg) translateZ(170px); }
+  .cube.open .front  { transform-origin: 50% 100%; transform: rotateX(-90deg) translateY(-340px); }
+  .cube.open .back   { transform-origin: 50% 0%;   transform: rotateX(-90deg) translateY(340px) rotate(180deg); }
+  .cube.open .left   { transform-origin: 100% 50%; transform: rotateX(-90deg) translateX(-340px) rotate(-90deg); }
+  .cube.open .right  { transform-origin: 0% 50%;   transform: rotateX(-90deg) translateX(340px) rotate(90deg); }
 
   .log { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--ink-soft); background: rgba(255,255,255,0.4); border: 1px solid var(--rule); padding: 0.7rem; margin-top: 1.5rem; white-space: pre-wrap; line-height: 1.6; }
 </style>
