@@ -110,14 +110,19 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 <style>
   /* ★방은 화면 전체다. BaseLayout의 container를 쓰지 않는다 —
      폭이 제한되면 "안에 서 있다"가 성립하지 않는다. */
-  .room { position: relative; width: 100%; transition: opacity 0.7s ease; }
+  .room { position: relative; width: 100%; transition: opacity 0.7s ease;
+    --mx: 4vw; --my: 5vh; --dg-len: 4.472vw; }
 
   /* 낙관 — 워드마크가 물러난 자리. 방에서는 이것만 남는다. */
   /* 낙관은 방의 한가운데 위에 걸린다. 흐리지 않다 — 이 방의 표식이다. */
-  .seal { position: fixed; top: 1.6rem; left: 50%; margin-left: -30px; z-index: 20; display: block; }
-  .seal img { display: block; }
+  /* 낙관과 인사는 위쪽 구역선 위 층에 놓는다. 방 치수를 따라가므로
+     창 높이가 바뀌어도 그 층을 벗어나지 않는다. 화면 기준 고정값이면 따로 논다. */
+  .seal { position: fixed; top: 0; left: 50%; height: var(--my); z-index: 20;
+    display: flex; align-items: center; transform: translateX(-50%); }
+  .seal img { display: block; width: auto; height: min(60px, calc(var(--my) - 12px)); }
 
-  .greet { position: fixed; top: 1.6rem; left: 1.8rem; z-index: 20;
+  .greet { position: fixed; top: 0; left: 1.8rem; height: var(--my); z-index: 20;
+    display: flex; align-items: center; margin: 0;
     font-family: 'EB Garamond', serif; font-style: italic; font-size: 0.95rem; color: var(--ink-soft); }
 
   /* ─────────────────────────────────────────────
@@ -149,7 +154,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     /* 방의 치수는 한 벌이다. 여백과 사선 길이가 물려 있다.
        dg-len = mx / cos(26.57도) — 가로로 뻗는 길이가 mx와 같아야
        사선 끝이 화면 가장자리에 딱 닿는다. 하나만 바꾸면 어긋난다. */
-    --mx: 4vw; --my: 5vh; --dg-len: 4.472vw; }
+    /* 치수는 .room에 있다 — 낙관·인사도 같은 값을 쓰므로 출처를 하나로 둔다. */ }
 
   /* 정면 벽 — 화면을 거의 채운다. 위아래 여백에 대각선이 놓인다. */
   .walls { position: absolute; inset: var(--my) var(--mx); }
@@ -181,8 +186,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
        벽 모서리에 닿지 않고 허공에 떠 있었다.
      ───────────────────────────────────────────── */
   .frame { position: absolute; inset: 0; pointer-events: none; }
-  .gl, .dg { position: absolute; height: 0; border-top: 1px solid var(--edge); }
-  .gl { left: 0; right: 0; }
+  .gl, .dg { position: absolute; height: 0; }
+  .gl { border-top: 2px solid var(--rule-strong); }
+  .dg { border-top: 1.5px solid var(--rule-strong); }
+  .gl { left: 0; right: 0; }   /* 굵기는 위에서 정한다 */
   .gl-top { top: var(--my); }
   .gl-bot { top: calc(100% - var(--my)); }
   .dg { width: var(--dg-len); transform-origin: 0 0; }
@@ -258,7 +265,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   /* 좁은 화면 — 벽이 화면 폭을 넘지 않게. 원근은 더 짧게 잡아 깊이를 유지한다. */
   @media (max-width: 720px) {
-    .box { --mx: 6vw; --my: 4vh; --dg-len: 6.708vw; }
+    .room { --mx: 6vw; --my: 4vh; --dg-len: 6.708vw; }
     .inner { padding: 2rem 1.4rem; }
     .greet { display: none; }
   }
