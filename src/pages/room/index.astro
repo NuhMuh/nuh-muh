@@ -176,9 +176,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
        기울기는 1:2(26.57도) — 가로로 뻗는 만큼의 절반을 내려온다. 좌표는 스크립트가 잰다.
      ───────────────────────────────────────────── */
   .frame { position: absolute; inset: 0; z-index: 1; pointer-events: none; display: block; }
-  .frame .fc { fill: var(--paper-letter); stroke: var(--rule-strong);
-    stroke-width: var(--bw); stroke-linejoin: miter; }
-  .frame .gl { stroke: var(--rule); stroke-width: 1; }
+  /* ★색을 CSS 클래스로 주지 않는다. SVG 안에서는 이 변수들이 잡히지 않아
+     fill이 비고, 그러면 SVG 기본값인 검정으로 칠해진다(실제로 겪음).
+     스크립트가 CSS에서 값을 읽어 속성으로 직접 박는다 — 출처는 여전히 CSS다. */
+  .frame .fc { stroke-linejoin: miter; }
 
   /* 벽 안 — 위쪽에 구역이 서고 아래로 늘어난다. */
   .inner { padding: 3.4rem 3.4rem 2rem; }
@@ -351,8 +352,20 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     }
 
     const NS = 'http://www.w3.org/2000/svg';
+    // 색과 굵기의 출처는 CSS다. 여기서는 읽기만 한다 — 값을 두 곳에 두지 않는다.
+    function ink() {
+      const c = getComputedStyle(root);
+      return {
+        paper: c.getPropertyValue('--paper-letter').trim() || '#f4eedd',
+        line:  c.getPropertyValue('--rule-strong').trim() || 'rgba(28,35,64,0.28)',
+        thin:  c.getPropertyValue('--rule').trim()        || 'rgba(28,35,64,0.14)',
+        bw:    parseFloat(c.getPropertyValue('--bw')) || 3,
+      };
+    }
     function draw() {
       const m = metrics();
+      if (!(m.W > 0) || !(m.R > m.L)) return;   // 아직 자리를 못 잡았다 — 다음 번에 그린다
+      const ic = ink();
       frame.setAttribute('viewBox', '0 0 ' + m.W + ' ' + m.H);
       while (frame.firstChild) frame.removeChild(frame.firstChild);
 
@@ -367,6 +380,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         if (uR - uL < 0.002) return;                     // 완전히 접힘
         const g = document.createElementNS(NS, 'polygon');
         g.setAttribute('class', 'fc');
+        g.setAttribute('fill', ic.paper);
+        g.setAttribute('stroke', ic.line);
+        g.setAttribute('stroke-width', ic.bw);
         g.setAttribute('points',
           rx(uL,m)+','+ry(uL,m,false)+' '+rx(uR,m)+','+ry(uR,m,false)+' '+
           rx(uR,m)+','+ry(uR,m,true)+' '+rx(uL,m)+','+ry(uL,m,true));
@@ -376,6 +392,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       [m.T, m.B].forEach((y) => {
         const l = document.createElementNS(NS, 'line');
         l.setAttribute('class', 'gl');
+        l.setAttribute('stroke', ic.thin);
+        l.setAttribute('stroke-width', 1);
         l.setAttribute('x1', 0); l.setAttribute('y1', y);
         l.setAttribute('x2', m.W); l.setAttribute('y2', y);
         frame.appendChild(l);
@@ -383,6 +401,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       showRoom();
     }
     window.addEventListener('resize', draw);
+    // ★첫 그림은 한 박자 뒤에. 페이지가 막 열린 시점에는 벽이 아직 자리를 못 잡아
+    //   재는 값이 전부 0이 되고, 그러면 크기 0짜리 그림이 나온다(실제로 겪음).
+    requestAnimationFrame(() => { draw(); requestAnimationFrame(draw); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
 
     function paint() {
       const showing = down ? 'bottom' : RING[((Math.round(pos) % RING.length) + RING.length) % RING.length];
