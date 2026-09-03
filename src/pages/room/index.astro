@@ -320,6 +320,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
     const frame = document.getElementById('frame');
     const boxEl = document.getElementById('box');
+    // ★방을 켜는 스위치. 다 그린 뒤에 켠다 — 그리는 중이 보이면 어수선하다.
+    //   벽 전환 코드를 갈아끼울 때 이 줄이 함께 지워져 빈 화면이 됐다.
+    const showRoom = () => { root.style.opacity = '1'; };
 
     // 치수는 CSS가 정한다. 여기서는 재기만 한다 — 값의 출처를 둘로 만들지 않는다.
     function metrics() {
@@ -377,6 +380,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         l.setAttribute('x2', m.W); l.setAttribute('y2', y);
         frame.appendChild(l);
       });
+      showRoom();
     }
     window.addEventListener('resize', draw);
 
