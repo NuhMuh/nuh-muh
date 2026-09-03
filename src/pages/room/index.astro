@@ -117,46 +117,61 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
      화면 폭의 절반 수준으로 잡아 정면 벽은 평평하게 크고
      양옆 벽은 저절로 가파르게 기울어 가장자리로 빨려들어간다.
      ───────────────────────────────────────────── */
+  /* ─────────────────────────────────────────────
+     ★방의 치수는 한 벌이다. 하나만 바꾸면 정육면체가 깨진다.
+       폭 = 깊이(정육면체), 깊이의 절반만큼 앞으로 당겨야 정면 벽이 화면에 선다.
+     ★높이를 100vh보다 작게 잡는 것이 요점이다.
+       꽉 채우면 옆벽이 넓어지는 부분이 화면 위아래로 나가 사선이 안 보인다.
+       위아래에 남긴 여백에 그 사선이 드러난다 — 그것이 입체를 만든다.
+     ★사선의 방향: 상자 안을 들여다보는 것이므로 가까운 쪽(화면 가장자리)이 넓고
+       먼 쪽(정면 벽)이 좁다. 위 모서리는 가장자리에서 안쪽으로 내려오고
+       아래 모서리는 올라간다. 원근이 알아서 그린다 — 우리가 선을 긋지 않는다.
+     ───────────────────────────────────────────── */
+  .room { --wall: 88vw; --half: 44vw; --tall: 78vh; --top: 11vh; }
+
   .box {
     position: relative;
     height: 100vh;
-    /* ★폭·깊이·원근은 한 벌이다. 벽 폭을 키우면 깊이도 같이 커져야 정육면체가 유지되고,
-       원근은 그보다 커야 왜곡이 심해지지 않는다. 지금은 정면이 화면을 거의 차지하고
-       옆벽은 가장자리로 밀려 힌트만 남는 값이다. */
-    perspective: 82vw;
-    perspective-origin: 50% 46%;
+    perspective: 132vw;         /* ★작을수록 가깝고 사선이 가팔라진다 */
+    perspective-origin: 50% 50%;
     overflow: hidden;
   }
 
   .walls {
     position: absolute; inset: 0;
     transform-style: preserve-3d;
-    /* 벽의 절반 깊이만큼 앞으로 당겨야 정면 벽이 화면에 밀착한다.
-       이 값과 아래 translateZ가 짝이다 — 함께 움직여야 한다. */
-    transform: translateZ(41vw) rotateY(var(--ry, 0deg));
+    transform: translateZ(var(--half)) rotateY(var(--ry, 0deg));
     transition: transform 1s cubic-bezier(0.22, 1, 0.28, 1);
   }
   .walls.dropping {
-    transform: translateZ(41vw) rotateX(78deg) rotateY(var(--ry, 0deg));
+    /* 아래를 내려다본다. 음수라야 바닥이 올라온다 — 양수면 천장을 본다. */
+    transform: translateZ(var(--half)) rotateX(-76deg) rotateY(var(--ry, 0deg));
   }
 
-  /* 벽 — 정면 하나가 화면을 꽉 채운다.
-     방이 정육면체이므로 벽의 폭과 깊이가 같아야 모서리가 맞는다. */
   .wall {
-    position: absolute; top: 0; left: 50%;
-    width: 82vw; height: 100vh; margin-left: -41vw;
+    position: absolute; top: var(--top); left: 50%;
+    width: var(--wall); height: var(--tall); margin-left: calc(var(--half) * -1);
     background: var(--paper-letter);
-    /* 벽 사이 모서리 — 이 세로선이 입체를 만든다. 종이가 접힌 자리다. */
     border-left: 1px solid var(--edge);
     border-right: 1px solid var(--edge);
-    box-shadow: inset 0 0 90px rgba(28, 35, 64, 0.07);
     overflow: hidden;
   }
-  .front  { transform: translateZ(-41vw); }
-  .right  { transform: rotateY( 90deg) translateZ(-41vw); }
-  .back   { transform: rotateY(180deg) translateZ(-41vw); }
-  .left   { transform: rotateY(-90deg) translateZ(-41vw); }
-  .bottom { transform: rotateX(-90deg) translateZ(-41vw); }
+
+  /* ★옆벽은 어둡다. 가장자리로 갈수록 더 어두워져 깊이가 생긴다.
+     빛이 정면에서 들어오고 옆은 그늘이 지는 것이다. */
+  .wall::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(to right, rgba(28,35,64,0.20), rgba(28,35,64,0.02) 30%, rgba(28,35,64,0.02) 70%, rgba(28,35,64,0.20));
+    opacity: 1; transition: opacity 0.7s ease;
+  }
+  .wall.facing::before { opacity: 0; }   /* 마주 본 벽은 그늘이 걷힌다 */
+
+  .front  { transform: translateZ(calc(var(--half) * -1)); }
+  .right  { transform: rotateY( 90deg) translateZ(calc(var(--half) * -1)); }
+  .back   { transform: rotateY(180deg) translateZ(calc(var(--half) * -1)); }
+  .left   { transform: rotateY(-90deg) translateZ(calc(var(--half) * -1)); }
+  /* ★바닥은 rotateX(90deg)다. 음수면 천장이 되어 내려다볼 때 글자가 뒤집힌다. */
+  .bottom { transform: rotateX( 90deg) translateZ(calc(var(--half) * -1)); }
 
   /* ★옆벽은 너무 가팔라 글씨를 알아볼 수 없다. 그래서 정면일 때만 내용을 보인다.
      운영자 판정: "구현이 어렵다면 그냥 빈 벽으로 처리하다가 돌렸을 때 보이도록 해도 된다."
@@ -232,16 +247,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   /* 좁은 화면 — 벽이 화면 폭을 넘지 않게. 원근은 더 짧게 잡아 깊이를 유지한다. */
   @media (max-width: 720px) {
-    .box { perspective: 90vw; }
-    .walls { transform: translateZ(45vw) rotateY(var(--ry, 0deg)); }
-    .walls.dropping { transform: translateZ(45vw) rotateX(78deg) rotateY(var(--ry, 0deg)); }
-    .wall { width: 90vw; margin-left: -45vw; }
-    .front  { transform: translateZ(-45vw); }
-    .right  { transform: rotateY( 90deg) translateZ(-45vw); }
-    .back   { transform: rotateY(180deg) translateZ(-45vw); }
-    .left   { transform: rotateY(-90deg) translateZ(-45vw); }
-    .bottom { transform: rotateX(-90deg) translateZ(-45vw); }
-    .inner { padding: 16vh 6vw 0; }
+    .room { --wall: 96vw; --half: 48vw; --tall: 74vh; --top: 13vh; }
+    .box { perspective: 150vw; }
+    .inner { padding: 3.5rem 7vw 0; }
     .greet { display: none; }
   }
 </style>
