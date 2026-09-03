@@ -66,15 +66,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         </section>
 
       </div>
-      <!-- 구역선과 사선 — 벽 위에 얹힌다. 굴리기의 기준 도형이다. -->
-      <div class="frame" aria-hidden="true">
-        <span class="gl gl-top"></span>
-        <span class="gl gl-bot"></span>
-        <span class="dg dg-tl"></span>
-        <span class="dg dg-tr"></span>
-        <span class="dg dg-bl"></span>
-        <span class="dg dg-br"></span>
-      </div>
+      <!-- 방의 모양은 전부 여기서 그린다 — 채움·테두리·사선·구역선.
+           따로 그리면 굴릴 때 서로 어긋난다(사선과 사각형은 한 몸). -->
+      <svg class="frame" id="frame" aria-hidden="true"></svg>
     </div>
 
     <!-- 돌리는 자리 — 화면 양 끝과 맨 아래. 화면 전체가 도는 느낌이 나게. -->
@@ -164,52 +158,27 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     /* 치수는 .room에 있다 — 낙관·인사도 같은 값을 쓰므로 출처를 하나로 둔다. */ }
 
   /* 정면 벽 — 화면을 거의 채운다. 위아래 여백에 대각선이 놓인다. */
-  .walls { position: absolute; inset: var(--my-top) var(--mx) var(--my); }
+  .walls { position: absolute; inset: var(--my-top) var(--mx) var(--my); z-index: 2; }
 
-  .wall {
-    position: absolute; inset: 0;
-    background: var(--paper-letter);
-    border: var(--bw) solid var(--rule-strong);
-    opacity: 0; pointer-events: none;
-    transition: opacity 0.5s ease;
-    overflow-y: auto;
-  }
+  /* ★벽 div는 이제 글씨만 담는다. 모양은 .frame SVG가 그린다.
+     쌓는 순서가 중요하다 — SVG가 아래(z 1), 글씨가 위(z 2). 뒤집히면 글씨가 가려진다. */
+  .wall { position: absolute; inset: 0; opacity: 0; pointer-events: none;
+    transition: opacity 0.18s ease; overflow-y: auto; }
   .wall.facing { opacity: 1; pointer-events: auto; }
 
   /* ─────────────────────────────────────────────
-     구역선(.gl) — 벽의 윗변·아랫변을 화면 끝까지 늘린 선.
-       화면이 위·가운데·아래 세 층으로 갈리고, 벽이 그 층에 끼워진 것으로 읽힌다.
-       ★사각형의 꼭짓점은 이 선을 벗어나지 않는다(운영자 확정). 굴릴 때도 마찬가지다 —
-         높이는 변하지 않고 폭만 변한다. 이 선이 꼭짓점이 타고 다니는 레일이다.
+     구역선 — 벽의 윗변·아랫변을 화면 끝까지 늘린 선.
+       ★꼭짓점은 이 선을 벗어나지 않는다(운영자 확정). 굴려도 높이는 변하지 않고 폭만 변한다.
 
-     사선(.dg) — 옆 벽이 접혀서 눌린 모습이지 장식이 아니다.
-       벽 모서리에서 시작해 화면 가장자리에 닿는다. 위 모서리 선은 아래로,
-       아래 모서리 선은 위로 — 가장자리로 갈수록 위아래가 모인다(운영자 확정).
-       ★사선과 사각형은 개념상 한 몸이다. 굴리면 사선이 누우면서 다음 정면의
-         윗변·아랫변이 되고, 그 바깥에 새 사선이 열린다. 따로 움직이게 만들지 말 것.
-
-     각도를 고정한다(26.57도). 이전 방식은 그라디언트 색 경계로 선을 흉내 냈는데,
-       귀퉁이 사각형의 대각선으로 각도가 강제돼 창 비율에 따라 눕고 섰다. 게다가
-       벽 모서리에 닿지 않고 허공에 떠 있었다.
+     사선 — 옆 벽이 접혀서 눌린 모습이지 장식이 아니다.
+       ★사선과 사각형은 한 몸이다. 굴리면 사선이 누우면서 다음 정면의 윗변·아랫변이 되고
+         그 바깥에 새 사선이 열린다. 그래서 둘을 한 곳(SVG)에서 같이 그린다.
+       기울기는 1:2(26.57도) — 가로로 뻗는 만큼의 절반을 내려온다. 좌표는 스크립트가 잰다.
      ───────────────────────────────────────────── */
-  .frame { position: absolute; inset: 0; pointer-events: none; }
-  .gl, .dg { position: absolute; height: 0; }
-  .gl { border-top: 1px solid var(--rule); }
-  .dg { border-top: var(--bw) solid var(--rule-strong); }
-  .gl { left: 0; right: 0; }   /* 굵기는 위에서 정한다 */
-  .gl-top { top: var(--my-top); }
-  .gl-bot { top: calc(100% - var(--my)); }
-  /* ★테두리 두께 보정. 벽 테두리는 모서리 좌표에서 안쪽으로 그려지므로
-     선의 한가운데는 절반만큼 안쪽에 있다. 안 밀면 굵어질수록 어긋나 보인다.
-     --bw를 바꾸면 이 보정도 따라온다 — 두 값은 한 벌이다. */
-  .dg { transform-origin: 0 0; }
-  .dg-tl, .dg-tr { width: var(--dg-top); top: calc(var(--my-top) + var(--bw) / 2); }
-  .dg-bl, .dg-br { width: var(--dg-bot); }
-  .dg-tl { left: calc(var(--mx) + var(--bw) / 2);        transform: rotate(153.43deg); }
-  .dg-tr { left: calc(100% - var(--mx) - var(--bw) / 2); transform: rotate(26.57deg); }
-  .dg-bl { left: calc(var(--mx) + var(--bw) / 2);        top: calc(100% - var(--my) - var(--bw) / 2); transform: rotate(206.57deg); }
-  .dg-br { left: calc(100% - var(--mx) - var(--bw) / 2); top: calc(100% - var(--my) - var(--bw) / 2); transform: rotate(-26.57deg); }
-  /* 벽 테두리는 사선과 같은 굵기다 — 사선이 곧 접힌 벽이므로 결이 갈리면 따로 논다. */
+  .frame { position: absolute; inset: 0; z-index: 1; pointer-events: none; display: block; }
+  .frame .fc { fill: var(--paper-letter); stroke: var(--rule-strong);
+    stroke-width: var(--bw); stroke-linejoin: miter; }
+  .frame .gl { stroke: var(--rule); stroke-width: 1; }
 
   /* 벽 안 — 위쪽에 구역이 서고 아래로 늘어난다. */
   .inner { padding: 3.4rem 3.4rem 2rem; }
@@ -341,26 +310,102 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     renderTrace(data.trace || []);
 
     // ── 어느 벽을 보고 있나 ──
+    // ★pos는 정수가 아니라 흐르는 값이다. 굴리는 중에는 소수가 된다.
+    //   이 값 하나가 벽 폭·사선 각도·글씨를 모두 움직인다 — 따로 관리하면 어긋난다.
     let face = (data.room && data.room.last_face) || 'front';
     let down = (face === 'bottom');
-    paint();
-    root.style.opacity = '1';
+    let pos = Math.max(0, RING.indexOf(down ? 'front' : face));
+    let _lastWall = RING[pos];
+    let rolling = false;
 
-    // 슬라이드다 — 회전값이 없다. 어느 벽을 보일지만 정한다.
-    function paint() {
-      const showing = down ? 'bottom' : face;
-      walls.querySelectorAll('.wall').forEach((w) => {
-        w.classList.toggle('facing', w.dataset.face === showing);
+    const frame = document.getElementById('frame');
+    const boxEl = document.getElementById('box');
+
+    // 치수는 CSS가 정한다. 여기서는 재기만 한다 — 값의 출처를 둘로 만들지 않는다.
+    function metrics() {
+      const b = boxEl.getBoundingClientRect();
+      const w = walls.getBoundingClientRect();
+      return { W: b.width, H: b.height,
+        L: w.left - b.left, R: w.right - b.left,
+        T: w.top - b.top,  B: w.bottom - b.top,
+        d: (w.left - b.left) / 2 };
+    }
+
+    // ★꼭짓점이 타고 다니는 레일. u=0 화면 왼끝 · 1 벽 왼쪽 · 2 벽 오른쪽 · 3 화면 오른끝.
+    //   u가 1과 2 사이면 y는 구역선 위에 그대로 있다 — 정면일 때 높이가 안 변하는 이유다.
+    //   1 바깥으로 나가면 y가 안쪽으로 모이며 접힌다. 그것이 사선이다.
+    function rx(u, m) {
+      if (u <= 1) return m.L * u;
+      if (u <= 2) return m.L + (m.R - m.L) * (u - 1);
+      return m.R + (m.W - m.R) * (u - 2);
+    }
+    function ry(u, m, bottom) {
+      const base = bottom ? m.B : m.T;
+      const sign = bottom ? -1 : 1;
+      if (u <= 1) return base + sign * m.d * (1 - u);
+      if (u <= 2) return base;
+      return base + sign * m.d * (u - 2);
+    }
+
+    const NS = 'http://www.w3.org/2000/svg';
+    function draw() {
+      const m = metrics();
+      frame.setAttribute('viewBox', '0 0 ' + m.W + ' ' + m.H);
+      while (frame.firstChild) frame.removeChild(frame.firstChild);
+
+      RING.forEach((name, i) => {
+        let r = i - pos;
+        while (r > 2) r -= RING.length;
+        while (r <= -2) r += RING.length;
+        let uL = 1 + r, uR = 2 + r;
+        if (uR <= 0 || uL >= 3) return;                  // 화면 밖 — 안 그린다
+        uL = Math.max(0, Math.min(3, uL));
+        uR = Math.max(0, Math.min(3, uR));
+        if (uR - uL < 0.002) return;                     // 완전히 접힘
+        const g = document.createElementNS(NS, 'polygon');
+        g.setAttribute('class', 'fc');
+        g.setAttribute('points',
+          rx(uL,m)+','+ry(uL,m,false)+' '+rx(uR,m)+','+ry(uR,m,false)+' '+
+          rx(uR,m)+','+ry(uR,m,true)+' '+rx(uL,m)+','+ry(uL,m,true));
+        frame.appendChild(g);
+      });
+
+      [m.T, m.B].forEach((y) => {
+        const l = document.createElementNS(NS, 'line');
+        l.setAttribute('class', 'gl');
+        l.setAttribute('x1', 0); l.setAttribute('y1', y);
+        l.setAttribute('x2', m.W); l.setAttribute('y2', y);
+        frame.appendChild(l);
       });
     }
-    let _lastWall = (face === 'bottom') ? 'front' : face;
+    window.addEventListener('resize', draw);
 
+    function paint() {
+      const showing = down ? 'bottom' : RING[((Math.round(pos) % RING.length) + RING.length) % RING.length];
+      const settled = !rolling;
+      walls.querySelectorAll('.wall').forEach((w) => {
+        w.classList.toggle('facing', settled && w.dataset.face === showing);
+      });
+      draw();
+    }
+
+    // ★굴리는 동안 글씨는 감춘다. 폭이 변하는데 글씨까지 눌리면 읽던 것이 뭉개진다.
     function turn(step) {
+      if (rolling) return;
       if (down) { down = false; face = _lastWall; paint(); save(); return; }
-      const i = RING.indexOf(face);
-      face = RING[(i + step + RING.length) % RING.length];
-      _lastWall = face;
-      paint(); save();
+      const from = pos, to = pos + step, DUR = 520, t0 = performance.now();
+      rolling = true;
+      walls.querySelectorAll('.wall').forEach((w) => w.classList.remove('facing'));
+      (function frameStep(now) {
+        const k = Math.min(1, (now - t0) / DUR);
+        const e = k < 0.5 ? 4*k*k*k : 1 - Math.pow(-2*k + 2, 3) / 2;
+        pos = from + (to - from) * e;
+        draw();
+        if (k < 1) { requestAnimationFrame(frameStep); return; }
+        pos = ((to % RING.length) + RING.length) % RING.length;
+        face = RING[pos]; _lastWall = face; rolling = false;
+        paint(); save();
+      })(performance.now());
     }
     function save() {
       callRoom({ action: 'face', face: down ? 'bottom' : face });
