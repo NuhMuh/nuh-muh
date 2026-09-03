@@ -1,184 +1,478 @@
 ---
+// 내 방 (1차 시공, 2026-09-03)
+//
+// ★주소를 /room으로 유지한다. /welcome의 [둘러본다]와 GothicDoor가 여기를 가리키는데
+//   그 사실이 어느 문서에도 없었다(조사에서 발견). 주소를 바꾸면 keyholder가 된 직후
+//   가장 중요한 순간에 사용자가 빈 곳에 도착한다.
+//
+// ★문구와 모양은 임시다. 앨리 확정안이 오면 교체한다.
+//
+// 구조: 화면 속에 육면체가 있고 지금 보이는 것은 한 면이다.
+//   벽 넷(front 내가 거는 / right 전시하는 / back 문이 둘인 / left 만드는) + 아랫면(짐 가방).
+//   천장은 쓰지 않는다.
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Masthead from '../../components/Masthead.astro';
 ---
 <BaseLayout title="방 — Nuh-Muh">
   <div class="container">
     <Masthead />
-    <div class="room-wrap" id="room-wrap" style="opacity:0;">
+    <div class="room" id="room" style="opacity:0;">
       <a href="/" class="back">← 돌아가기</a>
-      <h1 class="room-title">방 <span>Room</span></h1>
-      <p class="room-greet" id="room-greet">열쇠를 가진 이여.</p>
 
-      <ul class="room-list">
-        <li class="room-item disabled">
-          <span class="ri-label">이름</span>
-          <span class="ri-sub" id="ri-nick">—</span>
-        </li>
-        <li class="room-item account" id="account-item">
-          <span class="ri-label">계정 정보</span>
-          <span class="ri-sub" id="account-sub">비밀번호 변경</span>
-        </li>
-        <li class="room-panel" id="account-panel" style="display:none;">
-          <div class="pw-form">
-            <label class="pw-label">현재 비밀번호</label>
-            <input type="password" id="pw-current" class="pw-input" autocomplete="current-password" />
-            <label class="pw-label">새 비밀번호 <span class="pw-hint">8자 이상</span></label>
-            <input type="password" id="pw-new" class="pw-input" autocomplete="new-password" />
-            <label class="pw-label">새 비밀번호 확인</label>
-            <input type="password" id="pw-new2" class="pw-input" autocomplete="new-password" />
-            <button type="button" id="pw-save" class="pw-save">변경</button>
-            <p class="pw-result" id="pw-result"></p>
-          </div>
-        </li>
-        <li class="room-item disabled">
-          <span class="ri-label">신분</span>
-          <span class="ri-sub">곧 열립니다</span>
-        </li>
-        <li class="room-item disabled">
-          <span class="ri-label">구독</span>
-          <span class="ri-sub">곧 열립니다</span>
-        </li>
-        <li class="room-item disabled">
-          <span class="ri-label">발자취</span>
-          <span class="ri-sub">곧 열립니다</span>
-        </li>
-        <li class="room-item logout" id="logout-item">
-          <span class="ri-label">나가기</span>
-          <span class="ri-sub">열쇠를 내려놓고 떠납니다</span>
-        </li>
-      </ul>
+      <div class="room-head">
+        <h1 class="room-title">방 <span>Room</span></h1>
+        <p class="room-greet" id="greet">열쇠를 가진 이여.</p>
+      </div>
+
+      <!-- 굴리기 — 좌우와 아래. 지금 어느 면인지 표시한다. -->
+      <div class="turn">
+        <button type="button" class="t-btn" id="t-left" aria-label="왼쪽 벽으로">‹</button>
+        <span class="t-now" id="t-now">내가 거는 벽</span>
+        <button type="button" class="t-btn" id="t-right" aria-label="오른쪽 벽으로">›</button>
+        <span class="t-gap"></span>
+        <button type="button" class="t-btn wide" id="t-down">아래로 — 짐 가방</button>
+        <button type="button" class="t-btn wide" id="t-view">한눈에 보기</button>
+      </div>
+
+      <div class="stage" id="stage">
+        <div class="cube" id="cube">
+
+          <!-- ① 내가 거는 벽 -->
+          <section class="face front" data-face="front">
+            <h2 class="f-name">내가 거는 벽</h2>
+            <div class="plate">
+              <label class="p-label">문패</label>
+              <input type="text" id="plate" class="p-input" maxlength="60" placeholder="이 방을 무어라 부를지" />
+              <button type="button" id="plate-save" class="p-save">건다</button>
+              <p class="p-msg" id="plate-msg"></p>
+            </div>
+            <!-- 비어 있어도 자리는 있다(마틴). 2차에 액자·지도·거울이 들어온다. -->
+            <div class="spots" data-drop="front">
+              <div class="spot">액자</div>
+              <div class="spot">액자</div>
+              <div class="spot">액자</div>
+              <div class="spot">지도</div>
+              <div class="spot">거울</div>
+            </div>
+          </section>
+
+          <!-- ② 전시하는 벽 -->
+          <section class="face right" data-face="right">
+            <h2 class="f-name">전시하는 벽</h2>
+            <div class="spots" data-drop="right">
+              <div class="spot wide">전시 선반 — 자격 · 받은 눈길 · 몫</div>
+              <div class="spot wide">책장 — 좋아하는 작품</div>
+            </div>
+          </section>
+
+          <!-- ③ 문이 둘인 벽 -->
+          <section class="face back" data-face="back">
+            <h2 class="f-name">문이 둘인 벽</h2>
+            <div class="doors">
+              <div class="door">나가는 문</div>
+              <div class="door">남의 방으로</div>
+            </div>
+            <p class="f-sub">문 앞에 쌓인 것</p>
+            <div class="pile" id="pile" data-drop="back">
+              <p class="empty">아직 아무것도 없소.</p>
+            </div>
+          </section>
+
+          <!-- ④ 만드는 벽 -->
+          <section class="face left" data-face="left">
+            <h2 class="f-name">만드는 벽</h2>
+            <div class="spots" data-drop="left">
+              <div class="spot wide">책상</div>
+              <div class="spot wide">선반</div>
+              <div class="spot wide">낙서</div>
+            </div>
+          </section>
+
+          <!-- ⑤ 짐 가방 (아랫면) -->
+          <section class="face bottom" data-face="bottom">
+            <h2 class="f-name">짐 가방</h2>
+            <p class="f-sub">여기 둔 것은 남에게 보이지 않소.</p>
+            <div class="spots tall" data-drop="bottom">
+              <p class="empty" id="stash-empty">가방이 비었소.</p>
+            </div>
+          </section>
+
+        </div>
+      </div>
+
+      <!-- 발자취 — 넘기 단위로 모아 보여준다. 따로 쌓지 않는다. -->
+      <section class="trace">
+        <h2 class="tr-title">발자취</h2>
+        <div id="trace-body"><p class="empty">아직 남긴 것이 없소.</p></div>
+      </section>
+
+      <!-- ★계정 관리는 육면체 밖에 둔다.
+           벽 넷의 배분(내가 거는·전시하는·문이 둘인·만드는)에 계정이 없다.
+           문패나 액자처럼 '거는 것'이 아니라 열쇠를 바꾸고 방을 나가는 실무다.
+           환영 편지에서 신고 창구를 본문이 아니라 하단 난외주에 둔 것과 같은 판단. -->
+      <section class="keep">
+        <button type="button" class="k-head" id="k-head">열쇠 바꾸기</button>
+        <div class="k-body" id="k-body" style="display:none;">
+          <label class="k-label">지금 봉인</label>
+          <input type="password" id="pw-cur" class="k-input" autocomplete="current-password" />
+          <label class="k-label">새 봉인 <span class="k-hint">8자 이상</span></label>
+          <input type="password" id="pw-new" class="k-input" autocomplete="new-password" />
+          <label class="k-label">새 봉인 다시</label>
+          <input type="password" id="pw-new2" class="k-input" autocomplete="new-password" />
+          <button type="button" id="pw-save" class="k-save">바꾼다</button>
+          <p class="k-msg" id="pw-msg"></p>
+        </div>
+        <button type="button" class="k-out" id="logout">열쇠를 내려놓고 떠난다</button>
+      </section>
     </div>
   </div>
 </BaseLayout>
 
 <style>
-  .room-wrap { max-width: 720px; margin: 0 auto; padding: 2rem 0 6rem; transition: opacity 0.6s ease; }
-  .back { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.15em; color: var(--ink-soft); text-decoration: none; display: inline-block; margin-bottom: 3rem; }
+  .room { max-width: 860px; margin: 0 auto; padding: 2rem 0 6rem; transition: opacity 0.6s ease; }
+  .back { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.15em; color: var(--ink-soft); text-decoration: none; display: inline-block; margin-bottom: 2.4rem; }
   .back:hover { color: var(--mark); }
-  .room-title { font-family: 'Noto Serif KR', serif; font-weight: 500; font-size: 2.6rem; margin-bottom: 0.6rem; }
-  .room-title span { font-family: 'Cormorant Unicase', serif; color: var(--mark); font-size: 1.6rem; margin-left: 0.5rem; }
-  .room-greet { font-family: 'EB Garamond', serif; font-style: italic; font-size: 1.1rem; color: var(--ink-soft); margin-bottom: 2.8rem; }
-  .room-list { list-style: none; }
-  .room-item { display: flex; align-items: baseline; gap: 1.2rem; padding: 1.4rem 0; border-bottom: 1px solid var(--rule); }
-  .ri-label { font-family: 'Noto Serif KR', serif; font-size: 1.3rem; color: var(--ink); min-width: 8rem; }
-  .ri-sub { font-family: 'EB Garamond', serif; font-size: 0.95rem; color: var(--ink-faint); }
-  .room-item.disabled { opacity: 0.5; }
-  .room-item.logout { cursor: pointer; transition: padding-left 0.3s; }
-  .room-item.logout:hover { padding-left: 0.6rem; }
-  .room-item.logout:hover .ri-label { color: var(--mark); }
-  .room-item.account { cursor: pointer; transition: padding-left 0.3s; }
-  .room-item.account:hover { padding-left: 0.6rem; }
-  .room-item.account:hover .ri-label { color: var(--mark); }
-  .room-panel { list-style: none; padding: 0 0 1.4rem; border-bottom: 1px solid var(--rule); }
-  .pw-form { display: flex; flex-direction: column; max-width: 380px; padding: 0.5rem 0 0; }
-  .pw-label { font-family: 'Noto Serif KR', serif; font-size: 0.9rem; color: var(--ink-soft); margin: 0.9rem 0 0.35rem; }
-  .pw-hint { font-family: 'EB Garamond', serif; font-style: italic; font-size: 0.78rem; color: var(--ink-faint); margin-left: 0.4rem; }
-  .pw-input { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--ink); background: rgba(255,255,255,0.5); border: 1px solid var(--rule); border-radius: 4px; padding: 0.6rem 0.7rem; }
-  .pw-input:focus { outline: none; border-color: var(--mark); }
-  .pw-save { font-family: 'Noto Serif KR', serif; font-size: 0.98rem; color: #fff; background: var(--mark); border: none; border-radius: 4px; padding: 0.7rem; margin-top: 1.3rem; cursor: pointer; transition: opacity 0.2s; }
-  .pw-save:hover { opacity: 0.85; }
-  .pw-save:disabled { opacity: 0.4; cursor: default; }
-  .pw-result { font-family: 'EB Garamond', serif; font-size: 0.9rem; margin-top: 0.8rem; min-height: 1.3rem; }
+
+  .room-head { margin-bottom: 2rem; }
+  .room-title { font-family: 'Noto Serif KR', serif; font-weight: 500; font-size: 2.4rem; margin-bottom: 0.5rem; }
+  .room-title span { font-family: 'Cormorant Unicase', serif; color: var(--mark); font-size: 1.5rem; margin-left: 0.5rem; }
+  .room-greet { font-family: 'EB Garamond', serif; font-style: italic; font-size: 1.05rem; color: var(--ink-soft); }
+
+  /* 굴리기 줄 */
+  .turn { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
+  .t-btn { font-family: 'Noto Serif KR', serif; font-size: 0.85rem; color: var(--ink); background: transparent; border: 1px solid var(--rule); padding: 0.35rem 0.7rem; cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+  .t-btn:hover { border-color: var(--mark); color: var(--mark); }
+  .t-btn.wide { font-size: 0.78rem; }
+  .t-now { font-family: 'Noto Serif KR', serif; font-size: 0.95rem; color: var(--ink); min-width: 8rem; text-align: center; }
+  .t-gap { flex: 1; }
+
+  /* 무대 — 원근이 여기 걸린다 */
+  .stage { perspective: 1500px; perspective-origin: 50% 45%; height: 480px; display: flex; align-items: center; justify-content: center; margin-bottom: 3rem; }
+
+  .cube { position: relative; width: 380px; height: 380px; transform-style: preserve-3d; transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1); }
+
+  /* 면 — 종이 카드. 인장선 대신 가는 단선(임시, 앨리 대기) */
+  .face { position: absolute; inset: 0; background: var(--paper-letter); border: 1px solid var(--edge); padding: 1.4rem 1.3rem; overflow-y: auto; backface-visibility: hidden; }
+  .f-name { font-family: 'Noto Serif KR', serif; font-size: 1.1rem; font-weight: 600; color: var(--ink); margin-bottom: 0.3rem; }
+  .f-name::after { content: ''; display: block; width: 2.4rem; border-top: 1.5px solid var(--mark); margin-top: 0.5rem; margin-bottom: 0.9rem; }
+  .f-sub { font-family: 'Noto Serif KR', serif; font-size: 0.82rem; color: var(--ink-faint); margin: 0.9rem 0 0.5rem; }
+
+  /* 자리 — 비어 있어도 자리는 있다 */
+  .spots { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .spots.tall { min-height: 9rem; align-content: flex-start; }
+  .spot { font-family: 'Noto Serif KR', serif; font-size: 0.78rem; color: var(--ink-faint); border: 1px solid var(--rule); padding: 0.9rem 0.7rem; min-width: 4.4rem; text-align: center; background: rgba(255,255,255,0.25); }
+  .spot.wide { width: 100%; }
+  .empty { font-family: 'EB Garamond', serif; font-style: italic; font-size: 0.85rem; color: var(--ink-faint); }
+
+  .doors { display: flex; gap: 0.5rem; }
+  .door { flex: 1; font-family: 'Noto Serif KR', serif; font-size: 0.85rem; color: var(--ink-soft); border: 1px solid var(--rule); padding: 1.4rem 0.6rem; text-align: center; background: rgba(255,255,255,0.25); }
+  .pile { min-height: 4rem; }
+  .pile .letter { border: 1px solid var(--rule); padding: 0.7rem 0.8rem; margin-bottom: 0.4rem; background: rgba(255,255,255,0.35); }
+  .pile .l-from { font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; letter-spacing: 0.1em; color: var(--ink-faint); }
+  .pile .l-body { font-family: 'Noto Serif KR', serif; font-size: 0.85rem; color: var(--ink); line-height: 1.7; margin-top: 0.3rem; }
+
+  /* 문패 */
+  .plate { margin-bottom: 1.2rem; }
+  .p-label { display: block; font-family: 'Noto Serif KR', serif; font-size: 0.82rem; color: var(--ink-soft); margin-bottom: 0.35rem; }
+  .p-input { width: 100%; font-family: 'Noto Serif KR', serif; font-size: 0.9rem; color: var(--ink); background: rgba(255,255,255,0.5); border: 1px solid var(--rule); padding: 0.5rem 0.6rem; }
+  .p-input:focus { outline: none; border-color: var(--mark); }
+  .p-save { font-family: 'Noto Serif KR', serif; font-size: 0.82rem; color: var(--paper-letter); background: var(--ink); border: none; padding: 0.45rem 1.1rem; margin-top: 0.5rem; cursor: pointer; }
+  .p-save:disabled { opacity: 0.4; cursor: default; }
+  .p-msg, .k-msg { font-family: 'EB Garamond', serif; font-size: 0.85rem; color: var(--ink-soft); margin-top: 0.5rem; min-height: 1.2rem; }
+
+  /* 면 배치 — 벽 넷 + 아랫면 */
+  .front  { transform: translateZ(190px); }
+  .right  { transform: rotateY( 90deg) translateZ(190px); }
+  .back   { transform: rotateY(180deg) translateZ(190px); }
+  .left   { transform: rotateY(-90deg) translateZ(190px); }
+  .bottom { transform: rotateX(-90deg) translateZ(190px); }
+
+  /* 모서리 보이기 — 평소. 좌우 끝자락이 비스듬히 보인다 */
+  .cube.corner { transform: rotateX(-10deg) rotateY(calc(var(--ry, 0deg) + 16deg)); }
+  /* 짐 가방을 볼 때는 아래로 굴린다 */
+  .cube.down   { transform: rotateX(80deg) rotateY(var(--ry, 0deg)); }
+
+  /* ★한눈에 보기 — 2D 십자 배치.
+     3D 중첩 회전으로 펼치면 클릭·드래그가 전혀 닿지 않는다(시험 페이지로 실측).
+     corner에서는 되는데 펼친 상태에서만 안 됐다 — 브라우저가 히트 판정을 못 한 것으로 보인다.
+     그래서 3D를 걷어내고 평면에 배치한다.
+     ※대가: 다른 상태와 이어지지 않아 전환 연출이 없다(운영자 판정 — 정리하는 순간에 쓰는 것이므로
+       조작이 안 되면 펼칠 이유가 없고, 축소해 보여주면 다른 느낌으로 보일 테니 연출이 필요 없다). */
+  .cube.open { transform: none; transform-style: flat; width: 100%; height: 100%; }
+  .cube.open .face { position: absolute; width: 30%; height: 31%; transform: none !important; backface-visibility: visible; font-size: 0.9em; padding: 0.7rem 0.6rem; overflow-y: auto; }
+  .cube.open .f-name { font-size: 0.82rem; }
+  .cube.open .f-name::after { margin-top: 0.35rem; margin-bottom: 0.5rem; }
+  .cube.open .spot { font-size: 0.66rem; padding: 0.5rem 0.4rem; min-width: 3rem; }
+  .cube.open .back   { left: 35%; top: 0; }
+  .cube.open .left   { left: 2%;  top: 34.5%; }
+  .cube.open .bottom { left: 35%; top: 34.5%; }
+  .cube.open .right  { left: 68%; top: 34.5%; }
+  .cube.open .front  { left: 35%; top: 69%; }
+  .cube.open .plate, .cube.open .doors, .cube.open .f-sub { display: none; }
+
+  /* 발자취 */
+  .trace { border-top: 1px solid var(--rule); padding-top: 1.6rem; margin-bottom: 2.6rem; }
+  .tr-title { font-family: 'Noto Serif KR', serif; font-size: 1.05rem; font-weight: 600; margin-bottom: 1rem; }
+  .tr-week { margin-bottom: 1rem; }
+  .tr-head { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.1em; color: var(--mark); margin-bottom: 0.4rem; }
+  .tr-item { font-family: 'Noto Serif KR', serif; font-size: 0.88rem; color: var(--ink); padding: 0.3rem 0; }
+  .tr-item a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--rule); }
+  .tr-item a:hover { border-color: var(--mark); color: var(--mark); }
+
+  /* 계정 — 육면체 밖, 난외주 자리 */
+  .keep { border-top: 1px solid var(--rule); padding-top: 1.4rem; }
+  .k-head, .k-out { font-family: 'Noto Serif KR', serif; font-size: 0.9rem; color: var(--ink-soft); background: none; border: none; padding: 0.5rem 0; cursor: pointer; display: block; text-align: left; transition: color 0.2s, padding-left 0.3s; }
+  .k-head:hover, .k-out:hover { color: var(--mark); padding-left: 0.5rem; }
+  .k-body { max-width: 380px; padding: 0.6rem 0 1rem; }
+  .k-label { display: block; font-family: 'Noto Serif KR', serif; font-size: 0.85rem; color: var(--ink-soft); margin: 0.8rem 0 0.3rem; }
+  .k-hint { font-family: 'EB Garamond', serif; font-style: italic; font-size: 0.75rem; color: var(--ink-faint); margin-left: 0.3rem; }
+  .k-input { width: 100%; font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; color: var(--ink); background: rgba(255,255,255,0.5); border: 1px solid var(--rule); padding: 0.5rem 0.6rem; }
+  .k-input:focus { outline: none; border-color: var(--mark); }
+  .k-save { font-family: 'Noto Serif KR', serif; font-size: 0.9rem; color: var(--paper-letter); background: var(--ink); border: none; padding: 0.55rem 1.2rem; margin-top: 1rem; cursor: pointer; }
+  .k-save:disabled { opacity: 0.4; cursor: default; }
+
+  @media (max-width: 720px) {
+    .stage { height: 400px; }
+    .cube { width: 300px; height: 300px; }
+    .front  { transform: translateZ(150px); }
+    .right  { transform: rotateY( 90deg) translateZ(150px); }
+    .back   { transform: rotateY(180deg) translateZ(150px); }
+    .left   { transform: rotateY(-90deg) translateZ(150px); }
+    .bottom { transform: rotateX(-90deg) translateZ(150px); }
+  }
 </style>
 
 <script>
   import { supabase } from '../../lib/supabaseClient.js';
 
+  const FACES = ['front', 'right', 'back', 'left'];   // 좌우로 도는 것은 벽 넷
+  const FACE_NAME = {
+    front: '내가 거는 벽', right: '전시하는 벽',
+    back: '문이 둘인 벽', left: '만드는 벽', bottom: '짐 가방',
+  };
+  const FACE_RY = { front: 0, right: -90, back: -180, left: 90 };
+
   async function initRoom() {
-    const wrap = document.getElementById('room-wrap');
-    // 로그인 검사 — 세션 없으면 메인으로 돌려보냄
+    const root = document.getElementById('room');
+    const cube = document.getElementById('cube');
+    if (!root || !cube) return;
+
+    // 로그인 검사 — 세션 없으면 첫 화면으로.
+    // ※문구 없이 즉시 리다이렉트하는 것은 기존 동작 그대로다.
+    //   안내 문구 신설은 앨리 항목으로 조사에 보고돼 있다.
     let session = null;
     try {
       const { data } = await supabase.auth.getSession();
       session = data ? data.session : null;
     } catch (e) {}
+    if (!session) { window.location.href = '/'; return; }
 
-    if (!session) {
-      window.location.href = '/';
+    // 토큰은 쓰기 직전에 얻는다 — 페이지 로드 시점 사본을 가둬두지 않는다(§7-39).
+    async function freshToken() {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data && data.session) return data.session.access_token;
+      } catch (e) {}
+      try {
+        const { data: r } = await supabase.auth.refreshSession();
+        if (r && r.session) return r.session.access_token;
+      } catch (e) {}
+      return null;
+    }
+
+    async function callRoom(payload) {
+      const token = await freshToken();
+      const res = await fetch('/.netlify/functions/room', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.assign({ token: token }, payload)),
+      });
+      return res.json();
+    }
+
+    // ── 방을 읽는다 ──
+    const data = await callRoom({ action: 'get' });
+    if (data.status !== 'ok') {
+      // ※공통 오류 세트 — 서버가 이유를 말해주지 않는 실패는 통합 문구로 덮는다.
+      //   기존 화면이 서버 detail을 그대로 뿌리던 것을 여기서 걷어냈다.
+      const g = document.getElementById('greet');
+      if (g) g.textContent = '안쪽이 조용하구려.';
+      root.style.opacity = '1';
       return;
     }
 
-    // 로그인됨 → 닉네임 표시
-    const email = session.user ? session.user.email : '';
-    let nick = '';
-    try {
-      const { data: member } = await supabase
-        .from('members').select('nickname').eq('email', email).maybeSingle();
-      nick = member && member.nickname ? member.nickname : '';
-    } catch (e) {}
+    // 인사 — 닉네임이 있으면 이름을 부른다.
+    // ★문장 단위 교체다. 이름 자리만 비우면 ", 오셨습니까"가 되어 문장이 깨진다(§5-20 선례).
+    const greet = document.getElementById('greet');
+    if (greet && data.nickname) greet.textContent = data.nickname + '님, 오셨습니까.';
 
-    const nickEl = document.getElementById('ri-nick');
-    const greetEl = document.getElementById('room-greet');
-    if (nick) {
-      if (nickEl) nickEl.textContent = nick;
-      if (greetEl) greetEl.textContent = nick + '님, 오셨습니까.';
+    // 문패
+    const plate = document.getElementById('plate');
+    if (plate && data.room && data.room.nameplate) plate.value = data.room.nameplate;
+
+    // 문 앞에 쌓인 것 — 1차에는 첫 편지뿐이다.
+    renderPile(data.door || []);
+    renderTrace(data.trace || []);
+
+    // 마지막으로 보던 면부터 보인다.
+    let face = (data.room && data.room.last_face) || 'front';
+    let mode = (face === 'bottom') ? 'down' : 'corner';
+    paint();
+
+    root.style.opacity = '1';
+
+    // ── 굴리기 ──
+    function paint() {
+      const ry = (face === 'bottom') ? 0 : (FACE_RY[face] || 0);
+      cube.style.setProperty('--ry', ry + 'deg');
+      cube.className = 'cube ' + mode;
+      const now = document.getElementById('t-now');
+      if (now) now.textContent = (mode === 'open') ? '한눈에' : FACE_NAME[face];
+    }
+    function turn(step) {
+      if (face === 'bottom') face = 'front';
+      const i = FACES.indexOf(face);
+      face = FACES[(i + step + FACES.length) % FACES.length];
+      mode = 'corner';
+      paint();
+      callRoom({ action: 'face', face: face });
+    }
+    document.getElementById('t-left').addEventListener('click', () => turn(-1));
+    document.getElementById('t-right').addEventListener('click', () => turn(1));
+    document.getElementById('t-down').addEventListener('click', () => {
+      if (face === 'bottom') { face = 'front'; mode = 'corner'; }
+      else { face = 'bottom'; mode = 'down'; }
+      paint();
+      callRoom({ action: 'face', face: face });
+    });
+    document.getElementById('t-view').addEventListener('click', () => {
+      mode = (mode === 'open') ? ((face === 'bottom') ? 'down' : 'corner') : 'open';
+      paint();
+    });
+
+    // ── 문패 저장 ──
+    const pSave = document.getElementById('plate-save');
+    if (pSave) {
+      pSave.addEventListener('click', async () => {
+        const msg = document.getElementById('plate-msg');
+        pSave.disabled = true;
+        const label = pSave.textContent;
+        pSave.textContent = '거는 중';
+        const r = await callRoom({ action: 'nameplate', text: plate ? plate.value : '' });
+        if (msg) msg.textContent = (r.status === 'ok') ? '걸어두었소.' : '무언가 어긋났소.';
+        pSave.textContent = label;
+        pSave.disabled = false;
+      });
     }
 
-    if (wrap) wrap.style.opacity = '1';
-
-    // 계정 정보 — 비밀번호 변경
-    const accountItem = document.getElementById('account-item');
-    const accountPanel = document.getElementById('account-panel');
-    if (accountItem && accountPanel) {
-      accountItem.addEventListener('click', function () {
-        accountPanel.style.display = (accountPanel.style.display === 'none') ? 'block' : 'none';
+    // ── 열쇠 바꾸기 (기존 비밀번호 변경을 옮긴 것) ──
+    const kHead = document.getElementById('k-head');
+    const kBody = document.getElementById('k-body');
+    if (kHead && kBody) {
+      kHead.addEventListener('click', () => {
+        kBody.style.display = (kBody.style.display === 'none') ? 'block' : 'none';
       });
     }
     const pwSave = document.getElementById('pw-save');
     if (pwSave) {
-      pwSave.addEventListener('click', async function () {
-        const cur = document.getElementById('pw-current');
+      pwSave.addEventListener('click', async () => {
+        const cur = document.getElementById('pw-cur');
         const nw = document.getElementById('pw-new');
         const nw2 = document.getElementById('pw-new2');
-        const result = document.getElementById('pw-result');
-        const setMsg = (msg, ok) => {
-          if (result) { result.style.color = ok ? 'var(--mark)' : '#a33'; result.textContent = msg; }
-        };
-        const currentPassword = cur ? cur.value : '';
-        const newPassword = nw ? nw.value : '';
-        const newPassword2 = nw2 ? nw2.value : '';
+        const msg = document.getElementById('pw-msg');
+        // ★오류에 붉은색을 쓰지 않는다. 기존 화면이 #a33을 썼는데 그것은 네 번째 붉은 계열이며
+        //   §3-17(오류를 붉게 칠하지 않는다)과 §2-1-1(붉은색은 #8b3a2e 하나뿐)에 양쪽 다 어긋났다.
+        //   옮기면서 걷어냈다 — 색으로 가르지 않고 문구로만 알린다.
+        const say = (m) => { if (msg) msg.textContent = m; };
 
-        if (!currentPassword || !newPassword) { setMsg('현재/새 비밀번호를 입력하세요.', false); return; }
-        if (newPassword.length < 8) { setMsg('새 비밀번호는 8자 이상이어야 합니다.', false); return; }
-        if (newPassword !== newPassword2) { setMsg('새 비밀번호 확인이 일치하지 않습니다.', false); return; }
+        const c = cur ? cur.value : '', n = nw ? nw.value : '', n2 = nw2 ? nw2.value : '';
+        if (!c || !n) { say('지금 봉인과 새 봉인을 적으시오.'); return; }
+        if (n.length < 8) { say('새 봉인은 8자 이상이어야 하지.'); return; }
+        if (n !== n2) { say('새 봉인이 서로 다르구려.'); return; }
 
         pwSave.disabled = true;
-        setMsg('변경하는 중...', true);
+        const label = pwSave.textContent;
+        pwSave.textContent = '바꾸는 중';
         try {
           const res = await fetch('/.netlify/functions/change-password', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              token: session.access_token,
-              currentPassword: currentPassword,
-              newPassword: newPassword,
+              token: await freshToken(), currentPassword: c, newPassword: n,
             }),
           });
-          const data = await res.json();
-          if (data.status === 'ok') {
-            setMsg('비밀번호가 변경되었습니다.', true);
+          const d = await res.json();
+          if (d.status === 'ok') {
+            say('봉인을 바꾸었소.');
             if (cur) cur.value = ''; if (nw) nw.value = ''; if (nw2) nw2.value = '';
           } else {
-            setMsg(data.detail || '변경에 실패했습니다.', false);
+            // ★서버 detail을 그대로 뿌리지 않는다. 기존 화면은 그대로 출력했고,
+            //   그러면 영문·기술 메시지가 사용자 화면에 노출된다(join은 통합 문구로 덮는데 반대였다).
+            //   ※확정 문구는 앨리 대기. 지금은 임시로 통합 문구를 쓴다.
+            say('봉인을 바꾸지 못했소. 지금 봉인이 맞는지 살펴보시오.');
           }
         } catch (e) {
-          setMsg('변경 실패: ' + e.message, false);
+          say('거미가 길을 잃었군.');   // 공통 오류 세트 — 연결이 끊긴 경우
         }
+        pwSave.textContent = label;
         pwSave.disabled = false;
       });
     }
 
-    // 나가기(로그아웃)
-    const logoutItem = document.getElementById('logout-item');
-    if (logoutItem) {
-      logoutItem.addEventListener('click', async function () {
-        const sub = logoutItem.querySelector('.ri-sub');
-        if (sub) sub.textContent = '문을 닫는 중...';
+    // ── 나가기 ──
+    const out = document.getElementById('logout');
+    if (out) {
+      out.addEventListener('click', async () => {
+        out.textContent = '문을 닫는 중';
         try { await supabase.auth.signOut(); } catch (e) {}
         window.location.href = '/';
       });
     }
+  }
+
+  function renderPile(door) {
+    const pile = document.getElementById('pile');
+    if (!pile) return;
+    const letters = door.filter(d => d.kind === 'letter');
+    if (!letters.length) return;   // 비면 기본 문구 유지
+    pile.innerHTML = '';
+    letters.forEach((d) => {
+      const box = document.createElement('div');
+      box.className = 'letter';
+      const from = document.createElement('div');
+      from.className = 'l-from';
+      from.textContent = '주인장이 놓고 감';
+      const body = document.createElement('div');
+      body.className = 'l-body';
+      body.textContent = d.body || '';
+      box.appendChild(from); box.appendChild(body);
+      pile.appendChild(box);
+    });
+  }
+
+  // 발자취 — 넘기 단위로 모아 보여준다. 따로 쌓지 않는다(마틴 판정).
+  function renderTrace(trace) {
+    const el = document.getElementById('trace-body');
+    if (!el) return;
+    if (!trace.length) return;   // 비면 기본 문구 유지
+    el.innerHTML = '';
+    trace.forEach((w) => {
+      const box = document.createElement('div');
+      box.className = 'tr-week';
+      const head = document.createElement('div');
+      head.className = 'tr-head';
+      // ★독자 표기는 반드시 "N번째 넘기". week·주차는 화면에 노출하지 않는다.
+      head.textContent = (w.week == null) ? '넘기에 얹지 않은 것' : (w.week + '번째 넘기');
+      box.appendChild(head);
+      w.entries.forEach((e) => {
+        const row = document.createElement('div');
+        row.className = 'tr-item';
+        const a = document.createElement('a');
+        a.href = '/' + e.slug;
+        a.textContent = e.title;
+        row.appendChild(a);
+        box.appendChild(row);
+      });
+      el.appendChild(box);
+    });
   }
 
   if (document.readyState !== 'loading') initRoom();
