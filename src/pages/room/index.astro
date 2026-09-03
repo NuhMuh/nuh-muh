@@ -67,6 +67,15 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
       </div>
     </div>
+      <!-- 구역선과 사선 — 벽 위에 얹힌다. 굴리기의 기준 도형이다. -->
+      <div class="frame" aria-hidden="true">
+        <span class="gl gl-top"></span>
+        <span class="gl gl-bot"></span>
+        <span class="dg dg-tl"></span>
+        <span class="dg dg-tr"></span>
+        <span class="dg dg-bl"></span>
+        <span class="dg dg-br"></span>
+      </div>
 
     <!-- 돌리는 자리 — 화면 양 끝과 맨 아래. 화면 전체가 도는 느낌이 나게. -->
     <button type="button" class="turn edge-l" id="t-left" aria-label="왼쪽 벽으로"><span>‹</span></button>
@@ -136,10 +145,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
        오므라들며 뻗는다 — 옆벽이 뒤로 물러나 있다는 암시일 뿐 실제 벽이 아니다.
        위 모서리 선은 아래로, 아래 모서리 선은 위로 향한다(운영자 확인).
      ───────────────────────────────────────────── */
-  .box { position: relative; height: 100vh; overflow: hidden; }
+  .box { position: relative; height: 100vh; overflow: hidden;
+    /* 방의 치수는 한 벌이다. 여백과 사선 길이가 물려 있다.
+       dg-len = mx / cos(26.57도) — 가로로 뻗는 길이가 mx와 같아야
+       사선 끝이 화면 가장자리에 딱 닿는다. 하나만 바꾸면 어긋난다. */
+    --mx: 4vw; --my: 5vh; --dg-len: 4.472vw; }
 
   /* 정면 벽 — 화면을 거의 채운다. 위아래 여백에 대각선이 놓인다. */
-  .walls { position: absolute; inset: 5vh 4vw; }
+  .walls { position: absolute; inset: var(--my) var(--mx); }
 
   .wall {
     position: absolute; inset: 0;
@@ -151,24 +164,32 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   }
   .wall.facing { opacity: 1; pointer-events: auto; }
 
-  /* 모서리의 대각선 — 옆벽이 뒤로 물러나 있다는 암시.
-     ::before가 위 둘, ::after가 아래 둘을 그린다. */
-  .box::before, .box::after {
-    content: ''; position: absolute; left: 0; right: 0; height: 5vh;
-    pointer-events: none;
-  }
-  .box::before {
-    top: 0;
-    background:
-      linear-gradient(to bottom right, transparent calc(50% - 0.5px), var(--edge) calc(50% - 0.5px), var(--edge) calc(50% + 0.5px), transparent calc(50% + 0.5px)) left / 4vw 100% no-repeat,
-      linear-gradient(to bottom left,  transparent calc(50% - 0.5px), var(--edge) calc(50% - 0.5px), var(--edge) calc(50% + 0.5px), transparent calc(50% + 0.5px)) right / 4vw 100% no-repeat;
-  }
-  .box::after {
-    bottom: 0;
-    background:
-      linear-gradient(to top right, transparent calc(50% - 0.5px), var(--edge) calc(50% - 0.5px), var(--edge) calc(50% + 0.5px), transparent calc(50% + 0.5px)) left / 4vw 100% no-repeat,
-      linear-gradient(to top left,  transparent calc(50% - 0.5px), var(--edge) calc(50% - 0.5px), var(--edge) calc(50% + 0.5px), transparent calc(50% + 0.5px)) right / 4vw 100% no-repeat;
-  }
+  /* ─────────────────────────────────────────────
+     구역선(.gl) — 벽의 윗변·아랫변을 화면 끝까지 늘린 선.
+       화면이 위·가운데·아래 세 층으로 갈리고, 벽이 그 층에 끼워진 것으로 읽힌다.
+       ★사각형의 꼭짓점은 이 선을 벗어나지 않는다(운영자 확정). 굴릴 때도 마찬가지다 —
+         높이는 변하지 않고 폭만 변한다. 이 선이 꼭짓점이 타고 다니는 레일이다.
+
+     사선(.dg) — 옆 벽이 접혀서 눌린 모습이지 장식이 아니다.
+       벽 모서리에서 시작해 화면 가장자리에 닿는다. 위 모서리 선은 아래로,
+       아래 모서리 선은 위로 — 가장자리로 갈수록 위아래가 모인다(운영자 확정).
+       ★사선과 사각형은 개념상 한 몸이다. 굴리면 사선이 누우면서 다음 정면의
+         윗변·아랫변이 되고, 그 바깥에 새 사선이 열린다. 따로 움직이게 만들지 말 것.
+
+     각도를 고정한다(26.57도). 이전 방식은 그라디언트 색 경계로 선을 흉내 냈는데,
+       귀퉁이 사각형의 대각선으로 각도가 강제돼 창 비율에 따라 눕고 섰다. 게다가
+       벽 모서리에 닿지 않고 허공에 떠 있었다.
+     ───────────────────────────────────────────── */
+  .frame { position: absolute; inset: 0; pointer-events: none; }
+  .gl, .dg { position: absolute; height: 0; border-top: 1px solid var(--edge); }
+  .gl { left: 0; right: 0; }
+  .gl-top { top: var(--my); }
+  .gl-bot { top: calc(100% - var(--my)); }
+  .dg { width: var(--dg-len); transform-origin: 0 0; }
+  .dg-tl { left: var(--mx);              top: var(--my);              transform: rotate(153.43deg); }
+  .dg-tr { left: calc(100% - var(--mx)); top: var(--my);              transform: rotate(26.57deg); }
+  .dg-bl { left: var(--mx);              top: calc(100% - var(--my)); transform: rotate(206.57deg); }
+  .dg-br { left: calc(100% - var(--mx)); top: calc(100% - var(--my)); transform: rotate(-26.57deg); }
 
   /* 벽 안 — 위쪽에 구역이 서고 아래로 늘어난다. */
   .inner { padding: 3.4rem 3.4rem 2rem; }
@@ -237,8 +258,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   /* 좁은 화면 — 벽이 화면 폭을 넘지 않게. 원근은 더 짧게 잡아 깊이를 유지한다. */
   @media (max-width: 720px) {
-    .walls { inset: 4vh 6vw; }
-    .box::before, .box::after { height: 4vh; }
+    .box { --mx: 6vw; --my: 4vh; --dg-len: 6.708vw; }
     .inner { padding: 2rem 1.4rem; }
     .greet { display: none; }
   }
