@@ -19,7 +19,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
     <!-- 방에 들어오면 워드마크가 물러나고 엠블럼만 남는다. 자리를 벽에 내준다. -->
     <a href="/" class="seal" aria-label="너머로 돌아가기">
-      <img src="/images/emblem.png" alt="" width="30" />
+      <img src="/images/emblem.png" alt="" width="60" />
     </a>
 
     <p class="greet" id="greet">열쇠를 가진 이여.</p>
@@ -104,11 +104,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .room { position: relative; width: 100%; transition: opacity 0.7s ease; }
 
   /* 낙관 — 워드마크가 물러난 자리. 방에서는 이것만 남는다. */
-  .seal { position: fixed; top: 1.4rem; left: 1.6rem; z-index: 20; display: block; opacity: 0.55; transition: opacity 0.3s; }
-  .seal:hover { opacity: 1; }
+  /* 낙관은 방의 한가운데 위에 걸린다. 흐리지 않다 — 이 방의 표식이다. */
+  .seal { position: fixed; top: 1.6rem; left: 50%; margin-left: -30px; z-index: 20; display: block; }
   .seal img { display: block; }
 
-  .greet { position: fixed; top: 1.5rem; left: 4.4rem; z-index: 20;
+  .greet { position: fixed; top: 1.6rem; left: 1.8rem; z-index: 20;
     font-family: 'EB Garamond', serif; font-style: italic; font-size: 0.95rem; color: var(--ink-soft); }
 
   /* ─────────────────────────────────────────────
@@ -120,7 +120,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .box {
     position: relative;
     height: 100vh;
-    perspective: 46vw;          /* ★조정 지점 — 작을수록 깊고 가파르다 */
+    /* ★폭·깊이·원근은 한 벌이다. 벽 폭을 키우면 깊이도 같이 커져야 정육면체가 유지되고,
+       원근은 그보다 커야 왜곡이 심해지지 않는다. 지금은 정면이 화면을 거의 차지하고
+       옆벽은 가장자리로 밀려 힌트만 남는 값이다. */
+    perspective: 82vw;
     perspective-origin: 50% 46%;
     overflow: hidden;
   }
@@ -130,18 +133,18 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     transform-style: preserve-3d;
     /* 벽의 절반 깊이만큼 앞으로 당겨야 정면 벽이 화면에 밀착한다.
        이 값과 아래 translateZ가 짝이다 — 함께 움직여야 한다. */
-    transform: translateZ(23vw) rotateY(var(--ry, 0deg));
+    transform: translateZ(41vw) rotateY(var(--ry, 0deg));
     transition: transform 1s cubic-bezier(0.22, 1, 0.28, 1);
   }
   .walls.dropping {
-    transform: translateZ(23vw) rotateX(78deg) rotateY(var(--ry, 0deg));
+    transform: translateZ(41vw) rotateX(78deg) rotateY(var(--ry, 0deg));
   }
 
   /* 벽 — 정면 하나가 화면을 꽉 채운다.
      방이 정육면체이므로 벽의 폭과 깊이가 같아야 모서리가 맞는다. */
   .wall {
     position: absolute; top: 0; left: 50%;
-    width: 46vw; height: 100vh; margin-left: -23vw;
+    width: 82vw; height: 100vh; margin-left: -41vw;
     background: var(--paper-letter);
     /* 벽 사이 모서리 — 이 세로선이 입체를 만든다. 종이가 접힌 자리다. */
     border-left: 1px solid var(--edge);
@@ -149,17 +152,17 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     box-shadow: inset 0 0 90px rgba(28, 35, 64, 0.07);
     overflow: hidden;
   }
-  .front  { transform: translateZ(-23vw); }
-  .right  { transform: rotateY( 90deg) translateZ(-23vw); }
-  .back   { transform: rotateY(180deg) translateZ(-23vw); }
-  .left   { transform: rotateY(-90deg) translateZ(-23vw); }
-  .bottom { transform: rotateX(-90deg) translateZ(-23vw); }
+  .front  { transform: translateZ(-41vw); }
+  .right  { transform: rotateY( 90deg) translateZ(-41vw); }
+  .back   { transform: rotateY(180deg) translateZ(-41vw); }
+  .left   { transform: rotateY(-90deg) translateZ(-41vw); }
+  .bottom { transform: rotateX(-90deg) translateZ(-41vw); }
 
   /* ★옆벽은 너무 가팔라 글씨를 알아볼 수 없다. 그래서 정면일 때만 내용을 보인다.
      운영자 판정: "구현이 어렵다면 그냥 빈 벽으로 처리하다가 돌렸을 때 보이도록 해도 된다."
      옆에 보이는 것은 종이 질감과 모서리선뿐 — 저쪽에 벽이 있다는 힌트다. */
   .inner {
-    padding: 22vh 3.2vw 0;
+    padding: 20vh 9vw 0;
     opacity: 0; transition: opacity 0.45s ease 0.35s;
     pointer-events: none;
   }
