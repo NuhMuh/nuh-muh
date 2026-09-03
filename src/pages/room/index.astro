@@ -111,7 +111,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   /* ★방은 화면 전체다. BaseLayout의 container를 쓰지 않는다 —
      폭이 제한되면 "안에 서 있다"가 성립하지 않는다. */
   .room { position: relative; width: 100%; transition: opacity 0.7s ease;
-    --mx: 4vw; --my: 5vh; --dg-len: 4.472vw; }
+    /* 위아래 여백이 다르므로 사선 길이도 둘이다.
+       len = 가로로 뻗을 거리 / cos(각도). 위 사선은 위 여백만큼, 아래는 아래 여백만큼.
+       각도는 위아래 같다(26.57도) — 각도가 갈리면 방이 뒤틀린다. */
+    --mx: 4vw; --my-top: 10vh; --my: 5vh;
+    --dg-top: 4.472vw; --dg-bot: 4.472vw; }
 
   /* 낙관 — 워드마크가 물러난 자리. 방에서는 이것만 남는다. */
   /* 낙관은 방의 한가운데 위에 걸린다. 흐리지 않다 — 이 방의 표식이다. */
@@ -157,12 +161,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     /* 치수는 .room에 있다 — 낙관·인사도 같은 값을 쓰므로 출처를 하나로 둔다. */ }
 
   /* 정면 벽 — 화면을 거의 채운다. 위아래 여백에 대각선이 놓인다. */
-  .walls { position: absolute; inset: var(--my) var(--mx); }
+  .walls { position: absolute; inset: var(--my-top) var(--mx) var(--my); }
 
   .wall {
     position: absolute; inset: 0;
     background: var(--paper-letter);
-    border: 1px solid var(--edge);
+    border: 3px solid var(--rule-strong);
     opacity: 0; pointer-events: none;
     transition: opacity 0.5s ease;
     overflow-y: auto;
@@ -187,16 +191,19 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
      ───────────────────────────────────────────── */
   .frame { position: absolute; inset: 0; pointer-events: none; }
   .gl, .dg { position: absolute; height: 0; }
-  .gl { border-top: 2px solid var(--rule-strong); }
-  .dg { border-top: 1.5px solid var(--rule-strong); }
+  .gl { border-top: 1px solid var(--rule); }
+  .dg { border-top: 3px solid var(--rule-strong); }
   .gl { left: 0; right: 0; }   /* 굵기는 위에서 정한다 */
-  .gl-top { top: var(--my); }
+  .gl-top { top: var(--my-top); }
   .gl-bot { top: calc(100% - var(--my)); }
-  .dg { width: var(--dg-len); transform-origin: 0 0; }
-  .dg-tl { left: var(--mx);              top: var(--my);              transform: rotate(153.43deg); }
-  .dg-tr { left: calc(100% - var(--mx)); top: var(--my);              transform: rotate(26.57deg); }
+  .dg { transform-origin: 0 0; }
+  .dg-tl, .dg-tr { width: var(--dg-top); top: var(--my-top); }
+  .dg-bl, .dg-br { width: var(--dg-bot); }
+  .dg-tl { left: var(--mx);              transform: rotate(153.43deg); }
+  .dg-tr { left: calc(100% - var(--mx)); transform: rotate(26.57deg); }
   .dg-bl { left: var(--mx);              top: calc(100% - var(--my)); transform: rotate(206.57deg); }
   .dg-br { left: calc(100% - var(--mx)); top: calc(100% - var(--my)); transform: rotate(-26.57deg); }
+  /* 벽 테두리는 사선과 같은 굵기다 — 사선이 곧 접힌 벽이므로 결이 갈리면 따로 논다. */
 
   /* 벽 안 — 위쪽에 구역이 서고 아래로 늘어난다. */
   .inner { padding: 3.4rem 3.4rem 2rem; }
@@ -265,7 +272,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   /* 좁은 화면 — 벽이 화면 폭을 넘지 않게. 원근은 더 짧게 잡아 깊이를 유지한다. */
   @media (max-width: 720px) {
-    .room { --mx: 6vw; --my: 4vh; --dg-len: 6.708vw; }
+    .room { --mx: 6vw; --my-top: 8vh; --my: 4vh;
+      --dg-top: 6.708vw; --dg-bot: 6.708vw; }
     .inner { padding: 2rem 1.4rem; }
     .greet { display: none; }
   }
