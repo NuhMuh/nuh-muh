@@ -128,66 +128,50 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
        아래 모서리는 올라간다. 원근이 알아서 그린다 — 우리가 선을 긋지 않는다.
      ───────────────────────────────────────────── */
   /* ─────────────────────────────────────────────
-     ★치수를 px로 고정한다. vw로 하면 창 크기에 따라 벽·깊이·원근이 함께 변해
-       셋의 관계가 어긋난다(실제로 어긋나 벽이 화면 밖으로 확대됐다).
-     ★관계: 원근 > 깊이여야 한다. 원근이 눈에서 화면까지, 깊이가 화면에서 벽까지다.
-       .walls를 앞으로 당기지 않는다 — 당기면 벽이 눈앞으로 와 확대된다.
-       정면 벽은 화면 평면에 두고(translateZ 0), 나머지를 뒤·옆으로 보낸다.
-     ★사선은 원근이 그린다. 정면 벽 높이를 화면보다 낮게 잡아야
-       위아래 여백에 옆벽의 넓어지는 부분이 드러난다.
+     ★3D가 아니다. 슬라이드다.
+       앞선 시도들은 벽 다섯을 실제 공간에 배치하고 카메라를 돌렸다. 계산이 계속 어긋났고
+       옆벽이 화면을 침범했으며 짐 가방이 뒤집혔다. 그 접근을 폐기했다.
+     ★지금 구조: 화면에 벽 하나. 넘기면 내용만 바뀐다. 1→2→3→4→다시 1로 순환한다.
+     ★입체는 '감'이다. 정면 벽 네 모서리에서 짧은 대각선이 화면 가장자리 쪽으로
+       오므라들며 뻗는다 — 옆벽이 뒤로 물러나 있다는 암시일 뿐 실제 벽이 아니다.
+       위 모서리 선은 아래로, 아래 모서리 선은 위로 향한다(운영자 확인).
      ───────────────────────────────────────────── */
-  .box {
-    position: relative;
-    height: 100vh;
-    perspective: 900px;         /* ★작을수록 사선이 가팔라진다 */
-    perspective-origin: 50% 50%;
-    overflow: hidden;
-  }
+  .box { position: relative; height: 100vh; overflow: hidden; }
 
-  .walls {
-    position: absolute; inset: 0;
-    transform-style: preserve-3d;
-    transform: rotateY(var(--ry, 0deg));
-    transition: transform 1s cubic-bezier(0.22, 1, 0.28, 1);
-  }
-  .walls.dropping { transform: rotateX(-72deg) rotateY(var(--ry, 0deg)); }
+  /* 정면 벽 — 화면을 거의 채운다. 위아래 여백에 대각선이 놓인다. */
+  .walls { position: absolute; inset: 5vh 4vw; }
 
-  /* 벽 — 정면은 화면 평면에 그대로 선다(translateZ 0).
-     폭은 화면에 맞추되 최대 1100px, 깊이는 그 절반이다. */
   .wall {
-    position: absolute; top: 11vh; left: 50%;
-    width: min(88vw, 1100px); height: 78vh;
-    margin-left: calc(min(88vw, 1100px) / -2);
+    position: absolute; inset: 0;
     background: var(--paper-letter);
-    border-left: 1px solid var(--edge);
-    border-right: 1px solid var(--edge);
-    overflow: hidden;
+    border: 1px solid var(--edge);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.5s ease;
+    overflow-y: auto;
   }
+  .wall.facing { opacity: 1; pointer-events: auto; }
 
-  /* ★옆벽은 어둡다. 가장자리로 갈수록 짙어져 깊이가 생긴다. */
-  .wall::before {
-    content: ''; position: absolute; inset: 0; pointer-events: none;
-    background: linear-gradient(to right, rgba(28,35,64,0.22), rgba(28,35,64,0.02) 35%, rgba(28,35,64,0.02) 65%, rgba(28,35,64,0.22));
-    transition: opacity 0.7s ease;
-  }
-  .wall.facing::before { opacity: 0; }
-
-  /* 깊이 = 폭의 절반. 옆벽은 그 자리에서 90도 꺾여 뒤로 물러난다. */
-  .front  { transform: translateZ(0); }
-  .right  { transform: rotateY( 90deg) translateZ(calc(min(88vw, 1100px) / 2)); }
-  .back   { transform: rotateY(180deg) translateZ(calc(min(88vw, 1100px) * -1)); }
-  .left   { transform: rotateY(-90deg) translateZ(calc(min(88vw, 1100px) / 2)); }
-  .bottom { transform: rotateX( 90deg) translateZ(calc(min(88vw, 1100px) / 2)); }
-
-  /* ★옆벽은 너무 가팔라 글씨를 알아볼 수 없다. 그래서 정면일 때만 내용을 보인다.
-     운영자 판정: "구현이 어렵다면 그냥 빈 벽으로 처리하다가 돌렸을 때 보이도록 해도 된다."
-     옆에 보이는 것은 종이 질감과 모서리선뿐 — 저쪽에 벽이 있다는 힌트다. */
-  .inner {
-    padding: 20vh 9vw 0;
-    opacity: 0; transition: opacity 0.45s ease 0.35s;
+  /* 모서리의 대각선 — 옆벽이 뒤로 물러나 있다는 암시.
+     ::before가 위 둘, ::after가 아래 둘을 그린다. */
+  .box::before, .box::after {
+    content: ''; position: absolute; left: 0; right: 0; height: 5vh;
     pointer-events: none;
   }
-  .wall.facing .inner { opacity: 1; pointer-events: auto; }
+  .box::before {
+    top: 0;
+    background:
+      linear-gradient(to bottom right, transparent calc(50% - 0.5px), var(--edge) calc(50% - 0.5px), var(--edge) calc(50% + 0.5px), transparent calc(50% + 0.5px)) left / 4vw 100% no-repeat,
+      linear-gradient(to bottom left,  transparent calc(50% - 0.5px), var(--edge) calc(50% - 0.5px), var(--edge) calc(50% + 0.5px), transparent calc(50% + 0.5px)) right / 4vw 100% no-repeat;
+  }
+  .box::after {
+    bottom: 0;
+    background:
+      linear-gradient(to top right, transparent calc(50% - 0.5px), var(--edge) calc(50% - 0.5px), var(--edge) calc(50% + 0.5px), transparent calc(50% + 0.5px)) left / 4vw 100% no-repeat,
+      linear-gradient(to top left,  transparent calc(50% - 0.5px), var(--edge) calc(50% - 0.5px), var(--edge) calc(50% + 0.5px), transparent calc(50% + 0.5px)) right / 4vw 100% no-repeat;
+  }
+
+  /* 벽 안 — 위쪽에 구역이 서고 아래로 늘어난다. */
+  .inner { padding: 3.4rem 3.4rem 2rem; }
 
   .w-name { font-family: 'Noto Serif KR', serif; font-size: 1.5rem; font-weight: 500; color: var(--ink); letter-spacing: 0.02em; }
   .w-name::after { content: ''; display: block; width: 2.6rem; border-top: 1.5px solid var(--mark); margin: 0.9rem 0 2rem; }
@@ -253,13 +237,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   /* 좁은 화면 — 벽이 화면 폭을 넘지 않게. 원근은 더 짧게 잡아 깊이를 유지한다. */
   @media (max-width: 720px) {
-    .box { perspective: 620px; }
-    .wall { width: 94vw; margin-left: -47vw; height: 74vh; top: 13vh; }
-    .right  { transform: rotateY( 90deg) translateZ(47vw); }
-    .back   { transform: rotateY(180deg) translateZ(-94vw); }
-    .left   { transform: rotateY(-90deg) translateZ(47vw); }
-    .bottom { transform: rotateX( 90deg) translateZ(47vw); }
-    .inner { padding: 3.5rem 7vw 0; }
+    .walls { inset: 4vh 6vw; }
+    .box::before, .box::after { height: 4vh; }
+    .inner { padding: 2rem 1.4rem; }
     .greet { display: none; }
   }
 </style>
@@ -268,7 +248,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   import { supabase } from '../../lib/supabaseClient.js';
 
   const RING = ['front', 'right', 'back', 'left'];   // 좌우로 도는 것은 벽 넷
-  const RY = { front: 0, right: -90, back: -180, left: 90 };
 
   async function initRoom() {
     const root = document.getElementById('room');
@@ -323,21 +302,17 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     // ── 어느 벽을 보고 있나 ──
     let face = (data.room && data.room.last_face) || 'front';
     let down = (face === 'bottom');
-    paint(true);
+    paint();
     root.style.opacity = '1';
 
-    function paint(instant) {
-      const ry = down ? (RY[lastWall()] || 0) : (RY[face] || 0);
-      walls.style.setProperty('--ry', ry + 'deg');
-      walls.classList.toggle('dropping', down);
-      // 정면인 벽에만 내용을 보인다 — 옆벽은 너무 가팔라 글씨를 알아볼 수 없다.
+    // 슬라이드다 — 회전값이 없다. 어느 벽을 보일지만 정한다.
+    function paint() {
       const showing = down ? 'bottom' : face;
       walls.querySelectorAll('.wall').forEach((w) => {
         w.classList.toggle('facing', w.dataset.face === showing);
       });
     }
     let _lastWall = (face === 'bottom') ? 'front' : face;
-    function lastWall() { return _lastWall; }
 
     function turn(step) {
       if (down) { down = false; face = _lastWall; paint(); save(); return; }
