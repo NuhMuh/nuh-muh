@@ -375,62 +375,68 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     //      50%에서 사각형 옆선과 포개져 사라진다.
     //   ★진짜 3D가 아니다. 위 규칙이 전부이며 원근 계산을 들이지 말 것.
     // ─────────────────────────────────────────────
-    function vWidth(y, m) {
-      // 무대 안 높이 비율 → 반폭. 구역선에서 벽 반폭, 한가운데서 화면 반폭.
-      const half = (m.R - m.L) / 2;
-      const k = Math.sin(Math.PI * (y - m.T) / (m.B - m.T));
-      return half + (m.W / 2 - half) * Math.max(0, k);
+    // ★여섯 점만 옮기면 그림이 나온다(운영자와 좌표표로 확정, 2026-09-04).
+    //   왼쪽만 정하고 오른쪽은 거울로 얻는다. 새로 생기거나 사라지는 점은 없다.
+    //     A 흰 사각형 왼쪽 위  — 위 구역선을 따라 오른쪽으로 걸었다 돌아온다
+    //     B 두 사각형이 만나는 왼쪽 — 아래 구역선에서 화면 왼끝 한가운데로, 거기서 위 구역선으로
+    //     C 짐 가방 왼쪽 아래 — 아래 구역선을 따라 A와 같은 만큼 걸었다 돌아온다
+    //     P A의 사선 끝 · Q B의 사선 끝 · R C의 사선 끝 — 모두 화면 왼끝 위를 오르내린다
+    //   ★폭을 높이로 계산하려 들지 말 것. 윗변이 좁아지는 것은 A가 옆으로 걷기 때문이다.
+    //     그 착각으로 두 번 헛돌았다.
+    function vPoints(m) {
+      const t = vpos;
+      const u = 1 - Math.abs(2 * t - 1);       // 0 → 1(50%) → 0
+      const W = m.W, T = m.T, B = m.B, H = B - T;
+      const wallL = m.L;                        // 벽 왼쪽 변
+      const dx = wallL * 0.125;                 // A가 걷는 거리 — 윗변이 60에서 45로 줄어드는 값
+      const midY = (T + B) / 2, restP = T + wallL / 2, restQ = B - wallL / 2;
+
+      const ax = wallL + dx * u;
+      let bx, by;
+      if (t <= 0.5) { const k = t / 0.5; bx = wallL * (1 - k); by = B - (B - midY) * k; }
+      else          { const k = (t - 0.5) / 0.5; bx = wallL * k; by = midY - (midY - T) * k; }
+
+      const py = restP + (midY - restP) * Math.min(1, t / 0.5);
+      const qy = (t <= 0.5) ? restQ + (midY - restQ) * (t / 0.5)
+                            : midY + (restP - midY) * ((t - 0.5) / 0.5);
+      const ry = midY + (restQ - midY) * Math.max(0, (t - 0.5) / 0.5);
+
+      return { W, T, B, ax, bx, by, cx: ax,
+               p: py, q: qy, r: ry,
+               hasP: t < 0.999, hasR: t > 0.001 };
     }
     function vDraw(m, ic) {
-      const cx = m.W / 2;
-      const mid = (m.T + m.B) / 2;
-      const ys = m.B - (m.B - m.T) * vpos;   // 두 면이 만나는 가로 모서리
-      const ws = vWidth(ys, m);
-      const wRest = (m.R - m.L) / 2;
-
-      // 위 면(지금 벽)과 아래 면(짐 가방). 윗변·아랫변은 구역선에 걸려 있다.
-      const faces = [
-        [cx - wRest, m.T, cx + wRest, m.T, cx + ws, ys, cx - ws, ys],
-        [cx - ws, ys, cx + ws, ys, cx + wRest, m.B, cx - wRest, m.B],
-      ];
-      faces.forEach((f) => {
-        if (Math.abs(f[5] - f[1]) < 0.5) return;   // 완전히 접힘
+      const v = vPoints(m);
+      const mir = (x) => v.W - x;
+      const poly = (pts, stroke) => {
         const g = document.createElementNS(NS, 'polygon');
         g.setAttribute('fill', ic.paper);
-        g.setAttribute('stroke', ic.line);
+        g.setAttribute('stroke', stroke);
         g.setAttribute('stroke-width', ic.bw);
         g.setAttribute('stroke-linejoin', 'miter');
-        g.setAttribute('points', f[0]+','+f[1]+' '+f[2]+','+f[3]+' '+f[4]+','+f[5]+' '+f[6]+','+f[7]);
+        g.setAttribute('points', pts.map((q) => q[0] + ',' + q[1]).join(' '));
         frame.appendChild(g);
-      });
-
-      // 사선 — 꼭짓점에서 화면 좌우 경계까지. 바깥 끝은 한가운데를 향해 미끄러진다.
-      const slide = 1 - Math.abs(2 * vpos - 1);           // 0 → 1(50%) → 0
-      const restUp = m.T + wRest / 2, restDn = m.B - wRest / 2;
-      const outUp = restUp + (mid - restUp) * slide;
-      const outDn = restDn + (mid - restDn) * slide;
-      // ★사각형이 접혀 사라지면 그 사각형에 붙은 사선도 사라진다.
-      //   사선은 꼭짓점에 붙어 있는 것이므로 붙을 꼭짓점이 없으면 그릴 것도 없다.
-      //   안 걸러내면 사라진 벽의 사선이 화면 끝에 X자로 남는다(실제로 겪음).
-      const upAlive = (ys - m.T) > 0.5;    // 위 사각형(지금 벽)이 남아 있나
-      const dnAlive = (m.B - ys) > 0.5;    // 아래 사각형(짐 가방)이 남아 있나
-      const legs = [];
-      if (upAlive) legs.push([cx - wRest, m.T, 0, outUp], [cx + wRest, m.T, m.W, outUp]);
-      if (dnAlive) legs.push([cx - wRest, m.B, 0, outDn], [cx + wRest, m.B, m.W, outDn]);
-      legs.push(
-        // 가운데 모서리에 붙는 것 — 기울기를 지킨 채 길이만 줄어든다
-        [cx - ws, ys, 0,   ys + (ys > mid ? -1 : 1) * (cx - ws) / 2],
-        [cx + ws, ys, m.W, ys + (ys > mid ? -1 : 1) * (cx - ws) / 2]
-      );
-      legs.forEach((L) => {
-        if (Math.hypot(L[2] - L[0], L[3] - L[1]) < 1) return;
+      };
+      const seg = (x1, y1, x2, y2) => {
+        if (Math.hypot(x2 - x1, y2 - y1) < 1.2) return;   // 겹쳐서 안 보이는 것은 안 그린다
         const l = document.createElementNS(NS, 'line');
         l.setAttribute('stroke', ic.line);
         l.setAttribute('stroke-width', ic.bw);
-        l.setAttribute('x1', L[0]); l.setAttribute('y1', L[1]);
-        l.setAttribute('x2', L[2]); l.setAttribute('y2', L[3]);
+        l.setAttribute('x1', x1); l.setAttribute('y1', y1);
+        l.setAttribute('x2', x2); l.setAttribute('y2', y2);
         frame.appendChild(l);
-      });
+      };
+
+      // 흰 사각형(지금 벽) = A·B / 짐 가방 = B·C
+      if (Math.abs(v.by - v.T) > 0.5)
+        poly([[v.ax, v.T], [mir(v.ax), v.T], [mir(v.bx), v.by], [v.bx, v.by]], ic.line);
+      if (Math.abs(v.B - v.by) > 0.5)
+        poly([[v.bx, v.by], [mir(v.bx), v.by], [mir(v.cx), v.B], [v.cx, v.B]], ic.line);
+
+      // 사선 셋 — 각각 A·B·C에 붙는다
+      if (v.hasP) { seg(v.ax, v.T, 0, v.p);  seg(mir(v.ax), v.T, v.W, v.p); }
+      seg(v.bx, v.by, 0, v.q);  seg(mir(v.bx), v.by, v.W, v.q);
+      if (v.hasR) { seg(v.cx, v.B, 0, v.r);  seg(mir(v.cx), v.B, v.W, v.r); }
     }
 
     function draw() {
