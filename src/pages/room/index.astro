@@ -401,9 +401,13 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                             : midY + (restP - midY) * ((t - 0.5) / 0.5);
       const ry = midY + (restQ - midY) * Math.max(0, (t - 0.5) / 0.5);
 
+      // ★P는 전반부에만, R은 후반부에만 있다(운영자 좌표표).
+      //   P는 50%에서 한가운데에 닿고 그 순간 사라지며, 그 자리에서 R이 나타난다.
+      //   조건을 t>0 / t<1로 잡으면 R이 굴리는 내내 한가운데에 박힌 채 그려져
+      //   설명되지 않는 선분이 하나 더 생긴다(실제로 겪음).
       return { W, T, B, ax, bx, by, cx: ax,
                p: py, q: qy, r: ry,
-               hasP: t < 0.999, hasR: t > 0.001 };
+               hasP: t <= 0.5, hasR: t >= 0.5 };
     }
     function vDraw(m, ic) {
       const v = vPoints(m);
@@ -536,6 +540,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       walls.querySelectorAll('.wall').forEach((w) => w.classList.remove('facing'));
       const from = vpos, to = toDown ? 1 : 0, DUR = 560, t0 = performance.now();
       (function step(now) {
+        // ★가속은 여기 한 곳에만 건다. vPoints 안에서 또 굽히면 점들이 서로 다른
+        //   진도로 움직여, 50%에 세 점이 한자리에 모이지 않고 짧은 선이 남는다(실제로 겪음).
         const k = Math.min(1, (now - t0) / DUR);
         const e = k < 0.5 ? 4*k*k*k : 1 - Math.pow(-2*k + 2, 3) / 2;
         vpos = from + (to - from) * e;
