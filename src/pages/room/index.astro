@@ -409,13 +409,19 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       const restUp = m.T + wRest / 2, restDn = m.B - wRest / 2;
       const outUp = restUp + (mid - restUp) * slide;
       const outDn = restDn + (mid - restDn) * slide;
-      const legs = [
-        [cx - wRest, m.T, 0,   outUp], [cx + wRest, m.T, m.W, outUp],
-        [cx - wRest, m.B, 0,   outDn], [cx + wRest, m.B, m.W, outDn],
+      // ★사각형이 접혀 사라지면 그 사각형에 붙은 사선도 사라진다.
+      //   사선은 꼭짓점에 붙어 있는 것이므로 붙을 꼭짓점이 없으면 그릴 것도 없다.
+      //   안 걸러내면 사라진 벽의 사선이 화면 끝에 X자로 남는다(실제로 겪음).
+      const upAlive = (ys - m.T) > 0.5;    // 위 사각형(지금 벽)이 남아 있나
+      const dnAlive = (m.B - ys) > 0.5;    // 아래 사각형(짐 가방)이 남아 있나
+      const legs = [];
+      if (upAlive) legs.push([cx - wRest, m.T, 0, outUp], [cx + wRest, m.T, m.W, outUp]);
+      if (dnAlive) legs.push([cx - wRest, m.B, 0, outDn], [cx + wRest, m.B, m.W, outDn]);
+      legs.push(
         // 가운데 모서리에 붙는 것 — 기울기를 지킨 채 길이만 줄어든다
         [cx - ws, ys, 0,   ys + (ys > mid ? -1 : 1) * (cx - ws) / 2],
-        [cx + ws, ys, m.W, ys + (ys > mid ? -1 : 1) * (cx - ws) / 2],
-      ];
+        [cx + ws, ys, m.W, ys + (ys > mid ? -1 : 1) * (cx - ws) / 2]
+      );
       legs.forEach((L) => {
         if (Math.hypot(L[2] - L[0], L[3] - L[1]) < 1) return;
         const l = document.createElementNS(NS, 'line');
