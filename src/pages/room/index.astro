@@ -318,6 +318,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     let pos = Math.max(0, RING.indexOf(down ? 'front' : face));
     let _lastWall = RING[pos];
     let rolling = false;
+    // ★세로로 굴린 정도. 0이면 벽, 1이면 짐 가방. 굴리는 중에는 소수다.
+    //   좌우(pos)와 따로 둔다 — 두 축을 한 값에 담으면 서로를 밀어낸다.
+    let vpos = down ? 1 : 0;
 
     const frame = document.getElementById('frame');
     const boxEl = document.getElementById('box');
@@ -362,12 +365,87 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         bw:    parseFloat(c.getPropertyValue('--bw')) || 3,
       };
     }
+    // ─────────────────────────────────────────────
+    // ★세로 굴리기 — 좌우와 규칙이 다르다(운영자와 그림으로 확정, 2026-09-03).
+    //   무대는 구역선 둘과 화면 좌우 끝이 만드는 직사각형이다. 위아래 여백은 무대 밖.
+    //   ① 가로 모서리의 폭은 그 모서리가 무대 세로 어디에 있느냐로 정해진다.
+    //      정지 자리(구역선)에선 벽 폭, 한가운데선 화면 좌우 끝까지. 50%에서만 경계를 찍는다.
+    //   ② 사각형의 윗변은 위 구역선에, 아랫변은 아래 구역선에 걸린 채다. 무대 밖으로 안 나간다.
+    //   ③ 사선은 한쪽 끝이 사각형 꼭짓점, 다른 끝이 화면 좌우 경계. 절대 떨어지지 않는다.
+    //      50%에서 사각형 옆선과 포개져 사라진다.
+    //   ★진짜 3D가 아니다. 위 규칙이 전부이며 원근 계산을 들이지 말 것.
+    // ─────────────────────────────────────────────
+    function vWidth(y, m) {
+      // 무대 안 높이 비율 → 반폭. 구역선에서 벽 반폭, 한가운데서 화면 반폭.
+      const half = (m.R - m.L) / 2;
+      const k = Math.sin(Math.PI * (y - m.T) / (m.B - m.T));
+      return half + (m.W / 2 - half) * Math.max(0, k);
+    }
+    function vDraw(m, ic) {
+      const cx = m.W / 2;
+      const mid = (m.T + m.B) / 2;
+      const ys = m.B - (m.B - m.T) * vpos;   // 두 면이 만나는 가로 모서리
+      const ws = vWidth(ys, m);
+      const wRest = (m.R - m.L) / 2;
+
+      // 위 면(지금 벽)과 아래 면(짐 가방). 윗변·아랫변은 구역선에 걸려 있다.
+      const faces = [
+        [cx - wRest, m.T, cx + wRest, m.T, cx + ws, ys, cx - ws, ys],
+        [cx - ws, ys, cx + ws, ys, cx + wRest, m.B, cx - wRest, m.B],
+      ];
+      faces.forEach((f) => {
+        if (Math.abs(f[5] - f[1]) < 0.5) return;   // 완전히 접힘
+        const g = document.createElementNS(NS, 'polygon');
+        g.setAttribute('fill', ic.paper);
+        g.setAttribute('stroke', ic.line);
+        g.setAttribute('stroke-width', ic.bw);
+        g.setAttribute('stroke-linejoin', 'miter');
+        g.setAttribute('points', f[0]+','+f[1]+' '+f[2]+','+f[3]+' '+f[4]+','+f[5]+' '+f[6]+','+f[7]);
+        frame.appendChild(g);
+      });
+
+      // 사선 — 꼭짓점에서 화면 좌우 경계까지. 바깥 끝은 한가운데를 향해 미끄러진다.
+      const slide = 1 - Math.abs(2 * vpos - 1);           // 0 → 1(50%) → 0
+      const restUp = m.T + wRest / 2, restDn = m.B - wRest / 2;
+      const outUp = restUp + (mid - restUp) * slide;
+      const outDn = restDn + (mid - restDn) * slide;
+      const legs = [
+        [cx - wRest, m.T, 0,   outUp], [cx + wRest, m.T, m.W, outUp],
+        [cx - wRest, m.B, 0,   outDn], [cx + wRest, m.B, m.W, outDn],
+        // 가운데 모서리에 붙는 것 — 기울기를 지킨 채 길이만 줄어든다
+        [cx - ws, ys, 0,   ys + (ys > mid ? -1 : 1) * (cx - ws) / 2],
+        [cx + ws, ys, m.W, ys + (ys > mid ? -1 : 1) * (cx - ws) / 2],
+      ];
+      legs.forEach((L) => {
+        if (Math.hypot(L[2] - L[0], L[3] - L[1]) < 1) return;
+        const l = document.createElementNS(NS, 'line');
+        l.setAttribute('stroke', ic.line);
+        l.setAttribute('stroke-width', ic.bw);
+        l.setAttribute('x1', L[0]); l.setAttribute('y1', L[1]);
+        l.setAttribute('x2', L[2]); l.setAttribute('y2', L[3]);
+        frame.appendChild(l);
+      });
+    }
+
     function draw() {
       const m = metrics();
       if (!(m.W > 0) || !(m.R > m.L)) return;   // 아직 자리를 못 잡았다 — 다음 번에 그린다
       const ic = ink();
       frame.setAttribute('viewBox', '0 0 ' + m.W + ' ' + m.H);
       while (frame.firstChild) frame.removeChild(frame.firstChild);
+
+      if (vpos > 0.001) {
+        vDraw(m, ic);
+        [m.T, m.B].forEach((y) => {
+          const l = document.createElementNS(NS, 'line');
+          l.setAttribute('stroke', ic.thin); l.setAttribute('stroke-width', 1);
+          l.setAttribute('x1', 0); l.setAttribute('y1', y);
+          l.setAttribute('x2', m.W); l.setAttribute('y2', y);
+          frame.appendChild(l);
+        });
+        showRoom();
+        return;
+      }
 
       RING.forEach((name, i) => {
         let r = i - pos;
@@ -418,7 +496,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     // ★굴리는 동안 글씨는 감춘다. 폭이 변하는데 글씨까지 눌리면 읽던 것이 뭉개진다.
     function turn(step) {
       if (rolling) return;
-      if (down) { down = false; face = _lastWall; paint(); save(); return; }
+      if (down) { rollV(false); return; }   // 짐 가방에서는 좌우로 갈 곳이 없다 — 방으로 되돌린다
       const from = pos, to = pos + step, DUR = 520, t0 = performance.now();
       rolling = true;
       walls.querySelectorAll('.wall').forEach((w) => w.classList.remove('facing'));
@@ -439,19 +517,32 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
     document.getElementById('t-left').addEventListener('click', () => turn(-1));
     document.getElementById('t-right').addEventListener('click', () => turn(1));
-    document.getElementById('t-down').addEventListener('click', () => {
-      down = !down;
-      if (!down) face = _lastWall;
-      paint(); save();
-    });
+    // 세로 굴리기 — 좌우와 같은 방식으로 값 하나를 흘려보낸다.
+    function rollV(toDown) {
+      if (rolling) return;
+      rolling = true;
+      walls.querySelectorAll('.wall').forEach((w) => w.classList.remove('facing'));
+      const from = vpos, to = toDown ? 1 : 0, DUR = 560, t0 = performance.now();
+      (function step(now) {
+        const k = Math.min(1, (now - t0) / DUR);
+        const e = k < 0.5 ? 4*k*k*k : 1 - Math.pow(-2*k + 2, 3) / 2;
+        vpos = from + (to - from) * e;
+        draw();
+        if (k < 1) { requestAnimationFrame(step); return; }
+        vpos = to; down = toDown;
+        if (!down) face = _lastWall;
+        rolling = false; paint(); save();
+      })(performance.now());
+    }
+    document.getElementById('t-down').addEventListener('click', () => rollV(!down));
 
     // 키보드로도 돌린다 — 화살표가 화면 가장자리에 있으니 손이 멀다.
     document.addEventListener('keydown', (e) => {
       if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
       if (e.key === 'ArrowLeft') turn(-1);
       else if (e.key === 'ArrowRight') turn(1);
-      else if (e.key === 'ArrowDown' && !down) { down = true; paint(); save(); }
-      else if (e.key === 'ArrowUp' && down) { down = false; face = _lastWall; paint(); save(); }
+      else if (e.key === 'ArrowDown' && !down) rollV(true);
+      else if (e.key === 'ArrowUp' && down) rollV(false);
     });
 
     // ── 문패 ──
