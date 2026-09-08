@@ -24,7 +24,7 @@ if (!article) {
 const dateStr = article.created_at ? new Date(article.created_at).toLocaleDateString('ko-KR') : '';
 ---
 <BaseLayout title={article.title + " — Nuh-Muh"}>
-  <article class="art-wrap">
+  <article class="art-wrap" id="art-wrap" data-article-id={article.id}>
     <a href="/" class="art-back">← 너머</a>
 
     <p class="art-category">{article.category}</p>
@@ -56,7 +56,8 @@ const dateStr = article.created_at ? new Date(article.created_at).toLocaleDateSt
 </BaseLayout>
 
 <style>
-  .art-wrap { max-width: 680px; margin: 0 auto; padding: 3rem 1.2rem 6rem; }
+  .art-wrap { max-width: 680px; margin: 0 auto; padding: 3rem 1.2rem 6rem;
+    position: relative; }   /* 담기 쪽지의 좌표 기준 */
   .art-back { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.15em; color: var(--ink-soft); text-decoration: none; display: inline-block; margin-bottom: 3rem; }
   .art-back:hover { color: var(--mark); }
   .art-category { font-family: 'Cormorant Unicase', serif; font-size: 0.9rem; letter-spacing: 0.1em; color: var(--mark); margin-bottom: 0.8rem; }
@@ -122,4 +123,163 @@ const dateStr = article.created_at ? new Date(article.created_at).toLocaleDateSt
   .art-tags { margin-top: 3.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }
   .art-tag { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--ink-soft); border: 1px solid var(--rule); border-radius: 999px; padding: 0.25rem 0.7rem; }
   .art-work { font-family: 'EB Garamond', serif; font-style: italic; font-size: 0.95rem; color: var(--ink-faint); margin-top: 2rem; }
+
+  /* ─────────────────────────────────────────────
+     담기 쪽지 — 문장을 고르면 그 자리 위에 뜬다.
+     ★이 CSS는 있어도 무해하지만, 쪽지 자체는 열쇠가 확인된 뒤에만 만들어진다.
+       비로그인 독자의 HTML에는 담기 관련 요소가 하나도 없다(마틴 확인 4번).
+     ───────────────────────────────────────────── */
+  .keep-note {
+    position: absolute; z-index: 40; transform: translate(-50%, -100%);
+    background: var(--paper-letter); border: 1px solid var(--rule-strong);
+    padding: 0.34rem 0.8rem; cursor: pointer;
+    font-family: 'Noto Serif KR', serif; font-size: 0.84rem; color: var(--ink);
+    white-space: nowrap; opacity: 0; transition: opacity 0.16s ease;
+    box-shadow: 0 2px 8px rgba(28,35,64,0.10);
+  }
+  .keep-note.on { opacity: 1; }
+  .keep-note:hover { border-color: var(--mark); color: var(--mark); }
+  .keep-note.done { cursor: default; color: var(--ink-soft); border-color: var(--rule); }
+  .keep-hint {
+    position: absolute; z-index: 40; transform: translate(-50%, 0.5rem);
+    font-family: 'EB Garamond', serif; font-style: italic; font-size: 0.82rem;
+    color: var(--ink-faint); white-space: nowrap; pointer-events: none;
+    opacity: 0; transition: opacity 0.3s ease;
+  }
+  .keep-hint.on { opacity: 1; }
 </style>
+
+<script>
+  import { supabase } from '../lib/supabaseClient.js';
+
+  // ★담기 장치는 열쇠가 확인된 뒤에만 만들어진다. 숨기는 것이 아니라 존재하지 않는다 —
+  //   "참여 장치는 자격이 있을 때만 존재한다"가 소스 층위까지 가야 한다(마틴).
+  //   비로그인·initiate 독자가 받는 본문은 지금과 픽셀 하나 다르지 않다.
+  async function initKeep() {
+    const body = document.querySelector('.art-body');
+    const wrap = document.getElementById('art-wrap');
+    if (!body || !wrap || wrap.dataset.keepReady) return;
+
+    let session = null;
+    try { const { data } = await supabase.auth.getSession(); session = data ? data.session : null; }
+    catch (e) {}
+    if (!session) return;                       // 여기서 끝. 아무것도 만들지 않는다.
+
+    async function freshToken() {
+      try { const { data } = await supabase.auth.getSession();
+            if (data && data.session) return data.session.access_token; } catch (e) {}
+      try { const { data: r } = await supabase.auth.refreshSession();
+            if (r && r.session) return r.session.access_token; } catch (e) {}
+      return null;
+    }
+    async function call(payload) {
+      const res = await fetch('/.netlify/functions/keep', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.assign({ token: await freshToken() }, payload)),
+      });
+      return res.json();
+    }
+
+    const seen = await call({ action: 'moments' });
+    if (seen.status !== 'ok') return;           // keyholder가 아니면 서버가 막는다
+    const moments = new Set(seen.moments || []);
+    wrap.dataset.keepReady = '1';
+
+    const articleId = Number(wrap.dataset.articleId);
+    const note = document.createElement('button');
+    note.type = 'button'; note.className = 'keep-note'; note.textContent = '담기';
+    wrap.appendChild(note);
+    const hint = document.createElement('div');
+    hint.className = 'keep-hint';
+    wrap.appendChild(hint);
+
+    let pending = null;
+    const hide = () => { note.classList.remove('on'); note.classList.remove('done');
+                         note.textContent = '담기'; pending = null; };
+    const sayHint = (text) => {
+      hint.textContent = text; hint.classList.add('on');
+      setTimeout(() => hint.classList.remove('on'), 3200);
+    };
+
+    // ★빈 문단에는 담기 장치를 붙이지 않는다.
+    //   빈 문단도 앵커를 받고, 이미지마다 하나씩 자동으로 생긴다.
+    //   운영자가 만든 빈 줄과 도구가 만든 빈 문단은 성격이 다르나 구분할 수 없으므로
+    //   내용 없는 문단은 전부 제외한다(마틴 판정).
+    function blockOf(node) {
+      let el = node.nodeType === 3 ? node.parentElement : node;
+      while (el && el !== body) {
+        if (el.hasAttribute && el.hasAttribute('data-anchor')) return el;
+        el = el.parentElement;
+      }
+      return null;
+    }
+
+    document.addEventListener('selectionchange', () => {
+      const sel = document.getSelection();
+      if (!sel || sel.isCollapsed || sel.rangeCount === 0) { hide(); return; }
+      const range = sel.getRangeAt(0);
+      if (!body.contains(range.commonAncestorContainer)) { hide(); return; }
+
+      const text = sel.toString().trim();
+      if (!text) { hide(); return; }
+
+      const block = blockOf(range.startContainer);
+      if (!block || !block.textContent.trim()) { hide(); return; }   // 빈 문단 제외
+
+      // 문단 안에서 몇 번째 글자부터인지 — 원문이 고쳐져도 문단까지는 앵커로 도달한다.
+      let start = null, end = null;
+      try {
+        const pre = range.cloneRange();
+        pre.selectNodeContents(block);
+        pre.setEnd(range.startContainer, range.startOffset);
+        start = pre.toString().length;
+        end = start + sel.toString().length;
+      } catch (e) {}
+
+      pending = { anchor_id: block.getAttribute('data-anchor'),
+                  start_offset: start, end_offset: end, snapshot_text: text };
+
+      const r = range.getBoundingClientRect();
+      const w = wrap.getBoundingClientRect();
+      note.style.left = (r.left + r.width / 2 - w.left) + 'px';
+      note.style.top = (r.top - w.top - 8) + 'px';
+      note.classList.add('on');
+
+      if (!moments.has('first-drag')) {
+        moments.add('first-drag');
+        call({ action: 'first', moment: 'first-drag' });
+        hint.style.left = note.style.left;
+        hint.style.top = (r.bottom - w.top) + 'px';
+        sayHint('담으면 네 방에 놓인다');
+      }
+    });
+
+    note.addEventListener('mousedown', (e) => e.preventDefault());   // 선택이 풀리지 않게
+    note.addEventListener('click', async () => {
+      if (!pending || note.classList.contains('done')) return;
+      const p = pending;
+      note.textContent = '담는 중';
+      const r = await call(Object.assign({ action: 'keep', article_id: articleId }, p));
+      if (r.status === 'ok' || r.status === 'already') {
+        note.textContent = (r.status === 'already') ? '이미 담았소' : '담았소';
+        note.classList.add('done');
+        if (r.status === 'ok' && !moments.has('first-keep')) {
+          moments.add('first-keep');
+          call({ action: 'first', moment: 'first-keep' });
+          hint.style.left = note.style.left;
+          hint.style.top = note.style.top;
+          sayHint('네 방에 들어갔다. 너만 볼 수 있다.');
+        }
+        setTimeout(hide, 1400);
+      } else {
+        note.textContent = '무언가 어긋났소';   // 공통 오류 세트 — 미분류 실패
+        note.classList.add('done');
+        setTimeout(hide, 1800);
+      }
+    });
+  }
+
+  if (document.readyState !== 'loading') initKeep();
+  else document.addEventListener('DOMContentLoaded', initKeep);
+  document.addEventListener('astro:page-load', initKeep);
+</script>
