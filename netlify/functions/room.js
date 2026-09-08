@@ -68,6 +68,25 @@ export default async (req) => {
       .from('room_items').select('*').eq('room_id', room.id)
       .order('face').order('position');
 
+    // ★담긴 것 — room_items는 번호만 갖고 있으므로 문장을 따로 읽어 붙인다.
+    //   공개 여부를 묻지 않는다. face가 곧 자리이고 지금은 전부 bottom(가방)이다.
+    const keepIds = (items || []).filter((i) => i.kind === 'keep').map((i) => i.target_id);
+    let keepMap = {};
+    if (keepIds.length) {
+      const { data: krows } = await supabase
+        .from('keeps')
+        .select('id, article_id, anchor_id, snapshot_text, created_at, articles(title, slug)')
+        .in('id', keepIds);
+      (krows || []).forEach((r) => {
+        keepMap[r.id] = {
+          id: r.id, text: r.snapshot_text, anchor: r.anchor_id,
+          title: r.articles ? r.articles.title : null,
+          slug: r.articles ? r.articles.slug : null,
+          at: r.created_at,
+        };
+      });
+    }
+
     // 문 앞에 쌓인 것 — 1차에는 첫 편지뿐이다.
     const { data: door } = await supabase
       .from('room_door').select('*').eq('room_id', room.id)
@@ -82,7 +101,10 @@ export default async (req) => {
       status: 'ok',
       room: room,
       nickname: me.nickname || null,
-      items: items || [],
+      items: (items || []).map((i) =>
+        (i.kind === 'keep' && keepMap[i.target_id])
+          ? Object.assign({}, i, { keep: keepMap[i.target_id] })
+          : i),
       door: door || [],
       trace: trace,
       firstTime: r.created,
