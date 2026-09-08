@@ -126,10 +126,13 @@ const dateStr = article.created_at ? new Date(article.created_at).toLocaleDateSt
 
   /* ─────────────────────────────────────────────
      담기 쪽지 — 문장을 고르면 그 자리 위에 뜬다.
+     ★:global()이 필수다. 쪽지는 스크립트가 런타임에 만드는 노드라
+       Astro 스코프 CSS의 표식이 없어 규칙이 안 걸린다(통합본 §8-10).
+       안 붙이면 position: absolute가 무시돼 쪽지가 글 맨 아래에 찌부러진 채 놓인다.
      ★이 CSS는 있어도 무해하지만, 쪽지 자체는 열쇠가 확인된 뒤에만 만들어진다.
        비로그인 독자의 HTML에는 담기 관련 요소가 하나도 없다(마틴 확인 4번).
      ───────────────────────────────────────────── */
-  .keep-note {
+  :global(.keep-note) {
     position: absolute; z-index: 40; transform: translate(-50%, -100%);
     background: var(--paper-letter); border: 1px solid var(--rule-strong);
     padding: 0.34rem 0.8rem; cursor: pointer;
@@ -137,16 +140,16 @@ const dateStr = article.created_at ? new Date(article.created_at).toLocaleDateSt
     white-space: nowrap; opacity: 0; transition: opacity 0.16s ease;
     box-shadow: 0 2px 8px rgba(28,35,64,0.10);
   }
-  .keep-note.on { opacity: 1; }
-  .keep-note:hover { border-color: var(--mark); color: var(--mark); }
-  .keep-note.done { cursor: default; color: var(--ink-soft); border-color: var(--rule); }
-  .keep-hint {
+  :global(.keep-note.on) { opacity: 1; }
+  :global(.keep-note:hover) { border-color: var(--mark); color: var(--mark); }
+  :global(.keep-note.done) { cursor: default; color: var(--ink-soft); border-color: var(--rule); }
+  :global(.keep-hint) {
     position: absolute; z-index: 40; transform: translate(-50%, 0.5rem);
     font-family: 'EB Garamond', serif; font-style: italic; font-size: 0.82rem;
     color: var(--ink-faint); white-space: nowrap; pointer-events: none;
     opacity: 0; transition: opacity 0.3s ease;
   }
-  .keep-hint.on { opacity: 1; }
+  :global(.keep-hint.on) { opacity: 1; }
 </style>
 
 <script>
