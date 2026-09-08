@@ -150,6 +150,20 @@ const dateStr = article.created_at ? new Date(article.created_at).toLocaleDateSt
     opacity: 0; transition: opacity 0.3s ease;
   }
   :global(.keep-hint.on) { opacity: 1; }
+
+  /* 통째로 담기 — 본문이 끝난 자리에 붙는다. 쪽지와 같은 규칙으로 :global()이 필수다. */
+  :global(.keep-whole) {
+    margin-top: 3.4rem; padding-top: 1.6rem;
+    border-top: 1px solid var(--rule); text-align: center;
+  }
+  :global(.keep-whole button) {
+    font-family: 'Noto Serif KR', serif; font-size: 0.88rem; color: var(--ink-soft);
+    background: none; border: none; border-bottom: 1px solid var(--rule);
+    padding: 0.5rem 0.2rem; cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  :global(.keep-whole button:hover) { color: var(--mark); border-color: var(--mark); }
+  :global(.keep-whole button:disabled) { cursor: default; color: var(--ink-faint); border-color: transparent; }
 </style>
 
 <script>
@@ -278,6 +292,43 @@ const dateStr = article.created_at ? new Date(article.created_at).toLocaleDateSt
         note.textContent = '무언가 어긋났소';   // 공통 오류 세트 — 미분류 실패
         note.classList.add('done');
         setTimeout(hide, 1800);
+      }
+    });
+
+    // ── 통째로 담기 ──
+    // ★본문이 끝난 자리에 둔다. 담는 것은 읽고 나서 남기는 행위이므로
+    //   위에 두면 읽기도 전에 결정을 요구하게 된다(운영자 판정).
+    //   anchor_id 없이 보내면 글 담기가 된다.
+    const whole = document.createElement('div');
+    whole.className = 'keep-whole';
+    const wbtn = document.createElement('button');
+    wbtn.type = 'button';
+    wbtn.textContent = '통째로 담기';
+    whole.appendChild(wbtn);
+    wrap.appendChild(whole);
+
+    wbtn.addEventListener('click', async () => {
+      wbtn.disabled = true;
+      const label = wbtn.textContent;
+      wbtn.textContent = '담는 중';
+      const r = await call({
+        action: 'keep', article_id: articleId,
+        snapshot_text: (document.querySelector('.art-title') || {}).textContent
+                       || document.title || '이 글',
+      });
+      if (r.status === 'ok' || r.status === 'already') {
+        wbtn.textContent = (r.status === 'already') ? '이미 담았소' : '담았소';
+        if (r.status === 'ok' && !moments.has('first-keep')) {
+          moments.add('first-keep');
+          call({ action: 'first', moment: 'first-keep' });
+          const b = wbtn.getBoundingClientRect(), w2 = wrap.getBoundingClientRect();
+          hint.style.left = (b.left + b.width / 2 - w2.left) + 'px';
+          hint.style.top = (b.bottom - w2.top) + 'px';
+          sayHint('네 방에 들어갔다. 너만 볼 수 있다.');
+        }
+      } else {
+        wbtn.textContent = '무언가 어긋났소';
+        setTimeout(() => { wbtn.textContent = label; wbtn.disabled = false; }, 1800);
       }
     });
   }
