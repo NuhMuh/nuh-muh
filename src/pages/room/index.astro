@@ -152,7 +152,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
        오므라들며 뻗는다 — 옆벽이 뒤로 물러나 있다는 암시일 뿐 실제 벽이 아니다.
        위 모서리 선은 아래로, 아래 모서리 선은 위로 향한다(운영자 확인).
      ───────────────────────────────────────────── */
-  .box { position: relative; height: 100vh; overflow: hidden;
+  .box { position: relative; min-height: 100vh; overflow: hidden;
+    /* ★높이는 스크립트(fit)가 보이는 벽의 글에 맞춰 준다. 여기서는 바닥(화면 한 장)만 쥔다.
+       안에 든 것(.walls·.frame)이 전부 absolute라 CSS만으로는 높이의 주인이 없다(내 방 2차-①). */
     /* 방의 치수는 한 벌이다. 여백과 사선 길이가 물려 있다.
        dg-len = mx / cos(26.57도) — 가로로 뻗는 길이가 mx와 같아야
        사선 끝이 화면 가장자리에 딱 닿는다. 하나만 바꾸면 어긋난다. */
@@ -164,7 +166,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   /* ★벽 div는 이제 글씨만 담는다. 모양은 .frame SVG가 그린다.
      쌓는 순서가 중요하다 — SVG가 아래(z 1), 글씨가 위(z 2). 뒤집히면 글씨가 가려진다. */
   .wall { position: absolute; inset: 0; opacity: 0; pointer-events: none;
-    transition: opacity 0.18s ease; overflow-y: auto; }
+    transition: opacity 0.18s ease; }
+  /* ★벽 안 스크롤(overflow-y: auto)을 걷었다. 긴 글은 벽 안에서 따로 도는 대신
+     페이지가 길어지는 것으로 보인다 — 상자가 fit()으로 글만큼 늘어나므로 잘리지 않는다. */
   .wall.facing { opacity: 1; pointer-events: auto; }
 
   /* ─────────────────────────────────────────────
@@ -563,13 +567,43 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     requestAnimationFrame(() => { draw(); requestAnimationFrame(draw); });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
 
+    // ★보이는(굴림이 끝나면 보일) 벽. 글씨를 켜는 판정과 높이를 맞추는 판정이
+    //   같은 답을 내야 하므로 한 곳에 둔다.
+    function showingFace() {
+      return down ? 'bottom' : RING[((Math.round(pos) % RING.length) + RING.length) % RING.length];
+    }
+
+    // ★벽 구역의 높이는 보이는 벽의 글이 정한다(내 방 2차-①).
+    //   벽 넷은 겹쳐 둔 채 상자 높이만 여기서 맞춘다. 보이는 벽 하나를 CSS로 흐름에
+    //   세우는 방법은 버렸다 — 굴리는 동안에는 보이는 벽이 없어 상자가 주저앉는다.
+    //   위아래 여백은 CSS 값을 재서 쓰고, 바닥(화면 한 장)은 CSS min-height가 쥔다.
+    function contentHeight(faceName) {
+      const inner = walls.querySelector('.wall[data-face="' + faceName + '"] .inner');
+      if (!inner) return null;
+      const b = boxEl.getBoundingClientRect(), s = walls.getBoundingClientRect();
+      return Math.ceil((s.top - b.top) + inner.offsetHeight + (b.bottom - s.bottom));
+    }
+    function fit() {
+      const h = contentHeight(showingFace());
+      if (h != null) boxEl.style.height = h + 'px';
+    }
+
     function paint() {
-      const showing = down ? 'bottom' : RING[((Math.round(pos) % RING.length) + RING.length) % RING.length];
+      const showing = showingFace();
       const settled = !rolling;
       walls.querySelectorAll('.wall').forEach((w) => {
         w.classList.toggle('facing', settled && w.dataset.face === showing);
       });
+      fit();
       draw();
+    }
+
+    // ★글이 늦게 도착하거나(편지·담긴 것은 서버에서 온다) 빠지거나(빼기) 폭이 바뀌어
+    //   줄이 다시 감기면 벽 높이가 달라진다. 창 크기·굴림만 지켜보면 이것을 놓친다.
+    //   굴리는 중에는 손대지 않는다 — 굴림이 끝나면 paint()가 맞춘다.
+    if (window.ResizeObserver) {
+      const ro = new ResizeObserver(() => { if (!rolling) { fit(); draw(); } });
+      walls.querySelectorAll('.wall .inner').forEach((el) => ro.observe(el));
     }
 
     // ★굴리는 동안 글씨는 감춘다. 폭이 변하는데 글씨까지 눌리면 읽던 것이 뭉개진다.
