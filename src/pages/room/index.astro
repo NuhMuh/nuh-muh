@@ -569,8 +569,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
     // ★보이는(굴림이 끝나면 보일) 벽. 글씨를 켜는 판정과 높이를 맞추는 판정이
     //   같은 답을 내야 하므로 한 곳에 둔다.
-    function showingFace() {
-      return down ? 'bottom' : RING[((Math.round(pos) % RING.length) + RING.length) % RING.length];
+    //   isDown을 주면 "그 상태가 되면 보일 벽"을 답한다 — 짐 가방 굴림이 도착할 벽을 미리 물을 때 쓴다.
+    function showingFace(isDown = down) {
+      return isDown ? 'bottom' : RING[((Math.round(pos) % RING.length) + RING.length) % RING.length];
     }
 
     // ★벽 구역의 높이는 보이는 벽의 글이 정한다(내 방 2차-①).
@@ -588,6 +589,28 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       if (h != null) boxEl.style.height = h + 'px';
     }
 
+    // ★굴리는 동안 상자 높이를 옮긴다(내 방 2차-① ③, 운영자 결정 09-21).
+    //   높이는 글씨가 다 사라진 구간에서만 변해야 한다. 굴림이 시작되면 글씨는 .wall의
+    //   transition 시간에 걸쳐 흐려지므로, 그 시간이 지난 뒤 출발해 굴림 끝에 도착한다.
+    //   0초부터 옮기면 흐려지는 중인 긴 글의 아랫부분이 잘리는 것이 보인다.
+    //   흐려지는 시간은 CSS에서 읽는다 — 숫자를 여기 또 적으면 출처가 둘이 된다.
+    //   곡선은 굴림과 같은 것을 쓴다. 도착한 높이는 끝에 paint()→fit()이 놓는 높이와 같다.
+    function heightMover(targetFace, DUR) {
+      const h0 = boxEl.getBoundingClientRect().height;
+      const floor = parseFloat(getComputedStyle(boxEl).minHeight) || 0;
+      const raw = contentHeight(targetFace);
+      const h1 = (raw == null) ? h0 : Math.max(floor, raw);
+      const w = walls.querySelector('.wall');
+      const td = w ? getComputedStyle(w).transitionDuration : '0s';
+      const fade = td.trim().endsWith('ms') ? parseFloat(td) : parseFloat(td) * 1000;
+      const start = Math.min(fade || 0, DUR);
+      return (elapsed) => {
+        const k = (DUR > start) ? Math.max(0, Math.min(1, (elapsed - start) / (DUR - start))) : 1;
+        const e = k < 0.5 ? 4*k*k*k : 1 - Math.pow(-2*k + 2, 3) / 2;
+        boxEl.style.height = (h0 + (h1 - h0) * e) + 'px';
+      };
+    }
+
     function paint() {
       const showing = showingFace();
       const settled = !rolling;
@@ -600,7 +623,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
     // ★글이 늦게 도착하거나(편지·담긴 것은 서버에서 온다) 빠지거나(빼기) 폭이 바뀌어
     //   줄이 다시 감기면 벽 높이가 달라진다. 창 크기·굴림만 지켜보면 이것을 놓친다.
-    //   굴리는 중에는 손대지 않는다 — 굴림이 끝나면 paint()가 맞춘다.
+    //   굴리는 중에는 손대지 않는다 — 그때의 높이는 굴림(heightMover)이 쥐고, 끝나면 paint()가 맞춘다.
     if (window.ResizeObserver) {
       const ro = new ResizeObserver(() => { if (!rolling) { fit(); draw(); } });
       walls.querySelectorAll('.wall .inner').forEach((el) => ro.observe(el));
@@ -613,10 +636,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       const from = pos, to = pos + step, DUR = 520, t0 = performance.now();
       rolling = true;
       walls.querySelectorAll('.wall').forEach((w) => w.classList.remove('facing'));
+      const moveH = heightMover(RING[((to % RING.length) + RING.length) % RING.length], DUR);   // 도착할 벽
       (function frameStep(now) {
         const k = Math.min(1, (now - t0) / DUR);
         const e = k < 0.5 ? 4*k*k*k : 1 - Math.pow(-2*k + 2, 3) / 2;
         pos = from + (to - from) * e;
+        moveH(now - t0);
         draw();
         if (k < 1) { requestAnimationFrame(frameStep); return; }
         pos = ((to % RING.length) + RING.length) % RING.length;
@@ -636,12 +661,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       rolling = true;
       walls.querySelectorAll('.wall').forEach((w) => w.classList.remove('facing'));
       const from = vpos, to = toDown ? 1 : 0, DUR = 560, t0 = performance.now();
+      const moveH = heightMover(showingFace(toDown), DUR);   // 가방이면 가방, 아니면 돌아갈 벽
       (function step(now) {
         // ★가속은 여기 한 곳에만 건다. vPoints 안에서 또 굽히면 점들이 서로 다른
         //   진도로 움직여, 50%에 세 점이 한자리에 모이지 않고 짧은 선이 남는다(실제로 겪음).
         const k = Math.min(1, (now - t0) / DUR);
         const e = k < 0.5 ? 4*k*k*k : 1 - Math.pow(-2*k + 2, 3) / 2;
         vpos = from + (to - from) * e;
+        moveH(now - t0);
         draw();
         if (k < 1) { requestAnimationFrame(step); return; }
         vpos = to; down = toDown;
