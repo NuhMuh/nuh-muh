@@ -589,7 +589,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       if (h != null) boxEl.style.height = h + 'px';
     }
 
-    // ★굴리는 동안 상자 높이를 옮긴다(내 방 2차-① ③, 운영자 결정 09-21).
+    // ★굴리는 동안 상자 높이를(그리고 필요하면 스크롤을) 옮긴다(내 방 2차-① ③④, 운영자 결정 09-21).
     //   높이는 글씨가 다 사라진 구간에서만 변해야 한다. 굴림이 시작되면 글씨는 .wall의
     //   transition 시간에 걸쳐 흐려지므로, 그 시간이 지난 뒤 출발해 굴림 끝에 도착한다.
     //   0초부터 옮기면 흐려지는 중인 긴 글의 아랫부분이 잘리는 것이 보인다.
@@ -604,10 +604,19 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       const td = w ? getComputedStyle(w).transitionDuration : '0s';
       const fade = td.trim().endsWith('ms') ? parseFloat(td) : parseFloat(td) * 1000;
       const start = Math.min(fade || 0, DUR);
+      // ★굴린 뒤에는 새 벽의 맨 위가 보여야 한다(④, 마틴 소견·운영자 승인).
+      //   스크롤을 내린 채 굴리면 새 벽의 중간이나 발자취 쪽에 떨어진다. 높이와 같은 구간·
+      //   같은 곡선으로 방 위쪽까지 끌어올린다 — 글씨가 안 보이는 동안에 끝난다.
+      //   방 위쪽이 이미 보이면(방보다 아래로 스크롤돼 있지 않으면) 건드리지 않는다.
+      //   behavior 'instant' — 전역에 부드러운 스크롤이 걸려 있어도 매 순간 값이 그대로 들어가게.
+      const s0 = window.scrollY;
+      const sTop = boxEl.getBoundingClientRect().top + window.scrollY;
+      const lift = s0 > sTop;
       return (elapsed) => {
         const k = (DUR > start) ? Math.max(0, Math.min(1, (elapsed - start) / (DUR - start))) : 1;
         const e = k < 0.5 ? 4*k*k*k : 1 - Math.pow(-2*k + 2, 3) / 2;
         boxEl.style.height = (h0 + (h1 - h0) * e) + 'px';
+        if (lift) window.scrollTo({ top: s0 + (sTop - s0) * e, left: 0, behavior: 'instant' });
       };
     }
 
