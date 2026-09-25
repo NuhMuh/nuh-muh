@@ -113,7 +113,12 @@ export default async (req) => {
 
   // ── 문패 ──
   if (action === 'nameplate') {
-    const text = (body.text || '').trim().slice(0, 60);
+    // ★60자를 넘으면 자르지 않고 거절한다(내 방 2차-② ⑤). 전에는 말없이 60자로 잘라
+    //   저장하고 "걸어두었소"를 돌려줬다 — 쓴 사람은 뒤가 잘린 줄 모른다.
+    //   글자 수는 화면 입력칸(maxlength="60")과 같은 셈법이다. 화면으로는 61자를 보낼 수 없으므로
+    //   이 거절은 화면을 거치지 않고 들어오는 값만 막는다.
+    const text = (body.text || '').trim();
+    if (text.length > 60) return json({ status: 'error', detail: 'nameplate too long' });
     const { error } = await supabase
       .from('rooms')
       .update({ nameplate: text || null, nameplate_at: new Date().toISOString(), updated_at: new Date().toISOString() })
