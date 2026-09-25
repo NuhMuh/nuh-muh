@@ -31,10 +31,17 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <section class="wall front" data-face="front">
           <div class="inner">
             <h2 class="w-name">내가 거는 벽</h2>
-            <div class="plate">
-              <input type="text" id="plate" class="p-input" maxlength="60" placeholder="이 방을 무어라 부를지" />
-              <button type="button" id="plate-save" class="p-save">건다</button>
-              <p class="p-msg" id="plate-msg"></p>
+            <!-- ★세로로 반을 가른다(「내 방 설계」 §4-A). 왼쪽은 내가 채우는 것(문패·액자),
+                 오른쪽은 저절로 되는 것(지도·거울). 왼쪽이 주(主)라 더 넓다. -->
+            <div class="fw">
+              <div class="fw-l">
+                <div class="plate">
+                  <input type="text" id="plate" class="p-input" maxlength="60" placeholder="이 방을 무어라 부를지" />
+                  <button type="button" id="plate-save" class="p-save">건다</button>
+                  <p class="p-msg" id="plate-msg"></p>
+                </div>
+              </div>
+              <div class="fw-r"></div>
             </div>
           </div>
         </section>
@@ -263,11 +270,16 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .k-save:disabled { opacity: 0.4; cursor: default; }
   .k-msg { font-family: 'EB Garamond', serif; font-style: italic; font-size: 0.9rem; color: var(--ink-soft); margin-top: 0.7rem; min-height: 1.2rem; }
 
+  /* 첫째 벽 — 세로로 반을 가른다(§4-A). 왼쪽이 주라 더 넓다.
+     비율은 액자·지도가 들어온 뒤 실물을 보고 운영자와 다시 잡는다(발주 ④). */
+  .fw { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 3rem; align-items: start; }
+
   /* 좁은 화면 — 벽이 화면 폭을 넘지 않게. 원근은 더 짧게 잡아 깊이를 유지한다. */
   @media (max-width: 720px) {
     .room { --mx: 6vw; --my-top: 8vh; --my: 4vh; }
     .inner { padding: 2rem 1.4rem; }
     .greet { display: none; }
+    .fw { grid-template-columns: minmax(0, 1fr); gap: 2rem; }   /* 좁으면 위아래로 쌓는다 */
   }
 </style>
 
