@@ -36,6 +36,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             <div class="fw">
               <div class="fw-l">
                 <div class="plate">
+                  <!-- 거울 모드에서만 보인다 — 서버에 걸려 있는 문패 글자(남이 보는 것). -->
+                  <p class="p-view" id="plate-view"></p>
                   <input type="text" id="plate" class="p-input" maxlength="60" placeholder="이 방을 무어라 부를지" />
                   <button type="button" id="plate-save" class="p-save">건다</button>
                   <p class="p-msg" id="plate-msg"></p>
@@ -46,6 +48,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
               <div class="fw-r">
                 <!-- 지도 — 안은 lib/room/map.js가 그린다(내 방 2차-② ⑦). 벽 안에 있어야 길어질 때 벽이 받아준다. -->
                 <div class="map" id="map"></div>
+                <!-- 거울 — 누르면 남이 보는 내 방이 된다(내 방 2차-② ⑧, 「내 방 설계」 §5-4). 작게, 벽에 걸린 물건으로. -->
+                <button type="button" class="mirror-glass" id="mirror" aria-pressed="false" aria-label="거울 — 남에게 보이는 이 방"></button>
               </div>
             </div>
           </div>
@@ -334,6 +338,27 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   /* ── 지도 (내 방 2차-② ⑦) — 가로로 긴 좌표평면. 가로는 칸 폭을 따르고 세로는 담기에 따라 늘어난다. ── */
   .map :global(svg) { display: block; width: 100%; height: auto; }
 
+  /* ── 거울 (내 방 2차-② ⑧) — 작게, 거울처럼 생기기만(「내 방 설계」 §5-4). 모양은 운영자와 실물을 보며 다시 잡는다. ── */
+  .mirror-glass { display: block; width: 7.5rem; aspect-ratio: 16 / 10; margin: 2rem 0 0 auto; padding: 0; cursor: pointer;
+    background: linear-gradient(135deg, var(--paper-letter) 0%, rgba(28, 35, 64, 0.07) 55%, var(--paper-letter) 100%);
+    border: 1px solid var(--rule-strong); box-shadow: inset 0 0 0 4px var(--paper-letter), inset 0 0 0 5px var(--rule);
+    transition: border-color 0.2s; }
+  .mirror-glass:hover, .mirror-glass:focus-visible { border-color: var(--ink-soft); outline: none; }
+  .mirror-glass[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 4px var(--paper-letter), inset 0 0 0 5px var(--ink-soft); }
+  .mirror-glass:disabled { cursor: progress; }
+
+  /* ── 거울 모드 — 남이 내 방에 왔을 때 볼 수 없는 것을 숨긴다(「내 방 설계」 §5-4).
+     ★무엇을 숨기는지는 이 한 곳에만 둔다. 3차에 남이 보는 화면을 만들 때 이 목록이 기준이다. ── */
+  .p-view { display: none; margin: 0; font-family: 'Noto Serif KR', serif; font-size: 1.15rem; line-height: 1.6; color: var(--ink); word-break: keep-all; }
+  .room.is-mirror .p-view { display: block; }
+  .room.is-mirror .p-view:empty { display: none; }                  /* 문패를 안 걸었으면 남에게도 없다 */
+  .room.is-mirror .p-input, .room.is-mirror .p-save, .room.is-mirror .p-msg { display: none; }   /* 문패 고치는 장치 */
+  .room.is-mirror .greet { visibility: hidden; }                    /* 주인에게 건네는 인사 — 자리는 남겨 헤더가 안 흔들리게 */
+  .room.is-mirror #t-down { display: none; }                        /* 짐 가방 — 안 내놓은 것 */
+  .room.is-mirror #pile { display: none; }                          /* 주인장이 놓고 간 것 — 나만 본다(§5-10) */
+  .room.is-mirror .below { display: none; }                         /* 각주 — 발자취·계정 관리(§5-4 승인) */
+  .room.is-mirror .frames :global(.fr) { cursor: default; pointer-events: none; }
+
   /* 좁은 화면 — 벽이 화면 폭을 넘지 않게. 원근은 더 짧게 잡아 깊이를 유지한다. */
   @media (max-width: 720px) {
     .room { --mx: 6vw; --my-top: 8vh; --my: 4vh; }
@@ -469,6 +494,36 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       renderStash(fresh.items || []);
       frames.render(fresh.items || []);
       drawMap(document.getElementById('map'), fresh.map);
+      return fresh;   // 거울이 문패 글자를 여기서 받는다
+    }
+
+    // ── 거울 (내 방 2차-② ⑧, 「내 방 설계」 §5-4) ──
+    // ★누르면 남이 보는 내 방이 된다. 판정 기준: 남이 내 방에 왔을 때 볼 수 없는 것은 안 보인다.
+    //   무엇을 숨기는지는 CSS 한 곳(.room.is-mirror)에만 둔다 — 여기는 켜고 끄기만 한다.
+    // ★문패는 입력칸이 아니라 서버에 걸린 글자를 보여준다 — 쳐 두고 안 건 글자는 남이 못 본다.
+    //   그래서 켤 때 방을 새로 읽는다. 거울이 보여준 것과 남이 실제로 보는 것이 같아야 한다(§5-4).
+    // ★액자는 inert로 막는다 — 눌리지도, 탭으로 초점이 가지도 않는다.
+    //   남이 액자를 눌렀을 때의 동작(그 글로 갈지 묻기, §5-2)은 남이 올 길이 생기는 3차에 만든다.
+    const mirrorBtn = document.getElementById('mirror');
+    const plateView = document.getElementById('plate-view');
+    const framesBox = document.getElementById('frames');
+    let mirrorOn = false;
+    if (mirrorBtn) {
+      mirrorBtn.addEventListener('click', async () => {
+        if (mirrorBtn.disabled) return;   // 방을 읽는 동안 두 번 눌러 켜고 꺼지지 않게
+        mirrorBtn.disabled = true;
+        const on = !mirrorOn;
+        if (on) {
+          const fresh = await reload();
+          // 못 읽었으면 문패를 비운다 — 잘못 보이는 것보다 잘못 숨기는 것이 낫다(§5-4).
+          if (plateView) plateView.textContent = (fresh && fresh.room && fresh.room.nameplate) || '';
+        }
+        mirrorOn = on;
+        root.classList.toggle('is-mirror', on);
+        if (framesBox) framesBox.inert = on;
+        mirrorBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        mirrorBtn.disabled = false;
+      });
     }
 
     // ── 어느 벽을 보고 있나 ──
