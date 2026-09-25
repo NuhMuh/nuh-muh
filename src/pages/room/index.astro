@@ -40,6 +40,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <button type="button" id="plate-save" class="p-save">건다</button>
                   <p class="p-msg" id="plate-msg"></p>
                 </div>
+                <!-- 액자 셋 — 안은 lib/room/frames.js가 그린다(내 방 2차-② ⑥). -->
+                <div class="frames" id="frames"></div>
               </div>
               <div class="fw-r"></div>
             </div>
@@ -83,6 +85,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     <button type="button" class="turn edge-l" id="t-left" aria-label="왼쪽 벽으로"><span>‹</span></button>
     <button type="button" class="turn edge-r" id="t-right" aria-label="오른쪽 벽으로"><span>›</span></button>
     <button type="button" class="turn edge-d" id="t-down" aria-label="짐 가방으로"><span>⌄</span></button>
+
+    <!-- 엽서 창 — 액자에 걸 것을 고르는 자리. 벽 위에 뜬다(「내 방 설계」 §5-A).
+         벽 밖에 두어 벽 높이를 재는 장치에 안 잡힌다. -->
+    <div class="pc-layer" id="pc-layer" hidden></div>
 
     <!-- 아래로 흐르는 것들 — 방 밑에 붙는다. -->
     <div class="below">
@@ -274,17 +280,69 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
      비율은 액자·지도가 들어온 뒤 실물을 보고 운영자와 다시 잡는다(발주 ④). */
   .fw { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 3rem; align-items: start; }
 
+  /* ── 액자 셋 (내 방 2차-② ⑥) ──
+     ★틀 높이는 고정이다(3:4). 안에서 글자·이미지가 저 혼자 바뀌어도 틀이 안 커져야
+       벽 높이를 재는 장치(ResizeObserver, 2차-①)가 몇 초마다 벽을 다시 맞추지 않는다 — 벽이 출렁인다.
+     ★액자 안은 스크립트가 그린다 — :global()이 필수다(「스택과 기술 함정」 §23).
+     모양은 운영자와 실물을 보며 다시 잡는다(발주 ④). */
+  .frames { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.4rem; margin-top: 2.6rem; }
+  .frames :global(.fr) { position: relative; display: block; width: 100%; aspect-ratio: 3 / 4; padding: 0; overflow: hidden;
+    cursor: pointer; background: var(--paper-letter); border: 1px solid var(--rule-strong);
+    box-shadow: inset 0 0 0 6px var(--paper-letter), inset 0 0 0 7px var(--rule); transition: border-color 0.2s; }
+  .frames :global(.fr-empty) { border-color: var(--rule); }
+  .frames :global(.fr:hover), .frames :global(.fr:focus-visible) { border-color: var(--ink-soft); outline: none; }
+  .frames :global(.fr-slide) { position: absolute; inset: 7px; display: flex; align-items: center; justify-content: center;
+    padding: 1rem; opacity: 0; transition: opacity 1.2s ease; }
+  .frames :global(.fr-slide.on) { opacity: 1; }
+  .frames :global(.fr-text) { margin: 0; font-family: 'Noto Serif KR', serif; font-size: 0.9rem; line-height: 1.75; color: var(--ink);
+    text-align: center; word-break: keep-all; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 9; overflow: hidden; }
+  .frames :global(.fr-img) { display: block; max-width: 100%; max-height: 100%; object-fit: contain; }
+
+  /* ── 엽서 창 — 벽 위에 뜬다(「내 방 설계」 §5-A). 화면에 붙어 뜨므로 벽 높이에 안 잡힌다. ── */
+  .pc-layer { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center;
+    padding: 1.2rem; background: rgba(28, 35, 64, 0.18); }
+  .pc-layer[hidden] { display: none; }
+  .pc-layer :global(.pc) { width: 100%; max-width: 34rem; max-height: 82vh; overflow-y: auto; background: var(--paper-letter);
+    border: 1px solid var(--rule-strong); box-shadow: 0 18px 50px rgba(28, 35, 64, 0.18); padding: 2rem 2.2rem 1.6rem; }
+  .pc-layer :global(.pc-title) { font-family: 'Noto Serif KR', serif; font-size: 1.15rem; font-weight: 500; color: var(--ink); margin: 0 0 1rem; }
+  .pc-layer :global(.pc-note) { font-family: 'Noto Serif KR', serif; font-size: 0.86rem; line-height: 1.7; color: var(--ink-soft); margin: 0 0 1rem; }
+  .pc-layer :global(.pc-list) { list-style: none; margin: 0 0 1.2rem; padding: 0; }
+  .pc-layer :global(.pc-pick) { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; width: 100%;
+    text-align: left; background: none; border: none; border-bottom: 1px solid var(--rule); padding: 0.8rem 0.1rem; cursor: pointer;
+    font-family: 'Noto Serif KR', serif; font-size: 0.98rem; color: var(--ink); }
+  .pc-layer :global(.pc-pick:hover) { color: var(--mark); }
+  .pc-layer :global(.pc-when) { font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; letter-spacing: 0.08em; color: var(--ink-faint); }
+  .pc-layer :global(.pc-body) { margin: 0 0 1rem; }
+  .pc-layer :global(.pc-para) { font-family: 'Noto Serif KR', serif; font-size: 0.95rem; line-height: 1.95; color: var(--ink); margin: 0 0 0.9rem; }
+  /* 고른 문장 표시 — 붉은색을 쓰지 않는다. 붉은색은 인장선과 줄표 두 층위만 쓴다(「내 방 설계」 §5-3). */
+  .pc-layer :global(.pc-sen) { cursor: pointer; border-radius: 2px; transition: background 0.15s; }
+  .pc-layer :global(.pc-sen:hover) { background: rgba(28, 35, 64, 0.05); }
+  .pc-layer :global(.pc-sen.on) { background: rgba(28, 35, 64, 0.1); box-shadow: inset 0 -2px 0 var(--ink-soft); }
+  .pc-layer :global(.pc-count) { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.08em; color: var(--ink-faint); margin: 0; }
+  .pc-layer :global(.pc-warn) { font-family: 'EB Garamond', serif; font-style: italic; font-size: 0.9rem; color: var(--ink-soft); min-height: 1.2rem; margin: 0.4rem 0 0.8rem; }
+  .pc-layer :global(.pc-row) { display: flex; flex-wrap: wrap; gap: 1.4rem; align-items: baseline; margin-top: 0.6rem; }
+  .pc-layer :global(.pc-btn) { font-family: 'Noto Serif KR', serif; font-size: 0.88rem; color: var(--ink-soft); background: none; border: none;
+    border-bottom: 1px solid var(--rule); padding: 0.5rem 0; cursor: pointer; text-decoration: none; }
+  .pc-layer :global(.pc-btn:hover) { color: var(--mark); border-color: var(--mark); }
+  .pc-layer :global(.pc-go) { color: var(--ink); border-color: var(--ink-soft); }
+  .pc-layer :global(.pc-btn:disabled) { opacity: 0.4; cursor: default; }
+  @media (prefers-reduced-motion: reduce) { .frames :global(.fr-slide) { transition: none; } }
+
   /* 좁은 화면 — 벽이 화면 폭을 넘지 않게. 원근은 더 짧게 잡아 깊이를 유지한다. */
   @media (max-width: 720px) {
     .room { --mx: 6vw; --my-top: 8vh; --my: 4vh; }
     .inner { padding: 2rem 1.4rem; }
     .greet { display: none; }
     .fw { grid-template-columns: minmax(0, 1fr); gap: 2rem; }   /* 좁으면 위아래로 쌓는다 */
+    .frames { gap: 0.8rem; margin-top: 2rem; }
+    .pc-layer :global(.pc) { padding: 1.5rem 1.3rem 1.2rem; }
   }
 </style>
 
 <script>
   import { supabase } from '../../lib/supabaseClient.js';
+  // 액자 셋과 엽서 창은 따로 둔 파일이 그린다 — 모양을 오가는 동안 굴리기·높이 코드를 안 건드리려고.
+  import { mountFrames } from '../../lib/room/frames.js';
 
   const RING = ['front', 'right', 'back', 'left'];   // 좌우로 도는 것은 벽 넷
 
@@ -350,7 +408,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     function renderStash(list) {
       const el = document.getElementById('stash');
       if (!el) return;
-      const keeps = list.filter((i) => i.kind === 'keep' && i.keep);
+      // ★가방 목록에는 가방 자리(bottom)의 것만 — 벽에 걸린 것은 가방에 없다(마틴 판정 09-25, 「내 방 설계」 §6-4).
+      const keeps = list.filter((i) => i.kind === 'keep' && i.keep && i.face === 'bottom');
       el.innerHTML = '';
       if (!keeps.length) {
         const q = document.createElement('p');
@@ -384,6 +443,20 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       });
     }
     renderTrace(data.trace || []);
+
+    // ── 액자 (내 방 2차-② ⑥) — 그리는 일은 lib/room/frames.js가 한다 ──
+    // ★걸고 내린 뒤에는 방을 다시 읽어 가방과 액자를 함께 새로 그린다 — 두 곳이 같은 자료에서 나오게.
+    const frames = mountFrames({
+      box: document.getElementById('frames'), layer: document.getElementById('pc-layer'),
+      callRoom: callRoom, reload: reload,
+    });
+    frames.render(data.items || []);
+    async function reload() {
+      const fresh = await callRoom({ action: 'get' });
+      if (!fresh || fresh.status !== 'ok') return;
+      renderStash(fresh.items || []);
+      frames.render(fresh.items || []);
+    }
 
     // ── 어느 벽을 보고 있나 ──
     // ★pos는 정수가 아니라 흐르는 값이다. 굴리는 중에는 소수가 된다.
