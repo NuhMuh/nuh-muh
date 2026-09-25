@@ -43,7 +43,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 <!-- 액자 셋 — 안은 lib/room/frames.js가 그린다(내 방 2차-② ⑥). -->
                 <div class="frames" id="frames"></div>
               </div>
-              <div class="fw-r"></div>
+              <div class="fw-r">
+                <!-- 지도 — 안은 lib/room/map.js가 그린다(내 방 2차-② ⑦). 벽 안에 있어야 길어질 때 벽이 받아준다. -->
+                <div class="map" id="map"></div>
+              </div>
             </div>
           </div>
         </section>
@@ -328,6 +331,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .pc-layer :global(.pc-btn:disabled) { opacity: 0.4; cursor: default; }
   @media (prefers-reduced-motion: reduce) { .frames :global(.fr-slide) { transition: none; } }
 
+  /* ── 지도 (내 방 2차-② ⑦) — 가로로 긴 좌표평면. 가로는 칸 폭을 따르고 세로는 담기에 따라 늘어난다. ── */
+  .map :global(svg) { display: block; width: 100%; height: auto; }
+
   /* 좁은 화면 — 벽이 화면 폭을 넘지 않게. 원근은 더 짧게 잡아 깊이를 유지한다. */
   @media (max-width: 720px) {
     .room { --mx: 6vw; --my-top: 8vh; --my: 4vh; }
@@ -343,6 +349,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   import { supabase } from '../../lib/supabaseClient.js';
   // 액자 셋과 엽서 창은 따로 둔 파일이 그린다 — 모양을 오가는 동안 굴리기·높이 코드를 안 건드리려고.
   import { mountFrames } from '../../lib/room/frames.js';
+  // 지도는 따로 둔 파일이 그린다 — 계산은 서버(room.js), 여기는 그리기만(내 방 2차-② ⑦).
+  import { drawMap } from '../../lib/room/map.js';
 
   const RING = ['front', 'right', 'back', 'left'];   // 좌우로 도는 것은 벽 넷
 
@@ -435,7 +443,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         out.addEventListener('click', async () => {
           out.textContent = '빼는 중';
           const r = await unkeep(k.id);
-          if (r.status === 'ok') box.remove();
+          // ★빼면 지도의 점도 사라져야 한다(완료 확인 14) — 방을 다시 읽어 가방·액자·지도를 함께 새로 그린다.
+          if (r.status === 'ok') { box.remove(); document.dispatchEvent(new CustomEvent('nm:room-changed')); }
           else out.textContent = '무언가 어긋났소';
         });
         foot.appendChild(out);
@@ -451,11 +460,15 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       callRoom: callRoom, reload: reload,
     });
     frames.render(data.items || []);
+    drawMap(document.getElementById('map'), data.map);
+    // 가방의 빼기는 이 자리 밖(가방 그리는 곳)에 있다 — 서로 이름을 안 불러도 되게 신호로 다시 읽기를 부른다.
+    document.addEventListener('nm:room-changed', () => { reload(); });
     async function reload() {
       const fresh = await callRoom({ action: 'get' });
       if (!fresh || fresh.status !== 'ok') return;
       renderStash(fresh.items || []);
       frames.render(fresh.items || []);
+      drawMap(document.getElementById('map'), fresh.map);
     }
 
     // ── 어느 벽을 보고 있나 ──

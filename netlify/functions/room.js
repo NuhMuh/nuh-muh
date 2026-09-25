@@ -25,7 +25,7 @@ async function whoIs(token) {
   const { data: u, error: uErr } = await supabase.auth.getUser(token);
   if (uErr || !u || !u.user) return { ok: false, reason: 'invalid session' };
   const { data: m } = await supabase
-    .from('members').select('id, nickname, status').eq('email', u.user.email).maybeSingle();
+    .from('members').select('id, nickname, status, created_at').eq('email', u.user.email).maybeSingle();
   if (!m) return { ok: false, reason: 'no member' };
   return { ok: true, member: m };
 }
@@ -182,6 +182,58 @@ async function frameItem(roomId, memberId, itemId, needArticle) {
   return { item: item, keep: keep, article: article };
 }
 
+// ── 지도 (내 방 2차-② ⑦, 「내 방 설계」 §5-3) ──
+// ★한 달은 사람마다 자기 날에서 시작한다. 그 날은 members.created_at(이메일을 처음 넣은 날)의
+//   한국 날짜 "며칠"이다 [운영자 결정 09-25] — 키홀더가 된 날은 어디에도 안 남는다.
+// ★날짜는 한국 날짜로 센다. 저장값은 세계 표준시라 새벽 0~9시에 담은 것이 전날로 잡힌다.
+//   한국은 서머타임이 없어 9시간을 더하면 정확하다 — 시간대 도구(Intl)에 기대지 않는다.
+// ★그 달에 내 날이 없으면(31일인데 9월) 그달 마지막 날에 시작한다(마틴 요청 — 보고함).
+// ★담기 하나에 점 하나(문장·단어·글 통째 모두). 액자에 고른 문장은 담기가 아니므로 안 센다.
+const KST = 9 * 3600 * 1000;
+const DAY = 24 * 3600 * 1000;
+const QUAD = { '인물 너머': 1, '소설 너머': 2, '영상 너머': 3, '소식 너머': 4 };   // 운영자 확정 09-24
+
+function kstYMD(t) {
+  const d = new Date(new Date(t).getTime() + KST);
+  return { y: d.getUTCFullYear(), m: d.getUTCMonth(), d: d.getUTCDate() };
+}
+function daysIn(y, m) { return new Date(Date.UTC(y, m + 1, 0)).getUTCDate(); }
+// 그 달에서 내 날이 시작하는 순간(한국 자정)을 세계 표준시 밀리초로.
+function cycleStartOf(y, m, anchor) { return Date.UTC(y, m, Math.min(anchor, daysIn(y, m))) - KST; }
+function shiftMonth(y, m, by) { const t = y * 12 + m + by; return { y: Math.floor(t / 12), m: ((t % 12) + 12) % 12 }; }
+function cycleAt(anchor, now) {
+  const n = kstYMD(now);
+  let a = { y: n.y, m: n.m };
+  if (now < cycleStartOf(a.y, a.m, anchor)) a = shiftMonth(a.y, a.m, -1);
+  const b = shiftMonth(a.y, a.m, 1);
+  return { start: cycleStartOf(a.y, a.m, anchor), end: cycleStartOf(b.y, b.m, anchor) };
+}
+
+// 이 달의 점들 — 서버가 다 세고 화면은 그리기만 한다(출처를 하나로).
+// x = 그 달의 며칠째(1부터), y = 그 갈래에서 몇 번째 담기(1부터, 0은 없다). 부호는 사분면이 정한다.
+async function gatherMap(member, now) {
+  const anchor = kstYMD(member.created_at).d;
+  const c = cycleAt(anchor, now);
+  const { data: ks, error } = await supabase.from('keeps')
+    .select('created_at, articles(category)')
+    .eq('member_id', member.id)
+    .gte('created_at', new Date(c.start).toISOString())
+    .lt('created_at', new Date(c.end).toISOString())
+    .order('created_at', { ascending: true });
+  if (error) return null;   // 지도를 못 그려도 방은 열려야 한다
+  const nth = { 1: 0, 2: 0, 3: 0, 4: 0 };
+  const points = [];
+  (ks || []).forEach((k) => {
+    const q = QUAD[k.articles && k.articles.category];
+    if (!q) return;                                     // 넷에 안 드는 갈래(공지 등)는 안 찍는다
+    nth[q] += 1;
+    const day = Math.floor((new Date(k.created_at).getTime() - c.start) / DAY) + 1;
+    points.push({ x: (q === 1 || q === 4 ? 1 : -1) * day, y: (q === 1 || q === 2 ? 1 : -1) * nth[q], q: q });
+  });
+  return { start: new Date(c.start).toISOString(), end: new Date(c.end).toISOString(),
+    days: Math.round((c.end - c.start) / DAY), points: points };
+}
+
 export default async (req) => {
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
@@ -246,6 +298,7 @@ export default async (req) => {
     //   지금 사용자 행위 중 기록되는 것은 글쓰기뿐이다.
     //   담기·판 참여가 생기면 여기에 더한다 — 저장이 아니라 조회를 늘리는 것이다.
     const trace = await gatherTrace(me.id);
+    const map = await gatherMap(me, Date.now());
 
     return json({
       status: 'ok',
@@ -258,6 +311,7 @@ export default async (req) => {
           : i),
       door: door || [],
       trace: trace,
+      map: map,
       firstTime: r.created,
     });
   }
