@@ -91,12 +91,6 @@ export default async (req) => {
     if (!row || row.member_id !== me.id) {
       return json({ status: 'forbidden', detail: 'not yours' });
     }
-    // ★벽에 걸린 담기는 빼지 않는다(마틴 판정 09-25). 걸린 것은 가방에 없다(「내 방 설계」 §6-4) —
-    //   남이 보는 액자가 주인도 모르는 사이에 사라지면 안 된다. 먼저 액자에서 내리고, 가방에서 뺀다.
-    //   화면은 가방 목록에 걸린 것을 안 보여주지만, 화면을 거치지 않는 요청도 여기서 막는다.
-    const { data: placed } = await supabase.from('room_items')
-      .select('id').eq('kind', 'keep').eq('target_id', keepId).neq('face', 'bottom').limit(1);
-    if (placed && placed.length) return json({ status: 'error', detail: 'hung - take it down first' });
     await supabase.from('room_items')
       .delete().eq('kind', 'keep').eq('target_id', keepId);
     const { error } = await supabase.from('keeps').delete().eq('id', keepId);
