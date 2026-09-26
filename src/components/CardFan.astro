@@ -1,5 +1,5 @@
 ---
-// 화면 왼쪽 중앙 고정. 호버하면 8장이 원형으로 펼쳐짐. 클릭 → 전체 글 목록.
+// 첫 화면 오른쪽 사이드 패널(SidePanel) 안에 놓인다. 호버하면 16장이 원형으로 펼쳐짐. 클릭 → 전체 글(/works).
 const cards = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15];
 ---
 <a href="/works" class="card-fan" id="card-fan" aria-label="전체 글">
@@ -13,10 +13,8 @@ const cards = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15];
 
 <style>
   .card-fan {
-    position: fixed;
-    left: 1.4rem; top: 50%;
-    transform: translateY(-50%);
-    z-index: 80;
+    position: relative;
+    z-index: 80;   /* 펼친 카드가 옆 칸(균열·문) 위로 올라오게 — 좌표를 지워도 이것은 남긴다 */
     width: 64px; height: 64px;
     display: flex; align-items: center; justify-content: center;
     text-decoration: none;
@@ -40,7 +38,7 @@ const cards = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15];
     content: ''; position: absolute; inset: 4px;
     border: 1px solid var(--rule); border-radius: 3px;
   }
-  /* 호버: 원형으로 펼쳐짐 (8장, 45도씩) */
+  /* 호버: 원형으로 펼쳐짐 (16장, 22.5도씩) */
   .card-fan:hover .fan-card {
     transform: rotate(calc(var(--i) * 22.5deg)) translateY(-46px);
     box-shadow: 0 6px 16px rgba(28,35,64,0.2);

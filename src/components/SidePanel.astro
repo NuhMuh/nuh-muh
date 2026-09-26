@@ -52,22 +52,7 @@ import GothicDoor from './GothicDoor.astro';
   }
   .signup-box.visible { display: inline-block; }
   .signup-box:hover { background: var(--mark); }
-  /* 카드팬/균열: fixed 해제하되 자기 크기 유지 (relative) */
-  .sp-fan :global(.card-fan) {
-    position: relative !important;
-    left: auto !important; top: auto !important;
-    transform: none !important;
-  }
-  .sp-crack :global(.crk) {
-    position: relative !important;
-    left: auto !important; top: auto !important;
-    transform: none !important;
-  }
-  .sp-gate :global(.gate) {
-    position: relative !important;
-    left: auto !important; top: auto !important;
-    transform: none !important;
-  }
+  /* 카드팬·균열·문은 부품 스스로 position: relative다(09-26) — 예전처럼 화면 왼쪽 붙박이를 여기서 풀어 줄 일이 없다. */
   @media (max-width: 700px) {
     .side-panel { grid-column: span 1; }
   }
