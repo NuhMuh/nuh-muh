@@ -172,11 +172,15 @@ const sets = weekNums.map(week => {
   }
 
   @media (max-width: 700px) {
-    .set-cards { grid-template-columns: 1fr; grid-template-rows: none; }
+    /* 한 줄로 쌓이면 넓은 화면의 가로 비율(9:5)을 풀어 준다 — 그대로 두면 빈 칸이 제 높이를 찾는 순간
+       정해진 높이 안에서 작품 카드가 눌려 납작해진다(09-26 시험). */
+    .set-cards { grid-template-columns: 1fr; grid-template-rows: none; aspect-ratio: auto; }
     .pos-ga, .pos-na, .pos-da, .pos-ra,
     .mirrored .pos-ga, .mirrored .pos-na, .mirrored .pos-da, .mirrored .pos-ra {
       grid-column: 1; grid-row: auto;
     }
-    .empty-card { min-height: 120px; }
+    /* ★`.slot .empty-card`로 적어야 한다 — `.empty-card`만 쓰면 위의 `.slot .empty-card { min-height: 0 }`에 져서
+       빈 칸이 높이 0(가로줄)이 된다(09-26 실측, 420px 캡처). */
+    .slot .empty-card { min-height: 120px; }
   }
 </style>
