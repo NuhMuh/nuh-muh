@@ -69,8 +69,8 @@ const DISCORD_URL = "https://discord.gg/zSzuk2rp8T";
     79%  { clip-path: inset(0 0 13% 0);  transform: translateX(1px); }
     100% { clip-path: inset(0 0 0 0);    transform: translateX(0); }
   }
-
-  @media (max-width: 900px) { .crk { display: none !important; } }
+  /* 좁은 화면에서도 숨기지 않는다 [운영자 결정, 09-26] — 카드팬과 같은 까닭.
+     ★누구에게 보이는지는 그대로다: 로그인한 사람에게만(.unlocked). 폭 때문에 숨던 것만 풀었다. */
 </style>
 
 <script>

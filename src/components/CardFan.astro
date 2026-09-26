@@ -54,6 +54,6 @@ const cards = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15];
     opacity: 0; transition: opacity 0.4s;
   }
   .card-fan:hover .fan-hint { opacity: 1; }
-
-  @media (max-width: 900px) { .card-fan { display: none; } }
+  /* 좁은 화면에서도 숨기지 않는다 — "좁은 화면은 넓은 화면을 줄인 것이지, 덜어낸 다른 화면이 아니다"
+     [운영자 결정, 09-26]. 예전의 900px 이하 숨김은 이 부품이 화면 왼쪽에 붙박이였던 때(06-02)의 것이다. */
 </style>
