@@ -242,9 +242,14 @@ export function mountFrames(opts) {
       });
       spansOf.forEach((_, sen) => paint(sen));
 
+      // 본문 읽는 창은 넓게 — 긴 글이 좁은 기둥으로 흐르지 않게(메뉴 창 폭은 그대로).
+      card.classList.add('pc-read');
       card.appendChild(body);
-      card.appendChild(count);
-      card.appendChild(warn);
+      // ★개수·알림·"건다"는 창 아래에 붙박이로 — 긴 글 끝까지 내려가야 걸 수 있던 것을 푼다.
+      //   고르는 동안 몇 개 골랐는지도 늘 보인다. 붙는 것은 CSS(position: sticky)가 한다.
+      const foot = h('div', 'pc-foot');
+      foot.appendChild(count);
+      foot.appendChild(warn);
       const go = btn(editing ? T.save : T.hang, () => {
         const lines = order.filter((s) => chosen.has(s));
         const req = editing
@@ -252,7 +257,8 @@ export function mountFrames(opts) {
           : { action: 'hang', item_id: it.id, slot: slot, lines: lines, replace_item_id: replacing ? replacing.id : undefined };
         act(req, warn, go);
       }, 'pc-btn pc-go');
-      card.appendChild(row(go, btn(T.back, close)));
+      foot.appendChild(row(go, btn(T.back, close)));
+      card.appendChild(foot);
     });
   }
 
@@ -273,8 +279,8 @@ export function mountFrames(opts) {
         btn(T.changeArticle, () => openPick(slot, it)),
         btn(T.changeLines, () => openLines(slot, it, null, true)),
         btn(T.takeDown, () => openDown(it)),
+        btn(T.back, close),   // 첫 메뉴처럼 같은 줄에 — 창마다 자리가 다르지 않게
       ));
-      card.appendChild(row(btn(T.back, close)));
     });
   }
 

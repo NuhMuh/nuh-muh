@@ -314,6 +314,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .pc-layer[hidden] { display: none; }
   .pc-layer :global(.pc) { width: 100%; max-width: 34rem; max-height: 82vh; overflow-y: auto; background: var(--paper-letter);
     border: 1px solid var(--rule-strong); box-shadow: 0 18px 50px rgba(28, 35, 64, 0.18); padding: 2rem 2.2rem 1.6rem; }
+  /* 문장 고르는 창 — 넓게, 개수·"건다"는 창 아래 붙박이 [운영자 요청, 09-26 — "거슬리지 않도록"].
+     붙박이 줄은 창과 같은 종이색에 가는 선 하나로만 가른다. 창 여백만큼 바깥으로 넓혀 끝까지 채운다. */
+  .pc-layer :global(.pc.pc-read) { max-width: 42rem; }
+  .pc-layer :global(.pc-foot) { position: sticky; bottom: -1.6rem; margin: 0.4rem -2.2rem -1.6rem; padding: 0.7rem 2.2rem 1.1rem;
+    background: var(--paper-letter); border-top: 1px solid var(--rule); }
+  .pc-layer :global(.pc-foot .pc-warn) { min-height: 0; margin: 0.3rem 0 0; }
+  .pc-layer :global(.pc-foot .pc-warn:empty) { display: none; }
+  .pc-layer :global(.pc-foot .pc-row) { margin-top: 0.4rem; }
   .pc-layer :global(.pc-title) { font-family: 'Noto Serif KR', serif; font-size: 1.15rem; font-weight: 500; color: var(--ink); margin: 0 0 1rem; }
   .pc-layer :global(.pc-note) { font-family: 'Noto Serif KR', serif; font-size: 0.86rem; line-height: 1.7; color: var(--ink-soft); margin: 0 0 1rem; }
   .pc-layer :global(.pc-list) { list-style: none; margin: 0 0 1.2rem; padding: 0; }
@@ -382,6 +390,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     .fw { grid-template-columns: minmax(0, 1fr); gap: 2rem; }   /* 좁으면 위아래로 쌓는다 */
     .frames { gap: 0.8rem; margin-top: 2rem; }
     .pc-layer :global(.pc) { padding: 1.5rem 1.3rem 1.2rem; }
+    .pc-layer :global(.pc-foot) { bottom: -1.2rem; margin: 0.4rem -1.3rem -1.2rem; padding: 0.6rem 1.3rem 0.9rem; }
   }
 </style>
 
