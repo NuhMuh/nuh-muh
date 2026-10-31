@@ -11,7 +11,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping Supabase REST API
+        # ★works(넘기 카드)를 부른다. 전에 부르던 members(회원 표)는 공개 열쇠를 막아서
+        #   (42501 permission denied → 401) 늘 거절됐다. works는 사이트에 공개된 카드라 정상이면 200.
+        # ★--fail: 거절(4xx·5xx)을 실패로 친다. 전에는 -s만 있어 거절도 "success"로 찍혔고,
+        #   08-03~10-29 기록이 전부 401이었는데 두 달 넘게 아무도 몰랐다(「스택과 기술 함정」 §9-1, 10-31).
+        #   실패하면 GitHub가 실패 알림을 보낸다.
         run: |
-          curl -s -o /dev/null -w "%{http_code}" \
-            "${{ secrets.SUPABASE_URL }}/rest/v1/members?select=id&limit=1" \
+          curl -s --fail -o /dev/null -w "%{http_code}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/works?select=id&limit=1" \
             -H "apikey: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}"
